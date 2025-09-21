@@ -13,14 +13,10 @@ export default function Landing() {
             source={require('../../assets/images/favicon.png')}
             style={{width: 250, height: 250, borderRadius: 30}}
             />
-        <br/>
-        <Text style={globalStyles.subheading}>Earthquake Planner App</Text>
-        <br/>
-        <Text style={globalStyles.text}>Insert Stats</Text>
-        <br/>
+        <Text style={globalStyles.subheading}>{"\n"}Earthquake Planner App{"\n"} </Text>
+        <Text style={globalStyles.text}>Insert Stats{"\n"} </Text>
         </View>
-        <Button
-        title="Launch!"
+        <Button title="Launch!"
         onPress={onPress}
         color="#3B5249"
         style={{borderRadius: 10, alignItems: "center"}}
