@@ -1,6 +1,6 @@
-import Checkbox from 'expo-checkbox'; // works directly with Expo
 import { useState } from 'react';
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Checkbox from 'expo-checkbox';
 import { colors, fontSizes, globalStyles } from '../css';
 
 export default function AccountFlow() {
@@ -24,11 +24,30 @@ export default function AccountFlow() {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
+
+    // Email validation
+    if (!email.includes('@') || !email.includes('.') || email.length < 5) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    // Password validation
+    if (password.length < 8) {
+      Alert.alert('Error', 'Password must be at least 8 characters long');
+      return;
+    }
+
+    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password)) {
+      Alert.alert('Error', 'Password must contain a mix of uppercase and lowercase letters');
+      return;
+    }
+
     if (password !== confirmPassword) {
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
-    setStep(2);
+
+    setStep(2); // Move to step 2
   };
 
   const handleCreateAccount = () => {
@@ -132,7 +151,7 @@ export default function AccountFlow() {
             <Checkbox
               value={termsAgree}
               onValueChange={setTermsAgree}
-              color={termsAgree ? colors.primary : undefined} // optional styling
+              color={termsAgree ? colors.primary : undefined}
             />
             <Text style={styles.checkboxLabel}>
               I agree to the Terms & Privacy Policy
