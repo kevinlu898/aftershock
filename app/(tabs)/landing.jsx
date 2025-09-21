@@ -1,13 +1,11 @@
-import { Image, ScrollView, Text, TextInput, View } from 'react-native';
+import { Image, Text, TextInput, View } from 'react-native';
+import { globalStyles } from '../css';
 
 export default function Landing() {
     return (
-        <ScrollView>
-        <Text style={{
-            color: '#519872'
-        }}>Aftershock</Text>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={globalStyles.heading}>Aftershock</Text>
         <View>
-            <Text>Some more text</Text>
             <Image
             source={{
                 uri: 'https://reactnative.dev/docs/assets/p_cat2.png',
@@ -23,6 +21,6 @@ export default function Landing() {
             }}
             defaultValue="Type"
         />
-        </ScrollView>
+        </View>
     );
 }
