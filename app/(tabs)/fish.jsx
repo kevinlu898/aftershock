@@ -1,3 +1,9 @@
+import { Text, View } from 'react-native'
+
 export default function Fish() {
-  return <div>HELLO!</div>;
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+      <Text>HELLO!</Text>
+    </View>
+  )
 }
