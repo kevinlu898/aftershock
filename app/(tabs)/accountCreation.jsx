@@ -1,65 +1,95 @@
-import { useState } from 'react';
-import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import Checkbox from 'expo-checkbox';
-import { colors, fontSizes, globalStyles } from '../css';
+import Checkbox from "expo-checkbox";
+import { addDoc, collection } from "firebase/firestore";
+import { useState } from "react";
+import {
+  Alert,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { db } from "../../db/firebaseConfig";
+import { colors, fontSizes, globalStyles } from "../css";
 
 export default function AccountFlow() {
   const [step, setStep] = useState(1);
 
   // Step 1 state
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   // Step 2 state
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [zipCode, setZipCode] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [zipCode, setZipCode] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [termsAgree, setTermsAgree] = useState(false);
+
+  const addUser = async () => {
+    try {
+      const docRef = await addDoc(collection(db, "user"), {
+        username,
+        email,
+        password,
+        first_name: firstName,
+        last_name: lastName,
+        zip_code: zipCode,
+        phone_number: phoneNumber,
+      });
+      console.log("Document written with ID:", docRef.id);
+    } catch (e) {
+      console.error("Error adding document:", e);
+    }
+  };
 
   const handleNext = () => {
     if (!username || !email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
     // Email validation
-    if (!email.includes('@') || !email.includes('.') || email.length < 5) {
-      Alert.alert('Error', 'Please enter a valid email address');
+    if (!email.includes("@") || !email.includes(".") || email.length < 5) {
+      Alert.alert("Error", "Please enter a valid email address");
       return;
     }
 
     // Password validation
     if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters long');
+      Alert.alert("Error", "Password must be at least 8 characters long");
       return;
     }
 
     if (!/[A-Z]/.test(password) || !/[a-z]/.test(password)) {
-      Alert.alert('Error', 'Password must contain a mix of uppercase and lowercase letters');
+      Alert.alert(
+        "Error",
+        "Password must contain a mix of uppercase and lowercase letters"
+      );
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert("Error", "Passwords do not match");
       return;
     }
 
     setStep(2); // Move to step 2
   };
 
-  const handleCreateAccount = () => {
+  const handleCreateAccount = async () => {
     if (!firstName || !lastName || !zipCode || !phoneNumber) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert("Error", "Please fill in all fields");
       return;
     }
     if (!termsAgree) {
-      Alert.alert('Error', 'You must agree to the Terms & Privacy Policy');
+      Alert.alert("Error", "You must agree to the Terms & Privacy Policy");
       return;
     }
-    Alert.alert('Success', `Welcome ${username}! Account created.`);
+    addUser();
+    Alert.alert("Success", `Welcome ${username}! Account created.`);
   };
 
   return (
@@ -95,7 +125,9 @@ export default function AccountFlow() {
             secureTextEntry
           />
 
-          <Text style={[globalStyles.text, styles.inputLabel]}>Confirm Password:</Text>
+          <Text style={[globalStyles.text, styles.inputLabel]}>
+            Confirm Password:
+          </Text>
           <TextInput
             style={styles.input}
             placeholder="Confirm Password"
@@ -112,7 +144,9 @@ export default function AccountFlow() {
         <>
           <Text style={globalStyles.heading}>Enter Your Details</Text>
 
-          <Text style={[globalStyles.text, styles.inputLabel]}>First Name:</Text>
+          <Text style={[globalStyles.text, styles.inputLabel]}>
+            First Name:
+          </Text>
           <TextInput
             style={styles.input}
             placeholder="Enter First Name"
@@ -137,7 +171,9 @@ export default function AccountFlow() {
             keyboardType="numeric"
           />
 
-          <Text style={[globalStyles.text, styles.inputLabel]}>Phone Number:</Text>
+          <Text style={[globalStyles.text, styles.inputLabel]}>
+            Phone Number:
+          </Text>
           <TextInput
             style={styles.input}
             placeholder="Enter Phone Number"
@@ -176,7 +212,7 @@ const styles = {
     paddingHorizontal: 12,
     marginBottom: 16,
     fontSize: fontSizes.medium,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     marginTop: 10,
   },
   button: {
@@ -188,18 +224,18 @@ const styles = {
   inputLabel: {
     fontSize: fontSizes.medium,
     color: colors.accent,
-    textAlign: 'left',
+    textAlign: "left",
     marginBottom: 4,
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: fontSizes.large,
-    textAlign: 'center',
-    fontWeight: 'bold',
+    textAlign: "center",
+    fontWeight: "bold",
   },
   checkboxContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: 12,
   },
   checkboxLabel: {
