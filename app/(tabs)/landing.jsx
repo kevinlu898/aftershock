@@ -10,7 +10,7 @@ export default function Landing() {
         <Text style={globalStyles.heading}>Aftershock</Text>
         <View>
             <Image
-            source={require('../../assets/images/icon.png')}
+            source={require('../../assets/images/favicon.png')}
             style={{width: 200, height: 200, borderRadius: 30}}
             />
         <br/>
@@ -23,7 +23,7 @@ export default function Landing() {
         title="Launch!"
         onPress={onPress}
         color="#3B5249"
-        style={{borderRadius: 10}}
+        style={{borderRadius: 10, alignItems: "center"}}
         />
         </View>
     );
