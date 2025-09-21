@@ -14,7 +14,7 @@ const fontSizes = {
   small: 12,
   medium: 16,
   large: 20,
-  xlarge: 30,
+  xlarge: 24,
 };
 
 const globalStyles = StyleSheet.create({
@@ -22,25 +22,26 @@ const globalStyles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: colors.light,
+    textAlign: 'center',
   },
   heading: {
     fontSize: fontSizes.xlarge,
     fontWeight: 'bold',
     color: colors.primary,
+    textAlign: 'center',
+    marginBottom: 20,
+    marginTop: 10,
   },
   subheading: {
     fontSize: fontSizes.large,
     fontWeight: '600',
     color: colors.secondary,
+    textAlign: 'center',
   },
   text: {
     fontSize: fontSizes.medium,
     color: colors.accent,
-  },
-  bigBlue: {
-    color: colors.info,
-    fontWeight: 'bold',
-    fontSize: fontSizes.xlarge,
+    textAlign: 'center',
   },
   red: {
     color: colors.danger,

@@ -10,9 +10,7 @@ export default function Landing() {
         <Text style={globalStyles.heading}>Aftershock</Text>
         <View>
             <Image
-            source={{
-                uri: 'https://reactnative.dev/docs/assets/p_cat2.png',
-            }}
+            source={require('../../assets/images/icon.png')}
             style={{width: 200, height: 200}}
             />
         </View>
