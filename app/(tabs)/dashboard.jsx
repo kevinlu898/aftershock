@@ -1,7 +1,7 @@
 import { Button, Text, View } from "react-native";
 import { globalStyles } from "../css";
 
-export default function Dashboard() {
+export default function dashboard() {
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
       <Text style={globalStyles.heading}>Welcome, Friend</Text>
