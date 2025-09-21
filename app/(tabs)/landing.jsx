@@ -1,7 +1,10 @@
-import { Image, Text, TextInput, View } from 'react-native';
+import { Button, Image, Linking, Text, View } from 'react-native';
 import { globalStyles } from '../css';
 
 export default function Landing() {
+    const onPress = () => {
+        Linking.openURL("fish")
+    }
     return (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <Text style={globalStyles.heading}>Aftershock</Text>
@@ -13,13 +16,10 @@ export default function Landing() {
             style={{width: 200, height: 200}}
             />
         </View>
-        <TextInput
-            style={{
-            height: 40,
-            borderColor: 'gray',
-            borderWidth: 1,
-            }}
-            defaultValue="Type"
+        <Button
+        title="Launch!"
+        onPress={onPress}
+        color="#3B5249"
         />
         </View>
     );
