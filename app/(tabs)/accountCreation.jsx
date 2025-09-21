@@ -28,6 +28,35 @@ export default function AccountFlow() {
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
+    const handleNext = () => {
+  if (!username || !email || !password || !confirmPassword) {
+    Alert.alert('Error', 'Please fill in all fields');
+    return;
+  }
+
+  // Password validation
+  if (password.length < 8) {
+    Alert.alert('Error', 'Password must be at least 8 characters long');
+    return;
+  }
+  if (!/[A-Z]/.test(password) || !/[a-z]/.test(password)) {
+    Alert.alert('Error', 'Password must contain a mix of uppercase and lowercase letters');
+    return;
+  }
+  if (password !== confirmPassword) {
+    Alert.alert('Error', 'Passwords do not match');
+    return;
+  }
+
+  // Email validation
+  if (!email.includes('@') || !email.includes('.') || email.length < 5) {
+    Alert.alert('Error', 'Please enter a valid email address');
+    return;
+  }
+
+  setStep(2); // Move to next step
+};
+
     setStep(2);
   };
 
