@@ -1,6 +1,6 @@
-import { useNavigation } from '@react-navigation/native'; // <-- import from react-navigation
-import { Image, Text, TouchableOpacity, View } from 'react-native';
-import { globalStyles } from '../css';
+import { useNavigation } from "@react-navigation/native"; // <-- import from react-navigation
+import { Image, Text, TouchableOpacity, View } from "react-native";
+import { globalStyles } from "../css";
 
 export default function Landing() {
   const navigation = useNavigation(); // <-- call the hook inside the component
@@ -12,10 +12,16 @@ export default function Landing() {
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
       <Text style={globalStyles.heading}>Aftershock</Text>
-      <View>
+      <View style={{ alignItems: "center", justifyContent: "center" }}>
         <Image
           source={require("../../assets/images/favicon.png")}
-          style={{ width: 250, height: 250, borderRadius: 30, alignItems: "center", justifyContent: "center" }}
+          style={{
+            width: 250,
+            height: 250,
+            borderRadius: 30,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
         />
         <Text style={globalStyles.subheading}>
           {"\n"}Earthquake Planner App{"\n"}{" "}
