@@ -63,9 +63,13 @@ export default function AccountFlow() {
       return;
     }
 
-    // Username validation (3-20 characters)
+    // Username validation 
     if (username.length < 3 || username.length > 20) {
       Alert.alert("Error", "Username must be 3-20 characters");
+      return;
+    }
+    if (!/^[a-zA-Z0-9]{3,20}$/.test(username)) {
+      Alert.alert("Error", "Username must only contain letters, numbers or underscores.");
       return;
     }
 
@@ -188,6 +192,12 @@ export default function AccountFlow() {
           <TouchableOpacity style={styles.button} onPress={handleNext}>
             <Text style={styles.buttonText}>Next</Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.replace('/login')}>
+              <Text style={{ color: colors.primary, textAlign: "center", marginTop: 16 }}>
+                I already have an account
+              </Text>
+          </TouchableOpacity>
+
         </>
       ) : (
         <View>
@@ -263,10 +273,6 @@ export default function AccountFlow() {
               I agree to the Terms & Privacy Policy
             </Text>
           </View>
-
-          <TouchableOpacity style={styles.button} onPress={handleCreateAccount}>
-            <Text style={styles.buttonText}>Sign Up</Text>
-          </TouchableOpacity>
         </View>
       )}
     </ScrollView>
