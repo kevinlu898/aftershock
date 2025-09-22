@@ -63,13 +63,13 @@ export default function AccountFlow() {
       return;
     }
 
-    // Username validation 
+    // Username validation (letters, numbers, underscores)
     if (username.length < 3 || username.length > 20) {
       Alert.alert("Error", "Username must be 3-20 characters");
       return;
     }
-    if (!/^[a-zA-Z0-9]{3,20}$/.test(username)) {
-      Alert.alert("Error", "Username must only contain letters, numbers or underscores.");
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+      Alert.alert("Error", "Username must only contain letters, numbers, or underscores.");
       return;
     }
 
@@ -88,7 +88,7 @@ export default function AccountFlow() {
       if (!/[A-Z]/.test(password) || !/[a-z]/.test(password)) {
         Alert.alert(
           "Error",
-          "Password must contain a mix of uppercase and lowercase letters"  
+          "Password must contain a mix of uppercase and lowercase letters"
         );
         return;
       }
@@ -128,7 +128,7 @@ export default function AccountFlow() {
     await addUser();
 
     Alert.alert("Success", `Welcome ${username}! Account created.`);
-  router.replace('/dashboard');
+    router.replace('/dashboard');
   };
 
   return (
@@ -175,9 +175,7 @@ export default function AccountFlow() {
             onSubmitEditing={() => confirmPasswordRef.current?.focus()}
           />
 
-          <Text style={[globalStyles.text, styles.inputLabel]}>
-            Confirm Password:
-          </Text>
+          <Text style={[globalStyles.text, styles.inputLabel]}>Confirm Password:</Text>
           <TextInput
             ref={confirmPasswordRef}
             style={styles.input}
@@ -192,12 +190,12 @@ export default function AccountFlow() {
           <TouchableOpacity style={styles.button} onPress={handleNext}>
             <Text style={styles.buttonText}>Next</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.replace('/login')}>
-              <Text style={{ color: colors.primary, textAlign: "center", marginTop: 16 }}>
-                I already have an account
-              </Text>
-          </TouchableOpacity>
 
+          <TouchableOpacity onPress={() => router.replace('/login')}>
+            <Text style={{ color: colors.primary, textAlign: "center", marginTop: 16 }}>
+              I already have an account
+            </Text>
+          </TouchableOpacity>
         </>
       ) : (
         <View>
@@ -205,9 +203,7 @@ export default function AccountFlow() {
 
           <View style={styles.row}>
             <View style={{ flex: 1, marginRight: 8 }}>
-              <Text style={[globalStyles.text, styles.inputLabel]}>
-                First Name:
-              </Text>
+              <Text style={[globalStyles.text, styles.inputLabel]}>First Name:</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Enter First Name"
@@ -220,9 +216,7 @@ export default function AccountFlow() {
             </View>
 
             <View style={{ flex: 1, marginLeft: 8 }}>
-              <Text style={[globalStyles.text, styles.inputLabel]}>
-                Last Name:
-              </Text>
+              <Text style={[globalStyles.text, styles.inputLabel]}>Last Name:</Text>
               <TextInput
                 ref={lastNameRef}
                 style={styles.input}
@@ -249,9 +243,7 @@ export default function AccountFlow() {
             onSubmitEditing={() => phoneRef.current?.focus()}
           />
 
-          <Text style={[globalStyles.text, styles.inputLabel]}>
-            Phone Number:
-          </Text>
+          <Text style={[globalStyles.text, styles.inputLabel]}>Phone Number:</Text>
           <TextInput
             ref={phoneRef}
             style={styles.input}
@@ -273,6 +265,11 @@ export default function AccountFlow() {
               I agree to the Terms & Privacy Policy
             </Text>
           </View>
+
+          {/* Sign Up button */}
+          <TouchableOpacity style={styles.button} onPress={handleCreateAccount}>
+            <Text style={styles.buttonText}>Sign Up</Text>
+          </TouchableOpacity>
         </View>
       )}
     </ScrollView>
@@ -324,4 +321,3 @@ const styles = {
     justifyContent: "space-between",
   },
 };
-
