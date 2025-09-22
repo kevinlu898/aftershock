@@ -24,6 +24,12 @@ const styles = {
     backgroundColor: "#fff",
     marginTop: 10,
   },
+  heading: {
+    fontSize: fontSizes.xlarge,
+    fontWeight: "bold",
+    color: colors.primary,
+    textAlign: "center",
+  },
   button: {
     backgroundColor: colors.primary,
     paddingVertical: 14,
@@ -72,13 +78,13 @@ export default function LoginPage() {
   return (
     <ScrollView style={globalStyles.container}>
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <Text style={styles.heading}>
+          {"\n"}Welcome Back to Aftershock!{"\n"}{" "}
+        </Text>
         <Image
           source={require("../../assets/images/favicon.png")}
-          style={{ width: 250, height: 250, borderRadius: 30 }}
+          style={{ width: 100, height: 100, borderRadius: 20, marginBottom: 20 }}
         />
-        <Text style={globalStyles.subheading}>
-          {"\n"}Welcome back to Aftershock!{"\n"}{" "}
-        </Text>
       </View>
 
       <Text style={[globalStyles.text, styles.inputLabel]}>Username:</Text>
@@ -101,6 +107,11 @@ export default function LoginPage() {
       <TouchableOpacity style={styles.button} onPress={handleVerify}>
         <Text style={styles.buttonText}>Next</Text>
       </TouchableOpacity>
+      <TouchableOpacity onPress={() => router.replace('/login')}>
+              <Text style={{ color: colors.primary, textAlign: "center", marginTop: 16 }}>
+                I dont have an account
+              </Text>
+          </TouchableOpacity>
     </ScrollView>
   );
 }

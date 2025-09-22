@@ -1,6 +1,7 @@
 import Checkbox from "expo-checkbox";
+import { useRouter } from 'expo-router';
 import { addDoc, collection } from "firebase/firestore";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -13,6 +14,7 @@ import { db } from "../../db/firebaseConfig";
 import { colors, fontSizes, globalStyles } from "../css";
 
 export default function AccountFlow() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
 
   // Step 1 state
@@ -27,6 +29,16 @@ export default function AccountFlow() {
   const [zipCode, setZipCode] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [termsAgree, setTermsAgree] = useState(false);
+
+  // Step 1 refs
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
+  const confirmPasswordRef = useRef(null);
+
+  // Step 2 refs
+  const lastNameRef = useRef(null);
+  const zipRef = useRef(null);
+  const phoneRef = useRef(null);
 
   const addUser = async () => {
     try {
@@ -51,24 +63,35 @@ export default function AccountFlow() {
       return;
     }
 
+    // Username validation 
+    if (username.length < 3 || username.length > 20) {
+      Alert.alert("Error", "Username must be 3-20 characters");
+      return;
+    }
+    if (!/^[a-zA-Z0-9]{3,20}$/.test(username)) {
+      Alert.alert("Error", "Username must only contain letters, numbers or underscores.");
+      return;
+    }
+
     // Email validation
     if (!email.includes("@") || !email.includes(".") || email.length < 5) {
       Alert.alert("Error", "Please enter a valid email address");
       return;
     }
 
-    // Password validation
-    if (password.length < 8) {
-      Alert.alert("Error", "Password must be at least 8 characters long");
-      return;
-    }
-
-    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password)) {
-      Alert.alert(
-        "Error",
-        "Password must contain a mix of uppercase and lowercase letters"
-      );
-      return;
+    // Password validation (admin bypass)
+    if (password !== "admin") {
+      if (password.length < 8) {
+        Alert.alert("Error", "Password must be at least 8 characters long");
+        return;
+      }
+      if (!/[A-Z]/.test(password) || !/[a-z]/.test(password)) {
+        Alert.alert(
+          "Error",
+          "Password must contain a mix of uppercase and lowercase letters"  
+        );
+        return;
+      }
     }
 
     if (password !== confirmPassword) {
@@ -76,7 +99,7 @@ export default function AccountFlow() {
       return;
     }
 
-    setStep(2); // Move to step 2
+    setStep(2);
   };
 
   const handleCreateAccount = async () => {
@@ -84,16 +107,32 @@ export default function AccountFlow() {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
+
+    // Zip code validation (5 digits)
+    if (!/^\d{5}$/.test(zipCode)) {
+      Alert.alert("Error", "Please enter a valid 5-digit zip code");
+      return;
+    }
+
+    // Phone number validation (10 digits)
+    if (!/^\d{10}$/.test(phoneNumber)) {
+      Alert.alert("Error", "Please enter a valid 10-digit phone number");
+      return;
+    }
+
     if (!termsAgree) {
       Alert.alert("Error", "You must agree to the Terms & Privacy Policy");
       return;
     }
-    addUser();
+
+    await addUser();
+
     Alert.alert("Success", `Welcome ${username}! Account created.`);
+  router.replace('/dashboard');
   };
 
   return (
-    <ScrollView style={globalStyles.container}>
+    <ScrollView style={globalStyles.container} keyboardShouldPersistTaps="handled">
       {step === 1 ? (
         <>
           <Text style={globalStyles.heading}>Create New Account</Text>
@@ -104,85 +143,126 @@ export default function AccountFlow() {
             placeholder="Enter Username"
             value={username}
             onChangeText={setUsername}
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => emailRef.current?.focus()}
           />
 
           <Text style={[globalStyles.text, styles.inputLabel]}>Email:</Text>
           <TextInput
+            ref={emailRef}
             style={styles.input}
             placeholder="Enter Email"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => passwordRef.current?.focus()}
           />
 
           <Text style={[globalStyles.text, styles.inputLabel]}>Password:</Text>
           <TextInput
+            ref={passwordRef}
             style={styles.input}
             placeholder="Enter Password"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => confirmPasswordRef.current?.focus()}
           />
 
           <Text style={[globalStyles.text, styles.inputLabel]}>
             Confirm Password:
           </Text>
           <TextInput
+            ref={confirmPasswordRef}
             style={styles.input}
             placeholder="Confirm Password"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry
+            returnKeyType="done"
+            onSubmitEditing={handleNext}
           />
 
           <TouchableOpacity style={styles.button} onPress={handleNext}>
             <Text style={styles.buttonText}>Next</Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.replace('/login')}>
+              <Text style={{ color: colors.primary, textAlign: "center", marginTop: 16 }}>
+                I already have an account
+              </Text>
+          </TouchableOpacity>
+
         </>
       ) : (
-        <>
+        <View>
           <Text style={globalStyles.heading}>Enter Your Details</Text>
 
-          <Text style={[globalStyles.text, styles.inputLabel]}>
-            First Name:
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter First Name"
-            value={firstName}
-            onChangeText={setFirstName}
-          />
+          <View style={styles.row}>
+            <View style={{ flex: 1, marginRight: 8 }}>
+              <Text style={[globalStyles.text, styles.inputLabel]}>
+                First Name:
+              </Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter First Name"
+                value={firstName}
+                onChangeText={setFirstName}
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => lastNameRef.current?.focus()}
+              />
+            </View>
 
-          <Text style={[globalStyles.text, styles.inputLabel]}>Last Name:</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Last Name"
-            value={lastName}
-            onChangeText={setLastName}
-          />
+            <View style={{ flex: 1, marginLeft: 8 }}>
+              <Text style={[globalStyles.text, styles.inputLabel]}>
+                Last Name:
+              </Text>
+              <TextInput
+                ref={lastNameRef}
+                style={styles.input}
+                placeholder="Enter Last Name"
+                value={lastName}
+                onChangeText={setLastName}
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => zipRef.current?.focus()}
+              />
+            </View>
+          </View>
 
           <Text style={[globalStyles.text, styles.inputLabel]}>Zip Code:</Text>
           <TextInput
+            ref={zipRef}
             style={styles.input}
             placeholder="Enter Zip Code"
             value={zipCode}
             onChangeText={setZipCode}
             keyboardType="numeric"
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => phoneRef.current?.focus()}
           />
 
           <Text style={[globalStyles.text, styles.inputLabel]}>
             Phone Number:
           </Text>
           <TextInput
+            ref={phoneRef}
             style={styles.input}
             placeholder="Enter Phone Number"
             value={phoneNumber}
             onChangeText={setPhoneNumber}
             keyboardType="phone-pad"
+            returnKeyType="done"
+            onSubmitEditing={handleCreateAccount}
           />
 
-          {/* Terms Agreement */}
           <View style={styles.checkboxContainer}>
             <Checkbox
               value={termsAgree}
@@ -193,11 +273,7 @@ export default function AccountFlow() {
               I agree to the Terms & Privacy Policy
             </Text>
           </View>
-
-          <TouchableOpacity style={styles.button} onPress={handleCreateAccount}>
-            <Text style={styles.buttonText}>Sign Up</Text>
-          </TouchableOpacity>
-        </>
+        </View>
       )}
     </ScrollView>
   );
@@ -243,4 +319,9 @@ const styles = {
     fontSize: fontSizes.medium,
     color: colors.accent,
   },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
 };
+
