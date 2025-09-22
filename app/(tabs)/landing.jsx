@@ -1,5 +1,5 @@
-import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native'; // <-- import from react-navigation
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 import { globalStyles } from '../css';
 
 export default function Landing() {
