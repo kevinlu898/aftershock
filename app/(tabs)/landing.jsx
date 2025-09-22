@@ -15,7 +15,7 @@ export default function Landing() {
       <View>
         <Image
           source={require("../../assets/images/favicon.png")}
-          style={{ width: 250, height: 250, borderRadius: 30 }}
+          style={{ width: 250, height: 250, borderRadius: 30, alignItems: "center", justifyContent: "center" }}
         />
         <Text style={globalStyles.subheading}>
           {"\n"}Earthquake Planner App{"\n"}{" "}
