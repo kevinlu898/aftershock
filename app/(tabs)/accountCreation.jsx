@@ -1,5 +1,5 @@
 import Checkbox from "expo-checkbox";
-import { useRouter } from 'expo-router';
+import { useRouter } from "expo-router";
 import { addDoc, collection } from "firebase/firestore";
 import { useRef, useState } from "react";
 import {
@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { db } from "../../db/firebaseConfig";
+import { backendHash } from "../../requests";
 import { colors, fontSizes, globalStyles } from "../css";
 
 export default function AccountFlow() {
@@ -42,10 +43,12 @@ export default function AccountFlow() {
 
   const addUser = async () => {
     try {
+      console.log("here");
+      const thehash = await backendHash(password);
       const docRef = await addDoc(collection(db, "user"), {
         username,
         email,
-        password,
+        password_hash: thehash,
         first_name: firstName,
         last_name: lastName,
         zip_code: zipCode,
@@ -69,7 +72,10 @@ export default function AccountFlow() {
       return;
     }
     if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-      Alert.alert("Error", "Username must only contain letters, numbers, or underscores.");
+      Alert.alert(
+        "Error",
+        "Username must only contain letters, numbers, or underscores."
+      );
       return;
     }
 
@@ -128,11 +134,14 @@ export default function AccountFlow() {
     await addUser();
 
     Alert.alert("Success", `Welcome ${username}! Account created.`);
-    router.replace('/dashboard');
+    router.replace("/dashboard");
   };
 
   return (
-    <ScrollView style={globalStyles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      style={globalStyles.container}
+      keyboardShouldPersistTaps="handled"
+    >
       {step === 1 ? (
         <>
           <Text style={globalStyles.heading}>Create New Account</Text>
@@ -175,7 +184,9 @@ export default function AccountFlow() {
             onSubmitEditing={() => confirmPasswordRef.current?.focus()}
           />
 
-          <Text style={[globalStyles.text, styles.inputLabel]}>Confirm Password:</Text>
+          <Text style={[globalStyles.text, styles.inputLabel]}>
+            Confirm Password:
+          </Text>
           <TextInput
             ref={confirmPasswordRef}
             style={styles.input}
@@ -191,8 +202,14 @@ export default function AccountFlow() {
             <Text style={styles.buttonText}>Next</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => router.replace('/login')}>
-            <Text style={{ color: colors.primary, textAlign: "center", marginTop: 16 }}>
+          <TouchableOpacity onPress={() => router.replace("/login")}>
+            <Text
+              style={{
+                color: colors.primary,
+                textAlign: "center",
+                marginTop: 16,
+              }}
+            >
               I already have an account
             </Text>
           </TouchableOpacity>
@@ -203,7 +220,9 @@ export default function AccountFlow() {
 
           <View style={styles.row}>
             <View style={{ flex: 1, marginRight: 8 }}>
-              <Text style={[globalStyles.text, styles.inputLabel]}>First Name:</Text>
+              <Text style={[globalStyles.text, styles.inputLabel]}>
+                First Name:
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="Enter First Name"
@@ -216,7 +235,9 @@ export default function AccountFlow() {
             </View>
 
             <View style={{ flex: 1, marginLeft: 8 }}>
-              <Text style={[globalStyles.text, styles.inputLabel]}>Last Name:</Text>
+              <Text style={[globalStyles.text, styles.inputLabel]}>
+                Last Name:
+              </Text>
               <TextInput
                 ref={lastNameRef}
                 style={styles.input}
@@ -243,7 +264,9 @@ export default function AccountFlow() {
             onSubmitEditing={() => phoneRef.current?.focus()}
           />
 
-          <Text style={[globalStyles.text, styles.inputLabel]}>Phone Number:</Text>
+          <Text style={[globalStyles.text, styles.inputLabel]}>
+            Phone Number:
+          </Text>
           <TextInput
             ref={phoneRef}
             style={styles.input}
