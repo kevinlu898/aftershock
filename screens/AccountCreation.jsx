@@ -1,7 +1,7 @@
-import Checkbox from "expo-checkbox";
-import { useRouter } from "expo-router";
-import { addDoc, collection } from "firebase/firestore";
-import { useRef, useState } from "react";
+import { useNavigation } from '@react-navigation/native';
+import Checkbox from 'expo-checkbox';
+import { addDoc, collection } from 'firebase/firestore';
+import { useRef, useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -9,43 +9,40 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native";
-import { db } from "../../db/firebaseConfig";
-import { backendHash } from "../../requests";
-import { colors, fontSizes, globalStyles } from "../css";
+} from 'react-native';
+import { colors, fontSizes, globalStyles } from '../css';
+import { db } from '../db/firebaseConfig';
+import { backendHash } from '../requests';
 
 export default function AccountFlow() {
-  const router = useRouter();
+  const navigation = useNavigation();
   const [step, setStep] = useState(1);
 
   // Step 1 state
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Step 2 state
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [zipCode, setZipCode] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [zipCode, setZipCode] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [termsAgree, setTermsAgree] = useState(false);
 
-  // Step 1 refs
+  // Refs
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
   const confirmPasswordRef = useRef(null);
-
-  // Step 2 refs
   const lastNameRef = useRef(null);
   const zipRef = useRef(null);
   const phoneRef = useRef(null);
 
   const addUser = async () => {
     try {
-      console.log("here");
       const thehash = await backendHash(password);
-      const docRef = await addDoc(collection(db, "user"), {
+      const docRef = await addDoc(collection(db, 'user'), {
         username,
         email,
         password_hash: thehash,
@@ -54,54 +51,45 @@ export default function AccountFlow() {
         zip_code: zipCode,
         phone_number: phoneNumber,
       });
-      console.log("Document written with ID:", docRef.id);
+      console.log('Document written with ID:', docRef.id);
     } catch (e) {
-      console.error("Error adding document:", e);
+      console.error('Error adding document:', e);
     }
   };
 
   const handleNext = () => {
     if (!username || !email || !password || !confirmPassword) {
-      Alert.alert("Error", "Please fill in all fields");
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    // Username validation (letters, numbers, underscores)
     if (username.length < 3 || username.length > 20) {
-      Alert.alert("Error", "Username must be 3-20 characters");
+      Alert.alert('Error', 'Username must be 3-20 characters');
       return;
     }
     if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-      Alert.alert(
-        "Error",
-        "Username must only contain letters, numbers, or underscores."
-      );
+      Alert.alert('Error', 'Username must only contain letters, numbers, or underscores.');
       return;
     }
 
-    // Email validation
-    if (!email.includes("@") || !email.includes(".") || email.length < 5) {
-      Alert.alert("Error", "Please enter a valid email address");
+    if (!email.includes('@') || !email.includes('.') || email.length < 5) {
+      Alert.alert('Error', 'Please enter a valid email address');
       return;
     }
 
-    // Password validation (admin bypass)
-    if (password !== "admin") {
+    if (password !== 'admin') {
       if (password.length < 8) {
-        Alert.alert("Error", "Password must be at least 8 characters long");
+        Alert.alert('Error', 'Password must be at least 8 characters long');
         return;
       }
       if (!/[A-Z]/.test(password) || !/[a-z]/.test(password)) {
-        Alert.alert(
-          "Error",
-          "Password must contain a mix of uppercase and lowercase letters"
-        );
+        Alert.alert('Error', 'Password must contain a mix of uppercase and lowercase letters');
         return;
       }
     }
 
     if (password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
+      Alert.alert('Error', 'Passwords do not match');
       return;
     }
 
@@ -110,38 +98,33 @@ export default function AccountFlow() {
 
   const handleCreateAccount = async () => {
     if (!firstName || !lastName || !zipCode || !phoneNumber) {
-      Alert.alert("Error", "Please fill in all fields");
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    // Zip code validation (5 digits)
     if (!/^\d{5}$/.test(zipCode)) {
-      Alert.alert("Error", "Please enter a valid 5-digit zip code");
+      Alert.alert('Error', 'Please enter a valid 5-digit zip code');
       return;
     }
 
-    // Phone number validation (10 digits)
     if (!/^\d{10}$/.test(phoneNumber)) {
-      Alert.alert("Error", "Please enter a valid 10-digit phone number");
+      Alert.alert('Error', 'Please enter a valid 10-digit phone number');
       return;
     }
 
     if (!termsAgree) {
-      Alert.alert("Error", "You must agree to the Terms & Privacy Policy");
+      Alert.alert('Error', 'You must agree to the Terms & Privacy Policy');
       return;
     }
 
     await addUser();
 
-    Alert.alert("Success", `Welcome ${username}! Account created.`);
-    router.replace("/dashboard");
+    Alert.alert('Success', `Welcome ${username}! Account created.`);
+    navigation.navigate("Dashboard");
   };
 
   return (
-    <ScrollView
-      style={globalStyles.container}
-      keyboardShouldPersistTaps="handled"
-    >
+    <ScrollView style={globalStyles.container} keyboardShouldPersistTaps="handled">
       {step === 1 ? (
         <>
           <Text style={globalStyles.heading}>Create New Account</Text>
@@ -184,9 +167,7 @@ export default function AccountFlow() {
             onSubmitEditing={() => confirmPasswordRef.current?.focus()}
           />
 
-          <Text style={[globalStyles.text, styles.inputLabel]}>
-            Confirm Password:
-          </Text>
+          <Text style={[globalStyles.text, styles.inputLabel]}>Confirm Password:</Text>
           <TextInput
             ref={confirmPasswordRef}
             style={styles.input}
@@ -202,14 +183,8 @@ export default function AccountFlow() {
             <Text style={styles.buttonText}>Next</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => router.replace("/login")}>
-            <Text
-              style={{
-                color: colors.primary,
-                textAlign: "center",
-                marginTop: 16,
-              }}
-            >
+          <TouchableOpacity onPress={() => navigation.replace('Login')}>
+            <Text style={{ color: colors.primary, textAlign: 'center', marginTop: 16 }}>
               I already have an account
             </Text>
           </TouchableOpacity>
@@ -220,9 +195,7 @@ export default function AccountFlow() {
 
           <View style={styles.row}>
             <View style={{ flex: 1, marginRight: 8 }}>
-              <Text style={[globalStyles.text, styles.inputLabel]}>
-                First Name:
-              </Text>
+              <Text style={[globalStyles.text, styles.inputLabel]}>First Name:</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Enter First Name"
@@ -235,9 +208,7 @@ export default function AccountFlow() {
             </View>
 
             <View style={{ flex: 1, marginLeft: 8 }}>
-              <Text style={[globalStyles.text, styles.inputLabel]}>
-                Last Name:
-              </Text>
+              <Text style={[globalStyles.text, styles.inputLabel]}>Last Name:</Text>
               <TextInput
                 ref={lastNameRef}
                 style={styles.input}
@@ -264,9 +235,7 @@ export default function AccountFlow() {
             onSubmitEditing={() => phoneRef.current?.focus()}
           />
 
-          <Text style={[globalStyles.text, styles.inputLabel]}>
-            Phone Number:
-          </Text>
+          <Text style={[globalStyles.text, styles.inputLabel]}>Phone Number:</Text>
           <TextInput
             ref={phoneRef}
             style={styles.input}
@@ -289,7 +258,6 @@ export default function AccountFlow() {
             </Text>
           </View>
 
-          {/* Sign Up button */}
           <TouchableOpacity style={styles.button} onPress={handleCreateAccount}>
             <Text style={styles.buttonText}>Sign Up</Text>
           </TouchableOpacity>
@@ -308,7 +276,7 @@ const styles = {
     paddingHorizontal: 12,
     marginBottom: 16,
     fontSize: fontSizes.medium,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     marginTop: 10,
   },
   button: {
@@ -320,18 +288,18 @@ const styles = {
   inputLabel: {
     fontSize: fontSizes.medium,
     color: colors.accent,
-    textAlign: "left",
+    textAlign: 'left',
     marginBottom: 4,
   },
   buttonText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: fontSizes.large,
-    textAlign: "center",
-    fontWeight: "bold",
+    textAlign: 'center',
+    fontWeight: 'bold',
   },
   checkboxContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginVertical: 12,
   },
   checkboxLabel: {
@@ -340,7 +308,7 @@ const styles = {
     color: colors.accent,
   },
   row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
 };

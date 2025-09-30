@@ -1,12 +1,12 @@
-import { useNavigation } from "@react-navigation/native"; // <-- import from react-navigation
+import { useNavigation } from "@react-navigation/native";
 import { Image, Text, TouchableOpacity, View } from "react-native";
-import { globalStyles } from "../css";
+import { globalStyles } from "../css"; 
 
 export default function Landing() {
-  const navigation = useNavigation(); // <-- call the hook inside the component
+  const navigation = useNavigation();
 
   const onPress = () => {
-    navigation.navigate("accountCreation"); // <-- use the navigation object
+    navigation.navigate("AccountCreation");
   };
 
   return (
@@ -14,13 +14,11 @@ export default function Landing() {
       <Text style={globalStyles.heading}>Aftershock</Text>
       <View style={{ alignItems: "center", justifyContent: "center" }}>
         <Image
-          source={require("../../assets/images/favicon.png")}
+          source={require("../assets/images/favicon.png")} 
           style={{
             width: 250,
             height: 250,
             borderRadius: 30,
-            alignItems: "center",
-            justifyContent: "center",
           }}
         />
         <Text style={globalStyles.subheading}>
