@@ -10,9 +10,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { colors, fontSizes, globalStyles } from '../css';
-import { db } from '../db/firebaseConfig';
-import { backendHash } from '../requests';
+import { colors, fontSizes, globalStyles } from '../../css';
+import { db } from '../../db/firebaseConfig';
+import { backendHash } from '../../requests';
 
 export default function AccountFlow() {
   const navigation = useNavigation();
@@ -120,7 +120,7 @@ export default function AccountFlow() {
     await addUser();
 
     Alert.alert('Success', `Welcome ${username}! Account created.`);
-    navigation.navigate("Dashboard");
+    navigation.navigate("MainApp");
   };
 
   return (
