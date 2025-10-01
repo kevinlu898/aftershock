@@ -4,10 +4,9 @@ const colors = {
   primary: '#519872',   // sea green from your palette
   secondary: '#3B5249', // feldgrau
   accent: '#34252F',    // raisin black
-  light: '#BEC5AD',     // ash gray
-  muted: '#A4B494',     // sage
+  light: '#c5d1b8ff',     // ash gray
+  muted: '#A4B494',     // sage 
   danger: 'red',
-  info: 'blue',
 };
 
 const fontSizes = {
@@ -23,6 +22,9 @@ const globalStyles = StyleSheet.create({
     padding: 16,
     paddingTop: 50,
     backgroundColor: colors.light,
+  },
+  contentContainer: {
+    alignItems: 'center',
     textAlign: 'center',
   },
   heading: {
