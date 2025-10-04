@@ -1,6 +1,6 @@
-import { useNavigation } from '@react-navigation/native';
-import { and, collection, getDocs, query, where } from 'firebase/firestore';
-import { useState } from 'react';
+import { useNavigation } from "@react-navigation/native";
+import { and, collection, getDocs, query, where } from "firebase/firestore";
+import { useState } from "react";
 import {
   Alert,
   Image,
@@ -9,9 +9,10 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { colors, fontSizes, globalStyles } from '../../css';
-import { db } from '../../db/firebaseConfig';
+} from "react-native";
+import { colors, fontSizes, globalStyles } from "../../css";
+import { db } from "../../db/firebaseConfig";
+import { backendHash } from "../../requests";
 
 const styles = {
   input: {
@@ -22,14 +23,14 @@ const styles = {
     paddingHorizontal: 12,
     marginBottom: 16,
     fontSize: fontSizes.medium,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     marginTop: 10,
   },
   heading: {
     fontSize: fontSizes.xlarge,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.primary,
-    textAlign: 'center',
+    textAlign: "center",
   },
   button: {
     backgroundColor: colors.primary,
@@ -40,39 +41,44 @@ const styles = {
   inputLabel: {
     fontSize: fontSizes.medium,
     color: colors.accent,
-    textAlign: 'left',
+    textAlign: "left",
     marginBottom: 4,
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: fontSizes.large,
-    textAlign: 'center',
-    fontWeight: 'bold',
+    textAlign: "center",
+    fontWeight: "bold",
   },
 };
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const navigation = useNavigation();
 
   const handleVerify = async () => {
-    const userTable = collection(db, 'user');
+    const userTable = collection(db, "user");
+
+    const thehash = await backendHash(password);
 
     const queryToCheck = query(
       userTable,
-      and(where('username', '==', username), where('password', '==', password))
+      and(
+        where("username", "==", username),
+        where("password_hash", "==", thehash)
+      )
     );
 
     const results = await getDocs(queryToCheck);
     if (!results.empty) {
-      console.log('exists!');
-      Alert.alert('Success', 'You are logged in!');
-      navigation.navigate('MainApp');
+      console.log("exists!");
+      Alert.alert("Success", "You are logged in!");
+      navigation.navigate("MainApp");
     } else {
       console.log("acc doesn't");
       Alert.alert(
-        'Error',
+        "Error",
         "Either your username or password is wrong. Try creating a new account..."
       );
     }
@@ -80,26 +86,46 @@ export default function LoginPage() {
 
   return (
     <ScrollView style={globalStyles.container}>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={styles.heading}>{"\n"}Welcome Back to Aftershock!{"\n"}{' '}</Text>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <Text style={styles.heading}>
+          {"\n"}Welcome Back to Aftershock!{"\n"}{" "}
+        </Text>
         <Image
-          source={require('../../assets/images/favicon.png')}
-          style={{ width: 100, height: 100, borderRadius: 20, marginBottom: 20 }}
+          source={require("../../assets/images/favicon.png")}
+          style={{
+            width: 100,
+            height: 100,
+            borderRadius: 20,
+            marginBottom: 20,
+          }}
         />
       </View>
 
       <Text style={[globalStyles.text, styles.inputLabel]}>Username:</Text>
-      <TextInput style={styles.input} placeholder="Enter Username" value={username} onChangeText={setUsername} />
+      <TextInput
+        style={styles.input}
+        placeholder="Enter Username"
+        value={username}
+        onChangeText={setUsername}
+      />
 
       <Text style={[globalStyles.text, styles.inputLabel]}>Password:</Text>
-      <TextInput style={styles.input} placeholder="Enter Password" value={password} onChangeText={setPassword} secureTextEntry />
+      <TextInput
+        style={styles.input}
+        placeholder="Enter Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
 
       <TouchableOpacity style={styles.button} onPress={handleVerify}>
         <Text style={styles.buttonText}>Next</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.replace('AccountCreation')}>
-        <Text style={{ color: colors.primary, textAlign: 'center', marginTop: 16 }}>
+      <TouchableOpacity onPress={() => navigation.replace("AccountCreation")}>
+        <Text
+          style={{ color: colors.primary, textAlign: "center", marginTop: 16 }}
+        >
           I dont have an account
         </Text>
       </TouchableOpacity>
