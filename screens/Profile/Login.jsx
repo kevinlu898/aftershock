@@ -13,6 +13,7 @@ import {
 import { colors, fontSizes, globalStyles } from "../../css";
 import { db } from "../../db/firebaseConfig";
 import { backendHash } from "../../requests";
+import { storeData } from "../../storage/storageUtils";
 
 const styles = {
   input: {
@@ -74,6 +75,8 @@ export default function LoginPage() {
     if (!results.empty) {
       console.log("exists!");
       Alert.alert("Success", "You are logged in!");
+      storeData("isLoggedIn", "yes");
+      storeData("username", username);
       navigation.navigate("MainApp");
     } else {
       console.log("acc doesn't");
