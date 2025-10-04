@@ -1,4 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
+// eslint-disable-next-line import/no-named-as-default
 import Checkbox from "expo-checkbox";
 import {
   addDoc,
