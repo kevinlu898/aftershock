@@ -4,7 +4,7 @@ const colors = {
   primary: '#519872',   // sea green from your palette
   secondary: '#3B5249', // feldgrau
   accent: '#34252F',    // raisin black
-  light: '#c5d1b8ff',     // ash gray
+  light: '#dae7daff',     // ash gray #e5e9e0ff
   muted: '#A4B494',     // sage 
   danger: 'red',
 };
@@ -14,6 +14,7 @@ const fontSizes = {
   medium: 16,
   large: 20,
   xlarge: 24,
+  heading: 32,
 };
 
 const globalStyles = StyleSheet.create({
@@ -28,7 +29,7 @@ const globalStyles = StyleSheet.create({
     textAlign: 'center',
   },
   heading: {
-    fontSize: fontSizes.xlarge,
+    fontSize: fontSizes.heading,
     fontWeight: 'bold',
     color: colors.primary,
     textAlign: 'center',
