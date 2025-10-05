@@ -1,9 +1,16 @@
 import { useNavigation } from "@react-navigation/native";
 import { Image, Text, TouchableOpacity, View } from "react-native";
-import { globalStyles } from "../css"; 
+import { globalStyles } from "../css";
+import { getData } from "../storage/storageUtils";
 
 export default function Landing() {
   const navigation = useNavigation();
+  // storeData("isLoggedIn", "no");
+  getData("isLoggedIn").then((val) => {
+    if (val == "yes") {
+      navigation.navigate("MainApp");
+    }
+  });
 
   const onPress = () => {
     navigation.navigate("AccountCreation");
@@ -14,7 +21,7 @@ export default function Landing() {
       <Text style={globalStyles.heading}>Aftershock</Text>
       <View style={{ alignItems: "center", justifyContent: "center" }}>
         <Image
-          source={require("../assets/images/favicon.png")} 
+          source={require("../assets/images/favicon.png")}
           style={{
             width: 250,
             height: 250,
