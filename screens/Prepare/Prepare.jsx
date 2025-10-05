@@ -1,34 +1,29 @@
-import React, { useState } from 'react';
-import {
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { globalStyles, colors, fontSizes } from '../../css';
-import prepareStyles from './prepareStyles';
+import { useNavigation } from "@react-navigation/native";
+import { useState } from 'react';
+import { ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { PREPARE_MODULES } from './prepareModules'; // Import from separate file
+import { colors, globalStyles } from '../../css';
+import { PREPARE_MODULES } from './prepareModules';
+import prepareStyles from './prepareStyles';
 
 const Prepare = () => {
   const [expandedModule, setExpandedModule] = useState(null);
+  const navigation = useNavigation();
 
   const toggleModule = (moduleId) => {
     setExpandedModule(expandedModule === moduleId ? null : moduleId);
   };
 
-  // Progress Bar Component
   const ProgressBar = ({ progress }) => (
     <View style={prepareStyles.progressContainer}>
       <View style={[prepareStyles.progressFill, { width: `${progress * 100}%` }]} />
     </View>
   );
 
-  // Module Card Component
   const ModuleCard = ({ module }) => {
     const isExpanded = expandedModule === module.id;
     const statusColor = module.completed ? '#10B981' : module.progress > 0 ? colors.primary : '#9CA3AF';
-    
+
     return (
       <View style={prepareStyles.card}>
         <TouchableOpacity 
@@ -38,11 +33,7 @@ const Prepare = () => {
         >
           <View style={prepareStyles.headerLeft}>
             <View style={[prepareStyles.iconContainer, { backgroundColor: `${statusColor}20` }]}>
-              <MaterialCommunityIcons 
-                name={module.icon} 
-                size={24} 
-                color={statusColor} 
-              />
+              <MaterialCommunityIcons name={module.icon} size={24} color={statusColor} />
             </View>
             <View style={prepareStyles.headerText}>
               <Text style={prepareStyles.moduleTitle}>{module.title}</Text>
@@ -72,6 +63,7 @@ const Prepare = () => {
                   index === module.lessons.length - 1 && prepareStyles.lastLessonItem
                 ]}
                 activeOpacity={0.6}
+                onPress={() => navigation.navigate("prepareLessons", { lessonId: lesson.id, moduleId: module.id, lessonData: lesson })}
               >
                 <View style={prepareStyles.lessonLeft}>
                   <MaterialCommunityIcons 
@@ -88,22 +80,27 @@ const Prepare = () => {
                 </View>
                 <View style={prepareStyles.lessonRight}>
                   <Text style={prepareStyles.lessonDuration}>{lesson.duration}</Text>
-                  <MaterialCommunityIcons 
-                    name="chevron-right" 
-                    size={16} 
-                    color={colors.secondary} 
-                  />
+                  <MaterialCommunityIcons name="chevron-right" size={16} color={colors.secondary} />
                 </View>
               </TouchableOpacity>
             ))}
             
             <View style={prepareStyles.buttonContainer}>
-              <TouchableOpacity style={prepareStyles.primaryButton}>
-                <Text style={prepareStyles.primaryButtonText}>Continue</Text>
-              </TouchableOpacity>
-              {module.completed && (
+              {module.progress === 0 ? (
+                <TouchableOpacity style={prepareStyles.primaryButton}>
+                  <Text style={prepareStyles.primaryButtonText}>Start</Text>
+                </TouchableOpacity>
+              ) : module.progress >= 0.9 && module.progress < 1 ? (
+                <TouchableOpacity style={prepareStyles.primaryButton}>
+                  <Text style={prepareStyles.primaryButtonText}>Finish</Text>
+                </TouchableOpacity>
+              ) : module.progress === 1 ? (
                 <TouchableOpacity style={prepareStyles.secondaryButton}>
                   <Text style={prepareStyles.secondaryButtonText}>Review</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity style={prepareStyles.primaryButton}>
+                  <Text style={prepareStyles.primaryButtonText}>Continue</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -116,30 +113,37 @@ const Prepare = () => {
   const overallProgress = PREPARE_MODULES.reduce((acc, module) => acc + module.progress, 0) / PREPARE_MODULES.length;
 
   return (
-    <ScrollView 
-      style={globalStyles.container}
-      contentContainerStyle={prepareStyles.contentContainer}
-      showsVerticalScrollIndicator={false}
-    >
-      <Text style={globalStyles.heading}>Prepare</Text>
-      <Text style={prepareStyles.subtitle}>Complete your journey to earthquake safety</Text>
-      
-      {/* Overall Progress */}
-      <View style={prepareStyles.overallProgress}>
-        <View style={prepareStyles.progressHeader}>
-          <Text style={prepareStyles.progressLabel}>Overall Progress</Text>
-          <Text style={prepareStyles.progressPercent}>{Math.round(overallProgress * 100)}%</Text>
-        </View>
-        <ProgressBar progress={overallProgress} />
-      </View>
+    <View style={{ flex: 1, backgroundColor: colors.light }}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.light} translucent={false} />
 
-      {/* Modules List */}
-      <View style={prepareStyles.modulesList}>
-        {PREPARE_MODULES.map((module) => (
-          <ModuleCard key={module.id} module={module} />
-        ))}
-      </View>
-    </ScrollView>
+      <ScrollView
+        style={{ flex: 1, backgroundColor: colors.light }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingBottom: 90, 
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={globalStyles.heading}>Prepare</Text>
+        <Text style={prepareStyles.subtitle}>Complete your journey to earthquake safety</Text>
+
+        
+
+        <View style={[prepareStyles.overallProgress, { backgroundColor: colors.white }]}>
+          <View style={prepareStyles.progressHeader}>
+            <Text style={prepareStyles.progressLabel}>Overall Progress</Text>
+            <Text style={prepareStyles.progressPercent}>{Math.round(overallProgress * 100)}%</Text>
+          </View>
+          <ProgressBar progress={overallProgress} />
+        </View>
+        
+        <View style={prepareStyles.modulesList}>
+          {PREPARE_MODULES.map((module) => (
+            <ModuleCard key={module.id} module={module} />
+          ))}
+        </View>
+      </ScrollView>
+    </View>
   );
 };
 
