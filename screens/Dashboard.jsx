@@ -89,7 +89,7 @@ export default function Dashboard() {
                   padding: 12,
                 }}
               >
-                <Text style={{ fontSize: 22, color: '#34252F', fontWeight: 'bold', marginBottom: 8 }}>
+                <Text style={{ fontSize: 22, color: '#34252F', fontWeight: 'bold', marginBottom: 8, textAlign: 'center' }}>
                   {item.title}
                 </Text>
                 <Text style={{ fontSize: 15, color: '#3B5249', textAlign: 'center', marginBottom: 12 }}>
