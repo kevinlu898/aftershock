@@ -1,10 +1,10 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { StatusBar, Platform, View } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
+import { Platform, StatusBar, View } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import Dashboard from './screens/Dashboard';
 import Emergency from './screens/Emergency/Emergency';
@@ -35,12 +35,12 @@ function MainTabs() {
     <View
       style={{
         flex: 1,
-        backgroundColor: '#ffffff',
+        backgroundColor: '#e7f0e7ff', // 💚 matches theme background
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : insets.top,
       }}
     >
-      {/* Actual Status Bar appearance control */}
-      <ExpoStatusBar style="dark" backgroundColor="#ffffff" />
+      {/* Controls status bar color */}
+      <ExpoStatusBar style="dark" backgroundColor="#e7f0e7ff" />
 
       <Tab.Navigator
         initialRouteName="Dashboard"
@@ -80,7 +80,10 @@ function MainTabs() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <ExpoStatusBar style="dark" backgroundColor="#ffffff" />
+      {/* ✅ Ensures consistent status bar background on both iOS + Android */}
+      <StatusBar backgroundColor="#e7f0e7ff" barStyle="dark-content" />
+      <ExpoStatusBar style="dark" backgroundColor="#e7f0e7ff" />
+
       <NavigationContainer>
         <Stack.Navigator
           initialRouteName="Home"

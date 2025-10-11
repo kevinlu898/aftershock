@@ -481,7 +481,7 @@ const PrepareLessons = ({ route, navigation }) => {
               <MaterialCommunityIcons 
                 name={screen.icon} 
                 size={18} 
-                color={index === currentScreenIndex ? '#fff' : colors.secondary} 
+                color={index === currentScreenIndex ? '#fff' : colors.muted} 
               />
               <Text style={[
                 prepareLessonStyles.lessonNavTabText,
