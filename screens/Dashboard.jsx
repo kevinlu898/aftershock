@@ -3,8 +3,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
-import { ScrollView } from 'react-native-web';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { globalStyles } from '../css';
 import { getData } from '../storage/storageUtils';
 
