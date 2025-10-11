@@ -87,19 +87,44 @@ const Prepare = () => {
             
             <View style={prepareStyles.buttonContainer}>
               {module.progress === 0 ? (
-                <TouchableOpacity style={prepareStyles.primaryButton}>
+                <TouchableOpacity
+                  style={prepareStyles.primaryButton}
+                  onPress={() => {
+                    const first = module.lessons && module.lessons[0];
+                    if (first) navigation.navigate('prepareLessons', { lessonId: first.id, moduleId: module.id, lessonData: first });
+                  }}
+                >
                   <Text style={prepareStyles.primaryButtonText}>Start</Text>
                 </TouchableOpacity>
               ) : module.progress >= 0.9 && module.progress < 1 ? (
-                <TouchableOpacity style={prepareStyles.primaryButton}>
+                <TouchableOpacity
+                  style={prepareStyles.primaryButton}
+                  onPress={() => {
+                    // Finish: go to first incomplete lesson page (or first lesson)
+                    const next = (module.lessons || []).find(l => !l.completed) || (module.lessons && module.lessons[0]);
+                    if (next) navigation.navigate('prepareLessons', { lessonId: next.id, moduleId: module.id, lessonData: next });
+                  }}
+                >
                   <Text style={prepareStyles.primaryButtonText}>Finish</Text>
                 </TouchableOpacity>
               ) : module.progress === 1 ? (
-                <TouchableOpacity style={prepareStyles.secondaryButton}>
+                <TouchableOpacity
+                  style={prepareStyles.secondaryButton}
+                  onPress={() => {
+                    const first = module.lessons && module.lessons[0];
+                    if (first) navigation.navigate('prepareLessons', { lessonId: first.id, moduleId: module.id, lessonData: first });
+                  }}
+                >
                   <Text style={prepareStyles.secondaryButtonText}>Review</Text>
                 </TouchableOpacity>
               ) : (
-                <TouchableOpacity style={prepareStyles.primaryButton}>
+                <TouchableOpacity
+                  style={prepareStyles.primaryButton}
+                  onPress={() => {
+                    const next = (module.lessons || []).find(l => !l.completed) || (module.lessons && module.lessons[0]);
+                    if (next) navigation.navigate('prepareLessons', { lessonId: next.id, moduleId: module.id, lessonData: next });
+                  }}
+                >
                   <Text style={prepareStyles.primaryButtonText}>Continue</Text>
                 </TouchableOpacity>
               )}
