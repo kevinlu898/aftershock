@@ -120,14 +120,15 @@ const Prepare = () => {
         style={{ flex: 1, backgroundColor: colors.light }}
         contentContainerStyle={{
           paddingHorizontal: 16,
-          paddingBottom: 90, 
+          paddingTop: 30,
+          paddingBottom: 30, 
         }}
         showsVerticalScrollIndicator={false}
       >
         <Text style={globalStyles.heading}>Prepare</Text>
         <Text style={prepareStyles.subtitle}>Complete your journey to earthquake safety</Text>
 
-        
+
 
         <View style={[prepareStyles.overallProgress, { backgroundColor: colors.white }]}>
           <View style={prepareStyles.progressHeader}>
