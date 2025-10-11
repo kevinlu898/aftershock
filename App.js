@@ -36,7 +36,6 @@ function MainTabs() {
       style={{
         flex: 1,
         backgroundColor: '#ffffff',
-        // Add top padding for both iOS and Android safely
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : insets.top,
       }}
     >

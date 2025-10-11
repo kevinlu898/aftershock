@@ -52,6 +52,7 @@ const prepareStyles = StyleSheet.create({
   lessonDuration: {
     fontSize: fontSizes.small,
     color: colors.muted,
+    marginRight: 8, 
   },
 
   // Containers
@@ -65,6 +66,12 @@ const prepareStyles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12, // Added margin to separate from progress bar
   },
   progressContainer: {
     height: 6,
@@ -136,6 +143,10 @@ const prepareStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+  },
+  lessonRight: {
+    flexDirection: 'row',
+    alignItems: 'center', // This ensures duration and arrow are on same line
   },
 
   // Buttons

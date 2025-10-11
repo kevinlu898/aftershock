@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  ScrollView,
-  Text,
-  View,
-  TouchableOpacity,
-  Alert,
-  SafeAreaView,
-} from 'react-native';
+import { ScrollView, Text, View, TouchableOpacity, Alert, SafeAreaView, } from 'react-native';
 import { globalStyles, colors, fontSizes } from '../../css';
 import prepareStyles from './prepareStyles';
 import prepareLessonStyles from './prepareLessonStyles';

@@ -146,7 +146,7 @@ const prepareLessonStyles = StyleSheet.create({
 
   // Lesson content text styles
   lessonContentText: {
-    fontSize: fontSizes.medium,
+    fontSize: 15,
     lineHeight: 24,
     color: colors.secondary,
     textAlign: 'left',
@@ -235,7 +235,7 @@ const prepareLessonStyles = StyleSheet.create({
     borderColor: colors.primary,
   },
   lessonChecklistText: {
-    fontSize: fontSizes.medium,
+    fontSize: 15,
     color: colors.secondary,
     flex: 1,
     lineHeight: 20,
@@ -267,7 +267,7 @@ const prepareLessonStyles = StyleSheet.create({
     borderRadius: 2,
   },
   lessonQuestionText: {
-    fontSize: fontSizes.large,
+    fontSize: fontSizes.medium,
     fontWeight: '600',
     color: colors.secondary,
     textAlign: 'center',
@@ -311,7 +311,7 @@ const prepareLessonStyles = StyleSheet.create({
     color: colors.secondary,
   },
   lessonOptionText: {
-    fontSize: fontSizes.medium,
+    fontSize: 15,
     color: colors.secondary,
     flex: 1,
     lineHeight: 20,
