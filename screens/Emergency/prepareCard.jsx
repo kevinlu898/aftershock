@@ -32,7 +32,7 @@ export const PREPARE_CARD = [
     title: "Finding Food and Water",
     icon: "backpack",
     component: (
-      <>
+      <View>
         <Text>Use your emergency water supply FIRST.</Text>
         <Text>Drain your water heater for drinking water (40+ gallons).</Text>
         <Text>
@@ -52,7 +52,7 @@ export const PREPARE_CARD = [
           Check the app's Crowdsourced Map for water and food distribution
           points.
         </Text>
-      </>
+      </View>
     ),
   },
   {
