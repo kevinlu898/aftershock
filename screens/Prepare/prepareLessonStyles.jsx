@@ -61,7 +61,7 @@ const prepareLessonStyles = StyleSheet.create({
   },
   lessonModuleTitle: {
     fontSize: 14,
-    color: colors.secondary,
+    color: colors.primary,
     fontWeight: '500',
     marginBottom: 2,
   },
