@@ -42,8 +42,8 @@ export default function Dashboard() {
           Preparedness: 70% Your on your way!
         </Text>
 
-        {/* 2x2 grid of large white containers */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 32 }}>
+        {/* 2x2 grid for iOS fit */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 32 }}>
           {[ 
             {
               title: 'Continue Preparing',
@@ -61,7 +61,7 @@ export default function Dashboard() {
               title: 'Offline Access',
               text: 'Access resources without internet.',
               button: 'Open Center',
-              onPress: () => navigation.navigate('Emergency'), // Assuming Disaster Management Center is Emergency page
+              onPress: () => navigation.navigate('Emergency'),
             },
             {
               title: 'Ask AI',
@@ -72,34 +72,36 @@ export default function Dashboard() {
           ].map((item, idx) => (
             <View
               key={item.title}
-              style={{
-                width: '45%',
-                height: 170,
-                backgroundColor: '#fff',
-                margin: '2.5%',
-                borderRadius: 16,
-                alignItems: 'center',
-                justifyContent: 'center',
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 3,
-                padding: 12,
-              }}
+              style={{ width: '50%', aspectRatio: 1, padding: 8 }}
             >
-              <Text style={{ fontSize: 22, color: '#34252F', fontWeight: 'bold', marginBottom: 8 }}>
-                {item.title}
-              </Text>
-              <Text style={{ fontSize: 15, color: '#3B5249', textAlign: 'center', marginBottom: 12 }}>
-                {item.text}
-              </Text>
-              <View style={{ width: '80%' }}>
-                <TouchableOpacity onPress={item.onPress} style={{ backgroundColor: '#519872', borderRadius: 8 }}>
-                  <Text style={{ color: '#fff', textAlign: 'center', paddingVertical: 10, fontSize: 16 }}>
-                    {item.button}
-                  </Text>
-                </TouchableOpacity>
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: '#fff',
+                  borderRadius: 16,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3,
+                  padding: 12,
+                }}
+              >
+                <Text style={{ fontSize: 22, color: '#34252F', fontWeight: 'bold', marginBottom: 8 }}>
+                  {item.title}
+                </Text>
+                <Text style={{ fontSize: 15, color: '#3B5249', textAlign: 'center', marginBottom: 12 }}>
+                  {item.text}
+                </Text>
+                <View style={{ width: '80%' }}>
+                  <TouchableOpacity onPress={item.onPress} style={{ backgroundColor: '#519872', borderRadius: 8 }}>
+                    <Text style={{ color: '#fff', textAlign: 'center', paddingVertical: 10, fontSize: 16 }}>
+                      {item.button}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           ))}
