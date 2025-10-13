@@ -4,10 +4,10 @@ import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { colors, globalStyles } from "../../css";
 import { getData } from "../../storage/storageUtils";
+import prepareLessonStyles from "../Prepare/prepareLessonStyles";
 import prepareStyles from "../Prepare/prepareStyles";
 import { PREPARE_MODULES } from "./prepareModules";
-
-export default function Dashboard() {
+export default function Emergency() {
   const [expandedModule, setExpandedModule] = useState(null);
   const [PREPARE_CARD, SET_PREPARE_CARD] = useState([]);
 
@@ -102,12 +102,15 @@ export default function Dashboard() {
 
   const ModuleCard = ({ module }) => {
     const isExpanded = expandedModule === module.id;
-    const statusColor = module.completed
-      ? "#10B981"
-      : module.progress > 0
-      ? colors.primary
-      : "#9CA3AF";
-
+    const [checklist, setChecklist] = useState(module.checklistItems); // Local state for checklist items
+    console.log(module.checklistItems);
+    // Toggles completion state of a checklist item
+    const toggleItem = (itemId) => {
+      const updatedChecklist = checklist.map((item) =>
+        item.id === itemId ? { ...item, completed: !item.completed } : item
+      );
+      setChecklist(updatedChecklist);
+    };
     return (
       <View style={prepareStyles.card}>
         <TouchableOpacity
@@ -124,9 +127,6 @@ export default function Dashboard() {
             </View>
           </View>
           <View style={prepareStyles.headerRight}>
-            <Text style={[prepareStyles.progressText, { color: statusColor }]}>
-              {Math.round(module.progress * 100)}%
-            </Text>
             <MaterialCommunityIcons
               name={isExpanded ? "chevron-up" : "chevron-down"}
               size={24}
@@ -137,69 +137,47 @@ export default function Dashboard() {
 
         {isExpanded && (
           <View style={prepareStyles.lessonsContainer}>
-            {module.lessons.map((lesson, index) => (
-              <TouchableOpacity
-                key={lesson.id}
-                style={[
-                  prepareStyles.lessonItem,
-                  index === module.lessons.length - 1 &&
-                    prepareStyles.lastLessonItem,
-                ]}
-                activeOpacity={0.6}
-                onPress={() =>
-                  navigation.navigate("prepareLessons", {
-                    lessonId: lesson.id,
-                    moduleId: module.id,
-                    lessonData: lesson,
-                  })
-                }
-              >
-                <View style={prepareStyles.lessonLeft}>
-                  <MaterialCommunityIcons
-                    name={lesson.completed ? "check-circle" : "circle-outline"}
-                    size={20}
-                    color={lesson.completed ? "#10B981" : colors.secondary}
-                  />
-                  <Text
-                    style={[
-                      prepareStyles.lessonTitle,
-                      lesson.completed && prepareStyles.completedLesson,
-                    ]}
-                  >
-                    {lesson.title}
-                  </Text>
-                </View>
-                <View style={prepareStyles.lessonRight}>
-                  <Text style={prepareStyles.lessonDuration}>
-                    {lesson.duration}
-                  </Text>
-                  <MaterialCommunityIcons
-                    name="chevron-right"
-                    size={16}
-                    color={colors.secondary}
-                  />
-                </View>
-              </TouchableOpacity>
-            ))}
-
-            <View style={prepareStyles.buttonContainer}>
-              {module.progress === 0 ? (
-                <TouchableOpacity style={prepareStyles.primaryButton}>
-                  <Text style={prepareStyles.primaryButtonText}>Start</Text>
+            <View style={prepareLessonStyles.lessonChecklistContainer}>
+              {checklist.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={[
+                    prepareLessonStyles.lessonChecklistItem,
+                    item.completed &&
+                      prepareLessonStyles.lessonChecklistItemCompleted,
+                  ]}
+                  onPress={() => toggleItem(item.id)}
+                >
+                  <View style={prepareLessonStyles.lessonChecklistLeft}>
+                    {/* Custom checkbox */}
+                    <View
+                      style={[
+                        prepareLessonStyles.lessonCheckbox,
+                        item.completed &&
+                          prepareLessonStyles.lessonCheckboxCompleted,
+                      ]}
+                    >
+                      {item.completed && (
+                        <MaterialCommunityIcons
+                          name="check"
+                          size={16}
+                          color="#fff"
+                        />
+                      )}
+                    </View>
+                    {/* Checklist item text */}
+                    <Text
+                      style={[
+                        prepareLessonStyles.lessonChecklistText,
+                        item.completed &&
+                          prepareLessonStyles.lessonChecklistTextCompleted,
+                      ]}
+                    >
+                      {item.text}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
-              ) : module.progress >= 0.9 && module.progress < 1 ? (
-                <TouchableOpacity style={prepareStyles.primaryButton}>
-                  <Text style={prepareStyles.primaryButtonText}>Finish</Text>
-                </TouchableOpacity>
-              ) : module.progress === 1 ? (
-                <TouchableOpacity style={prepareStyles.secondaryButton}>
-                  <Text style={prepareStyles.secondaryButtonText}>Review</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity style={prepareStyles.primaryButton}>
-                  <Text style={prepareStyles.primaryButtonText}>Continue</Text>
-                </TouchableOpacity>
-              )}
+              ))}
             </View>
           </View>
         )}
@@ -361,7 +339,7 @@ export default function Dashboard() {
       {/* end 2x2 layout */}
 
       {/* start the checklist and the important documents */}
-      <View style={prepareStyles.modulesList}>
+      <View style={{ ...prepareStyles.modulesList, marginTop: 16 }}>
         {PREPARE_MODULES.map((module) => (
           <ModuleCard key={module.id} module={module} />
         ))}
