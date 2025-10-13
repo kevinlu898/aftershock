@@ -16,6 +16,7 @@ const PrepareLessons = ({ route, navigation }) => {
   const [currentLesson, setCurrentLesson] = useState(null);        // Current lesson data
   const [currentModule, setCurrentModule] = useState(null);        // Current module data
   const [screens, setScreens] = useState([]);                      // Array of available screens
+  const [showCompletedView, setShowCompletedView] = useState(false);
 
   // Loads lesson and module data when component mounts
   useEffect(() => {
@@ -43,8 +44,28 @@ const PrepareLessons = ({ route, navigation }) => {
         (async () => {
           const saved = await getLessonCurrentPageIndex(lesson.id);
           const start = saved ?? initialPageIndex ?? 0;
-          setCurrentScreenIndex(start);
+          // if saved index is past the end it means the lesson was completed and stored as pageCount
+          if (pages.length > 0 && start >= pages.length) {
+            // mark local state as completed and show Completed view instead of pages
+            setCurrentLesson(prev => prev ? { ...prev, completed: true } : prev);
+            setShowCompletedView(true);
+          } else {
+            setCurrentScreenIndex(start);
+            setShowCompletedView(false);
+          }
         })();
+        // subscribe to completion changes to keep local state in sync
+        const off = completion.events.on('changed', (state) => {
+          // update local module/lesson completed flags if they changed
+          try {
+            const moduleState = state?.modules?.[module?.id]?.lessons?.[lesson.id];
+            if (moduleState) {
+              setCurrentLesson(prev => prev ? { ...prev, completed: !!moduleState.completed } : prev);
+              setCurrentModule(prev => prev ? { ...prev, completed: !!state.modules[module.id]?.completed } : prev);
+            }
+          } catch (e) { /* ignore */ }
+        });
+        return () => off && off();
       } else {
         // Lesson not found - show error and navigate back
         Alert.alert('Error', 'Lesson not found');
@@ -126,16 +147,23 @@ const PrepareLessons = ({ route, navigation }) => {
       const next = currentScreenIndex + 1;
       setCurrentScreenIndex(next);
       // persist current page
-      await completion.setLessonCurrentPage(currentModule.id, currentLesson.id, next);
+      try {
+        await completion.setLessonCurrentPage(currentModule.id, currentLesson.id, next);
+        console.log('prepareLessons: persisted page', next);
+      } catch (e) {
+        console.warn('prepareLessons: failed to persist page', e);
+      }
     } else {
-      // All screens completed - show completion message
-      Alert.alert('Lesson Complete!', 'Congratulations! You have completed this lesson.',
-        [{ text: 'Continue', onPress: () => navigation.goBack() }]
-      );
-      // mark lesson completed and update UI state
-      await completion.markLessonCompleted(currentModule.id, currentLesson.id);
+      // All screens completed - persist and show Completed view
+      try {
+        await completion.markLessonCompleted(currentModule.id, currentLesson.id);
+        console.log('prepareLessons: lesson marked completed in storage');
+      } catch (e) {
+        console.warn('prepareLessons: error marking lesson complete', e);
+      }
       setCurrentLesson(prev => prev ? { ...prev, completed: true } : prev);
       setCurrentModule(prev => prev ? { ...prev, completed: true } : prev);
+      setShowCompletedView(true);
     }
   };
 
@@ -468,8 +496,42 @@ const PrepareLessons = ({ route, navigation }) => {
     );
   };
 
+  // Completed view component
+  const CompletedScreen = () => (
+    <View style={prepareLessonStyles.lessonScreenContainer}>
+      <View style={prepareLessonStyles.lessonContentCard}>
+        <MaterialCommunityIcons name="check-circle" size={64} color="#10B981" style={{ alignSelf: 'center', marginBottom: 12 }} />
+        <Text style={[prepareLessonStyles.lessonPageTitle, { textAlign: 'center', marginBottom: 8 }]}>Lesson Complete</Text>
+        <Text style={{ textAlign: 'center', color: '#6B7280', marginBottom: 16 }}>You have completed this lesson. Would you like to review it?</Text>
+
+        <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+          <TouchableOpacity
+            onPress={() => {
+              // review: go to first page
+              setShowCompletedView(false);
+              setCurrentScreenIndex(0);
+              // persist that we're on first page
+              completion.setLessonCurrentPage(currentModule.id, currentLesson.id, 0).catch(() => {});
+            }}
+            style={[prepareLessonStyles.lessonContinueButton, { marginRight: 8, paddingHorizontal: 20 }]}
+          >
+            <Text style={prepareLessonStyles.lessonContinueButtonText}>Review</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={[prepareLessonStyles.lessonContinueButton, { backgroundColor: '#6B7280', paddingHorizontal: 20 }]}
+          >
+            <Text style={prepareLessonStyles.lessonContinueButtonText}>Close</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+
   // Renders the current screen based on screen type
   const renderCurrentScreen = () => {
+    if (showCompletedView) return <CompletedScreen />;
     const currentScreen = screens[currentScreenIndex];
     if (!currentScreen) return null;
 

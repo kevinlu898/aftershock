@@ -7,7 +7,6 @@ export const PREPARE_MODULES = [
         title: 'Understand Earthquakes',
         icon: 'brain',
         description: 'Know your risk and the science',
-        progress: 0.4,
         lessons: [
             {
                 id: '1-1',
@@ -15,7 +14,6 @@ export const PREPARE_MODULES = [
                 duration: '5 min',
                 type: 'lesson',
                 content: {
-                    // New: pages array to allow multiple pages per lesson (ordered)
                     pages: [
                         {
                             id: '1-1-p1',
@@ -194,7 +192,6 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
         title: 'Make Your Plan',
         icon: 'clipboard-list',
         description: 'Create your emergency plan',
-        progress: 1.0,
         lessons: [
             {
                 id: '2-1',
@@ -282,7 +279,6 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
         title: 'Build Your Kits',
         icon: 'medical-bag',
         description: 'Assemble emergency supplies',
-        progress: 0.2,
         lessons: [
             {
                 id: '3-1',
@@ -376,7 +372,6 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
         title: 'Secure Your Home',
         icon: 'home-alert',
         description: 'Prevent injuries and damage',
-        progress: 0.0,
         lessons: [
             {
                 id: '4-1',
@@ -464,7 +459,6 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
         title: 'Finalize & Review',
         icon: 'check-circle',
         description: 'Tie up loose ends',
-        progress: 0.0,
         lessons: [
             {
                 id: '5-1',
@@ -542,25 +536,165 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
     },
 ];
 
-// Helper function to get lesson data by ID
-export const getLessonById = (lessonId) => {
-    for (const module of PREPARE_MODULES) {
-        const lesson = module.lessons.find(l => l.id === lessonId);
-        if (lesson) return lesson;
-    }
-    return null;
+// Ensure default progress fields for backward compatibility (synchronous UIs)
+PREPARE_MODULES.forEach(m => {
+    if (typeof m.progress !== 'number') m.progress = 0;
+    if (!Array.isArray(m.lessons)) return;
+    m.lessons.forEach(l => {
+        if (typeof l.progress !== 'number') l.progress = 0;
+    });
+});
+
+/**
+ * Return PREPARE_MODULES augmented with completion info and computed progress.
+ * - lesson.progress = pagesCompleted / pageCount
+ * - module.progress = totalCompletedPages / totalPages (weighted by pages)
+ */
+ export const getModulesWithCompletion = async () => {
+     const state = await getCompletionState();
+
+    // Helper to compute page completions from a lesson when no state is available
+    const computeCompletedPagesFromCatalog = (lesson) => {
+        const pages = (lesson.content && Array.isArray(lesson.content.pages)) ? lesson.content.pages : [];
+        let completed = 0;
+        for (const p of pages) {
+            if (p.completed === true) {
+                completed += 1;
+                continue;
+            }
+            if (p.type === 'checklist' && Array.isArray(p.items)) {
+                const all = p.items.every(it => it.completed === true);
+                if (all) completed += 1;
+            }
+            // quiz/video/text require explicit completed flag to count as complete in static catalog
+        }
+        return { completed, total: pages.length };
+    };
+
+    return PREPARE_MODULES.map((m) => {
+        const moduleState = state?.modules?.[m.id] || null;
+
+        let totalPages = 0;
+        let totalCompletedPages = 0;
+
+        const lessons = m.lessons.map((l) => {
+            let pageCount = (l.content && Array.isArray(l.content.pages)) ? l.content.pages.length : 0;
+            pageCount = Number(pageCount) || 0;
+            totalPages += pageCount;
+
+            let pagesCompleted = 0;
+            let completedFlag = false;
+            let currentPageIndex = 0;
+
+            if (moduleState) {
+                const lState = moduleState.lessons?.[l.id] || {};
+                completedFlag = !!lState.completed;
+                currentPageIndex = Number(lState.currentPageIndex ?? 0) || 0;
+                pagesCompleted = completedFlag ? pageCount : Math.max(0, Math.min(currentPageIndex, pageCount));
+            } else {
+                // no persisted state: infer from static catalog where possible
+                const inferred = computeCompletedPagesFromCatalog(l);
+                pagesCompleted = Number(inferred.completed) || 0;
+                const inferredTotal = Number(inferred.total) || 0;
+                completedFlag = inferredTotal > 0 && (Number(inferred.completed) >= inferredTotal);
+                currentPageIndex = pagesCompleted; // best-effort
+            }
+
+            totalCompletedPages += Number(pagesCompleted) || 0;
+
+            const lessonProgressRaw = pageCount > 0 ? (pagesCompleted / pageCount) : (completedFlag ? 1 : 0);
+            const lessonProgress = (Number(lessonProgressRaw) && isFinite(lessonProgressRaw)) ? Number(lessonProgressRaw) : (lessonProgressRaw === 0 ? 0 : Number(0));
+
+            return {
+                ...l,
+                pageCount,
+                currentPageIndex,
+                completed: completedFlag,
+                progress: lessonProgress || 0,
+            };
+        });
+
+        let moduleProgress = 0;
+        if (Number(totalPages) > 0) {
+            moduleProgress = Number(totalCompletedPages) / Number(totalPages);
+        } else if (lessons.length > 0) {
+            moduleProgress = lessons.filter(ln => ln.completed).length / lessons.length;
+        }
+        if (!isFinite(moduleProgress) || Number.isNaN(moduleProgress)) {
+            console.warn('prepareModules: computed NaN moduleProgress for module', m.id, { totalPages, totalCompletedPages, lessonsCount: lessons.length });
+            moduleProgress = 0;
+        }
+
+        // final coercion
+        moduleProgress = Number(moduleProgress) || 0;
+
+        return {
+            ...m,
+            lessons,
+            completed: moduleState ? !!moduleState.completed : m.completed || false,
+            progress: moduleProgress || 0,
+        };
+    });
 };
 
-// Helper function to get module data by ID
-export const getModuleById = (moduleId) => {
-    return PREPARE_MODULES.find(module => module.id === moduleId);
+export const getPrepareModules = async () => {
+    return await getModulesWithCompletion();
 };
+
+/**
+ * Return computed progress for a module (0..1)
+ */
+export const getModuleProgress = async (moduleId) => {
+    const modules = await getModulesWithCompletion();
+    const m = modules.find(mm => mm.id === moduleId);
+    return m ? (m.progress ?? 0) : 0;
+};
+
+/**
+ * Return computed progress for a lesson (0..1)
+ */
+export const getLessonProgress = async (lessonId) => {
+    const modules = await getModulesWithCompletion();
+    for (const m of modules) {
+        const l = m.lessons.find(ll => ll.id === lessonId);
+        if (l) return l.progress ?? 0;
+    }
+    return 0;
+};
+
+/**
+ * Get lesson by ID
+ * - ensures synchronous consumers can find lessons/modules by ID
+ */
+ export const getLessonById = (lessonId) => {
+    for (const module of PREPARE_MODULES) {
+        const lesson = module.lessons.find(l => l.id === lessonId);
+        if (lesson) {
+            console.log('prepareModules: getLessonById -> found', lessonId);
+            return lesson;
+        }
+    }
+    console.warn('prepareModules: getLessonById -> not found', lessonId);
+    return null;
+ };
+ 
+ // Helper function to get module data by ID
+ export const getModuleById = (moduleId) => {
+    const m = PREPARE_MODULES.find(module => module.id === moduleId) || null;
+    if (m) console.log('prepareModules: getModuleById -> found', moduleId);
+    else console.warn('prepareModules: getModuleById -> not found', moduleId);
+    return m;
+ };
+ 
+ // synchronous access to the static catalog for components that import PREPARE_MODULES synchronously
+ export const getCatalogModules = () => PREPARE_MODULES;
+ 
+ // default export for backward compatibility
+ export default PREPARE_MODULES;
 
 // Normalize lesson pages: prefer content.pages, ensure each page has an id, and normalize field names
 export const getLessonPages = (lesson) => {
-    // If lesson or content missing, return empty
     if (!lesson || !lesson.content) return [];
-
     const pages = lesson.content.pages;
     if (!Array.isArray(pages) || pages.length === 0) return [];
 
@@ -571,12 +705,10 @@ export const getLessonPages = (lesson) => {
             id,
             type,
             title: page.title || lesson.title || '',
-            // unify content keys so the renderer can use consistent field names
             body: page.body || page.text || null,
             videoUrl: page.videoUrl || page.url || null,
             items: page.items || page.checklistItems || null,
             questions: page.questions || page.quizQuestions || null,
-            // pass-through any explicitly provided completed flag
             completed: page.completed === true,
         };
     });
@@ -595,57 +727,12 @@ export const findFirstIncompletePageIndex = (lesson) => {
             if (!all) return i; else continue;
         }
 
-        // For quiz pages, we can't determine completion without saved state; treat as incomplete unless flagged
-        if (p.type === 'quiz') return i;
+        // For quiz, video, and text pages treat as incomplete unless flagged
+        if (p.type === 'quiz' || p.type === 'video' || p.type === 'text') return i;
 
-        // For video pages, treat as incomplete unless flagged completed
-        if (p.type === 'video') return i;
-
-        // For text pages, treat as incomplete unless flagged
-        if (p.type === 'text') return i;
-
-        // default: return first not explicitly completed
         if (!p.completed) return i;
     }
     return 0;
-};
-
-/**
- * Return PREPARE_MODULES augmented with completion info from async storage/firebase.
- */
-export const getModulesWithCompletion = async () => {
-    const state = await getCompletionState();
-    if (!state) return PREPARE_MODULES;
-
-    return PREPARE_MODULES.map((m) => {
-        const moduleState = state.modules?.[m.id] || {};
-        // compute per-lesson progress and module progress
-        const lessons = m.lessons.map((l) => {
-            const lState = moduleState.lessons?.[l.id] || {};
-            const pageCount = (l.content && Array.isArray(l.content.pages)) ? l.content.pages.length : 0;
-            const currentIndex = lState.currentPageIndex ?? 0;
-            let lessonProgress = 0;
-            if (lState.completed) lessonProgress = 1;
-            else if (pageCount > 0) lessonProgress = Math.max(0, Math.min(1, currentIndex / pageCount));
-            return {
-                ...l,
-                completed: !!lState.completed,
-                currentPageIndex: currentIndex,
-                pageCount,
-                progress: lessonProgress,
-            };
-        });
-
-        // module progress = average of lesson progress
-        const moduleProgress = lessons.length > 0 ? (lessons.reduce((s, ln) => s + (ln.progress || 0), 0) / lessons.length) : 0;
-
-        return {
-            ...m,
-            completed: !!moduleState.completed,
-            lessons,
-            progress: moduleProgress,
-        };
-    });
 };
 
 /**
@@ -678,13 +765,4 @@ export const getModuleCompletion = async (moduleId) => {
 export const getLessonCurrentPageIndex = async (lessonId) => {
     const comp = await getLessonCompletion(lessonId);
     return comp?.currentPageIndex ?? 0;
-};
-
-/**
- * Async helper to return the modules merged with persistent completion state.
- * Use this in UI code instead of importing PREPARE_MODULES directly when you
- * want the latest completion flags from AsyncStorage/Firebase.
- */
-export const getPrepareModules = async () => {
-    return await getModulesWithCompletion();
 };

@@ -1,18 +1,39 @@
 import { useNavigation } from "@react-navigation/native";
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { colors, globalStyles } from '../../css';
-import { PREPARE_MODULES, findFirstIncompletePageIndex, getLessonCurrentPageIndex } from './prepareModules';
+import { findFirstIncompletePageIndex, getLessonCurrentPageIndex, getPrepareModules } from './prepareModules';
+import completion from './prepareModulesCompletion';
 import prepareStyles from './prepareStyles';
 
 const Prepare = () => {
   const [expandedModule, setExpandedModule] = useState(null);
+  const [modules, setModules] = useState([]);
   const navigation = useNavigation();
 
   const toggleModule = (moduleId) => {
     setExpandedModule(expandedModule === moduleId ? null : moduleId);
   };
+
+  const fetchModules = async () => {
+    try {
+      const ms = await getPrepareModules();
+      setModules(ms || []);
+    } catch (e) {
+      console.warn('Prepare: fetchModules error', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchModules();
+    const focusOff = navigation.addListener && navigation.addListener('focus', fetchModules);
+    const off = completion.events.on('changed', () => fetchModules());
+    return () => {
+      focusOff && focusOff();
+      off && off();
+    };
+  }, []);
 
   const ProgressBar = ({ progress }) => (
     <View style={prepareStyles.progressContainer}>
@@ -64,6 +85,7 @@ const Prepare = () => {
                 ]}
                 activeOpacity={0.6}
                 onPress={async () => {
+                  console.log('Prepare: lesson tap', module.id, lesson.id);
                   const saved = await getLessonCurrentPageIndex(lesson.id);
                   const pageIndex = saved ?? findFirstIncompletePageIndex(lesson);
                   navigation.navigate('prepareLessons', { lessonId: lesson.id, moduleId: module.id, lessonData: lesson, initialPageIndex: pageIndex });
@@ -88,7 +110,7 @@ const Prepare = () => {
                 </View>
               </TouchableOpacity>
             ))}
-            
+
             <View style={prepareStyles.buttonContainer}>
               {module.progress === 0 ? (
                 <TouchableOpacity
@@ -115,7 +137,7 @@ const Prepare = () => {
                       const pageIndex = saved ?? findFirstIncompletePageIndex(next);
                       navigation.navigate('prepareLessons', { lessonId: next.id, moduleId: module.id, lessonData: next, initialPageIndex: pageIndex });
                     }
-                   }}
+                  }}
                 >
                   <Text style={prepareStyles.primaryButtonText}>Finish</Text>
                 </TouchableOpacity>
@@ -155,7 +177,7 @@ const Prepare = () => {
     );
   };
 
-  const overallProgress = PREPARE_MODULES.reduce((acc, module) => acc + module.progress, 0) / PREPARE_MODULES.length;
+  const overallProgress = (modules.length > 0) ? (modules.reduce((acc, module) => acc + (Number(module.progress) || 0), 0) / modules.length) : 0;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.light }}>
@@ -166,14 +188,12 @@ const Prepare = () => {
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 30,
-          paddingBottom: 30, 
+          paddingBottom: 30,
         }}
         showsVerticalScrollIndicator={false}
       >
         <Text style={globalStyles.heading}>Prepare</Text>
         <Text style={prepareStyles.subtitle}>Complete your journey to earthquake safety</Text>
-
-
 
         <View style={[prepareStyles.overallProgress, { backgroundColor: colors.white }]}>
           <View style={prepareStyles.progressHeader}>
@@ -182,9 +202,9 @@ const Prepare = () => {
           </View>
           <ProgressBar progress={overallProgress} />
         </View>
-        
+
         <View style={prepareStyles.modulesList}>
-          {PREPARE_MODULES.map((module) => (
+          {modules.map((module) => (
             <ModuleCard key={module.id} module={module} />
           ))}
         </View>
