@@ -4,8 +4,8 @@ const colors = {
   primary: '#519872',   // sea green from your palette
   secondary: '#445c52ff', // feldgrau
   accent: '#34252F',    // raisin black
-  light: '#dae7daff',     // ash gray
-  muted: '#A4B494',     // sage 
+  light: '#e7f0e7ff',     // ash gray
+  muted: '#97b4a1ff',     // 9ecaaeff 
   danger: 'red',
   white: '#ffffff',
   black: '#000000',
@@ -20,7 +20,6 @@ const fontSizes = {
 };
 
 const globalStyles = StyleSheet.create({
-  // Existing styles
   container: {
     flex: 1,
     padding: 16,
@@ -37,7 +36,7 @@ const globalStyles = StyleSheet.create({
     color: colors.primary,
     textAlign: 'center',
     marginBottom: 20,
-    marginTop: 10,
+    marginTop: 0,
   },
   subheading: {
     fontSize: fontSizes.large,
