@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { ScrollView, Text, View, TouchableOpacity, Alert, SafeAreaView, } from 'react-native';
-import { globalStyles, colors, fontSizes } from '../../css';
-import prepareStyles from './prepareStyles';
-import prepareLessonStyles from './prepareLessonStyles';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Dimensions, ScrollView as HScrollView, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { getLessonById, getModuleById } from './prepareModules';
+import { colors } from '../../css';
+import prepareLessonStyles from './prepareLessonStyles';
+import { getLessonById, getLessonPages, getModuleById } from './prepareModules';
 
 // Main component for displaying and navigating through lesson content
 const PrepareLessons = ({ route, navigation }) => {
   // Extract parameters from navigation route with default values
-  const { lessonId = '1-1', moduleId = '1', lessonData } = route?.params || {};
-  
+  const { lessonId = '1-1', moduleId = '1', lessonData, initialPageIndex = 0 } = route?.params || {};
+
   // State management for component data and UI
   const [currentScreenIndex, setCurrentScreenIndex] = useState(0); // Current active screen index
   const [currentLesson, setCurrentLesson] = useState(null);        // Current lesson data
@@ -28,7 +27,18 @@ const PrepareLessons = ({ route, navigation }) => {
         // Update state and initialize screens
         setCurrentLesson(lesson);
         setCurrentModule(module);
-        initializeScreens(lesson);
+        const pages = getLessonPages(lesson);
+        console.log('prepareLessons: loaded lesson', lesson.id, 'pages:', pages.map(p => p.id));
+        setScreens(pages.map(p => {
+          return {
+            type: p.type === 'text' ? 'lesson' : p.type,
+            title: p.title || 'Page',
+            icon: p.type === 'text' ? 'book-open-variant' : (p.type === 'video' ? 'play-circle' : (p.type === 'checklist' ? 'checklist' : 'puzzle')),
+            content: p.type === 'text' ? p.body : (p.type === 'video' ? p.videoUrl : (p.type === 'checklist' ? p.items : p.questions)),
+          };
+        }));
+        console.log('prepareLessons: set screens length ->', pages.length);
+        setCurrentScreenIndex(initialPageIndex || 0);
       } else {
         // Lesson not found - show error and navigate back
         Alert.alert('Error', 'Lesson not found');
@@ -40,41 +50,46 @@ const PrepareLessons = ({ route, navigation }) => {
       Alert.alert('Error', 'Failed to load lesson');
       navigation.goBack();
     }
-  }, [lessonId, lessonData, moduleId]);
+  }, [lessonId, lessonData, moduleId, initialPageIndex]);
 
-  // Dynamically creates screen configurations based on available content
-  const initializeScreens = (lesson) => {
-    const screens = [];
-    
-    // Add Learn screen if text content exists
-    if (lesson.content?.text) {
-      screens.push({ type: 'lesson', title: 'Learn', icon: 'book-open-variant', content: lesson.content.text });
+  // Scroll active menu item into view and center it
+  const menuRef = useRef(null);
+  useEffect(() => {
+    if (!menuRef.current) return;
+    const screenWidth = Dimensions.get('window').width;
+    const total = screens.length;
+    // compute offsets
+    const itemFull = 110 + 12; // active width
+    const compact = 44 + 12; // compact width
+    // Build cumulative widths to compute exact offset
+    let pos = 0;
+    for (let i = 0; i < currentScreenIndex; i++) {
+      pos += (i === currentScreenIndex ? itemFull : compact);
     }
-    
-    // Add Watch screen if video content exists
-    if (lesson.content?.videoUrl) {
-      screens.push({ type: 'video', title: 'Watch', icon: 'play-circle', content: lesson.content.videoUrl });
+
+    if (currentScreenIndex === 0) {
+      // anchor left
+      try { menuRef.current.scrollTo({ x: 0, y: 0, animated: true }); } catch (e) {}
+      return;
     }
-    
-    // Add Checklist screen if checklist items exist
-    if (lesson.content?.checklistItems?.length > 0) {
-      screens.push({ type: 'checklist', title: 'Checklist', icon: 'checklist', content: lesson.content.checklistItems });
+    if (currentScreenIndex === total - 1) {
+      // anchor right: scroll to max
+      const estimatedTotalWidth = itemFull + compact * (total - 1);
+      const offsetRight = Math.max(0, estimatedTotalWidth - screenWidth + 24);
+      try { menuRef.current.scrollTo({ x: offsetRight, y: 0, animated: true }); } catch (e) {}
+      return;
     }
-    
-    // Add Practice screen if quiz questions exist
-    if (lesson.content?.quizQuestions?.length > 0) {
-      screens.push({ type: 'quiz', title: 'Practice', icon: 'puzzle', content: lesson.content.quizQuestions });
-    }
-    
-    // Update state with configured screens
-    setScreens(screens);
-  };
+
+    // center other tabs
+    const centerOffset = pos - (screenWidth / 2) + (itemFull / 2);
+    try { menuRef.current.scrollTo({ x: Math.max(0, centerOffset), y: 0, animated: true }); } catch (e) {}
+  }, [currentScreenIndex]);
 
   // Calculate progress percentage (0 to 1)
   const progress = screens.length > 0 ? (currentScreenIndex + 1) / screens.length : 0;
 
   // Show loading state while data is being fetched
-  if (!currentLesson || screens.length === 0) {
+  if (!currentLesson) {
     return (
       <View style={prepareLessonStyles.lessonLoadingContainer}>
         <MaterialCommunityIcons name="loading" size={40} color={colors.primary} />
@@ -83,11 +98,26 @@ const PrepareLessons = ({ route, navigation }) => {
     );
   }
 
+  // If lesson loaded but there are no pages, show a friendly fallback
+  if (screens.length === 0) {
+    return (
+      <SafeAreaView style={prepareLessonStyles.lessonSafeArea}>
+        <View style={[prepareLessonStyles.lessonContainer, { justifyContent: 'center', alignItems: 'center' }]}>
+          <Text style={prepareLessonStyles.lessonLoadingText}>No content available for this lesson.</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 16 }}>
+            <Text style={{ color: colors.primary }}>Go back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   // Handles progression to next screen or lesson completion
   const markScreenComplete = () => {
+    console.log('markScreenComplete called, currentScreenIndex=', currentScreenIndex, 'screens.length=', screens.length);
     if (currentScreenIndex < screens.length - 1) {
       // Move to next screen
-      setCurrentScreenIndex(currentScreenIndex + 1);
+      setCurrentScreenIndex((s) => s + 1);
     } else {
       // All screens completed - show completion message
       Alert.alert('Lesson Complete!', 'Congratulations! You have completed this lesson.',
@@ -284,6 +314,7 @@ const PrepareLessons = ({ route, navigation }) => {
       if (currentQuestion < questions.length - 1) {
         setCurrentQuestion(currentQuestion + 1);
       } else {
+        console.log('Quiz finished, showing results. currentScreenIndex=', currentScreenIndex, 'screens.length=', screens.length);
         setShowResults(true);
       }
     };
@@ -303,6 +334,7 @@ const PrepareLessons = ({ route, navigation }) => {
     if (showResults) {
       const { correct, total } = calculateScore();
       const passed = correct >= total * 0.7; // 70% passing threshold
+      console.log('Quiz results shown, passed=', passed, 'currentScreenIndex=', currentScreenIndex, 'screens.length=', screens.length);
 
       return (
         <View style={prepareLessonStyles.lessonScreenContainer}>
@@ -331,7 +363,10 @@ const PrepareLessons = ({ route, navigation }) => {
           {/* Continue or retry button */}
           <TouchableOpacity 
             style={prepareLessonStyles.lessonContinueButton}
-            onPress={passed ? markScreenComplete : () => {
+            onPress={passed ? () => {
+              console.log('Quiz Continue pressed - will call markScreenComplete. currentScreenIndex=', currentScreenIndex, 'screens.length=', screens.length);
+              markScreenComplete();
+            } : () => {
               setShowResults(false);
               setCurrentQuestion(0);
               setUserAnswers({});
@@ -462,35 +497,37 @@ const PrepareLessons = ({ route, navigation }) => {
               {currentModule?.title || 'Module'}
             </Text>
             <Text style={prepareLessonStyles.lessonPageTitle} numberOfLines={2}>
-              {currentLesson.title}
+              {currentLesson?.title}
             </Text>
           </View>
         </View>
 
-        {/* Navigation tabs for different screen types */}
-        <View style={prepareLessonStyles.lessonNavTabsContainer}>
-          {screens.map((screen, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                prepareLessonStyles.lessonNavTab,
-                index === currentScreenIndex && prepareLessonStyles.lessonNavTabActive
-              ]}
-              onPress={() => goToScreen(index)}
-            >
-              <MaterialCommunityIcons 
-                name={screen.icon} 
-                size={18} 
-                color={index === currentScreenIndex ? '#fff' : colors.muted} 
-              />
-              <Text style={[
-                prepareLessonStyles.lessonNavTabText,
-                index === currentScreenIndex && prepareLessonStyles.lessonNavTabTextActive
-              ]}>
-                {screen.title}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        {/* Horizontal menu for lesson pages */}
+        <View style={prepareLessonStyles.lessonMenuContainer}>
+          <HScrollView ref={menuRef} horizontal showsHorizontalScrollIndicator={false} style={prepareLessonStyles.lessonMenuScroll} contentContainerStyle={{ paddingHorizontal: 6 }}>
+            {screens.map((screen, index) => (
+              <TouchableOpacity
+                key={screen.id || index}
+                style={index === currentScreenIndex ? [
+                  prepareLessonStyles.lessonMenuItem,
+                  prepareLessonStyles.lessonMenuItemActive
+                ] : prepareLessonStyles.lessonMenuItemCompact}
+                onPress={() => goToScreen(index)}
+              >
+                <MaterialCommunityIcons name={screen.icon} size={18} color={index === currentScreenIndex ? '#fff' : colors.muted} />
+                {/* show label only for active tab */}
+                {index === currentScreenIndex && (
+                  <Text style={[
+                    prepareLessonStyles.lessonMenuItemText,
+                    prepareLessonStyles.lessonMenuItemTextActive,
+                    { marginLeft: 8 }
+                  ]}>
+                    {index + 1}. {screen.title}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </HScrollView>
         </View>
 
         {/* Dynamic content area */}
