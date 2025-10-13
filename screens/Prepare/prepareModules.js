@@ -1,3 +1,5 @@
+import { getCompletionState } from './prepareModulesCompletion';
+
 /* Lessons and Modules for prepare page*/
 export const PREPARE_MODULES = [
     {
@@ -6,13 +8,11 @@ export const PREPARE_MODULES = [
         icon: 'brain',
         description: 'Know your risk and the science',
         progress: 0.4,
-        completed: false,
         lessons: [
             {
                 id: '1-1',
                 title: 'How Earthquakes Work',
                 duration: '5 min',
-                completed: true,
                 type: 'lesson',
                 content: {
                     // New: pages array to allow multiple pages per lesson (ordered)
@@ -85,7 +85,6 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
                 id: '1-2',
                 title: 'Know Your Risk',
                 duration: '8 min',
-                completed: true,
                 type: 'lesson',
                 content: {
                     pages: [
@@ -136,7 +135,6 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
                 id: '1-3',
                 title: 'Myths vs Facts',
                 duration: '5 min',
-                completed: false,
                 type: 'quiz',
                 content: {
                     pages: [
@@ -197,13 +195,11 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
         icon: 'clipboard-list',
         description: 'Create your emergency plan',
         progress: 1.0,
-        completed: true,
         lessons: [
             {
                 id: '2-1',
                 title: 'Learn the Basics',
                 duration: '10 min',
-                completed: true,
                 type: 'lesson',
                 content: {
                     pages: [
@@ -230,7 +226,6 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
                 id: '2-2',
                 title: 'Define Contacts',
                 duration: '15 min',
-                completed: true,
                 type: 'checklist',
                 content: {
                     pages: [
@@ -258,7 +253,6 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
                 id: '2-3',
                 title: 'Practice Your Plan',
                 duration: '5 min',
-                completed: true,
                 type: 'practice',
                 content: {
                     pages: [
@@ -289,13 +283,11 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
         icon: 'medical-bag',
         description: 'Assemble emergency supplies',
         progress: 0.2,
-        completed: false,
         lessons: [
             {
                 id: '3-1',
                 title: 'Go-Bag Essentials',
                 duration: '20 min',
-                completed: true,
                 type: 'checklist',
                 content: {
                     pages: [
@@ -325,7 +317,6 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
                 id: '3-2',
                 title: 'Home Kit',
                 duration: '25 min',
-                completed: false,
                 type: 'checklist',
                 content: {
                     pages: [
@@ -354,7 +345,6 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
                 id: '3-3',
                 title: 'Car Kit',
                 duration: '15 min',
-                completed: false,
                 type: 'checklist',
                 content: {
                     pages: [
@@ -387,13 +377,11 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
         icon: 'home-alert',
         description: 'Prevent injuries and damage',
         progress: 0.0,
-        completed: false,
         lessons: [
             {
                 id: '4-1',
                 title: 'Identify Hazards',
                 duration: '15 min',
-                completed: false,
                 type: 'checklist',
                 content: {
                     pages: [
@@ -422,7 +410,6 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
                 id: '4-2',
                 title: 'Shut Off Utilities',
                 duration: '10 min',
-                completed: false,
                 type: 'lesson',
                 content: {
                     pages: [
@@ -478,13 +465,11 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
         icon: 'check-circle',
         description: 'Tie up loose ends',
         progress: 0.0,
-        completed: false,
         lessons: [
             {
                 id: '5-1',
                 title: 'Document Belongings',
                 duration: '30 min',
-                completed: false,
                 type: 'checklist',
                 content: {
                     pages: [
@@ -512,7 +497,6 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
                 id: '5-2',
                 title: 'Review Insurance',
                 duration: '15 min',
-                completed: false,
                 type: 'lesson',
                 content: {
                     pages: [
@@ -624,4 +608,83 @@ export const findFirstIncompletePageIndex = (lesson) => {
         if (!p.completed) return i;
     }
     return 0;
+};
+
+/**
+ * Return PREPARE_MODULES augmented with completion info from async storage/firebase.
+ */
+export const getModulesWithCompletion = async () => {
+    const state = await getCompletionState();
+    if (!state) return PREPARE_MODULES;
+
+    return PREPARE_MODULES.map((m) => {
+        const moduleState = state.modules?.[m.id] || {};
+        // compute per-lesson progress and module progress
+        const lessons = m.lessons.map((l) => {
+            const lState = moduleState.lessons?.[l.id] || {};
+            const pageCount = (l.content && Array.isArray(l.content.pages)) ? l.content.pages.length : 0;
+            const currentIndex = lState.currentPageIndex ?? 0;
+            let lessonProgress = 0;
+            if (lState.completed) lessonProgress = 1;
+            else if (pageCount > 0) lessonProgress = Math.max(0, Math.min(1, currentIndex / pageCount));
+            return {
+                ...l,
+                completed: !!lState.completed,
+                currentPageIndex: currentIndex,
+                pageCount,
+                progress: lessonProgress,
+            };
+        });
+
+        // module progress = average of lesson progress
+        const moduleProgress = lessons.length > 0 ? (lessons.reduce((s, ln) => s + (ln.progress || 0), 0) / lessons.length) : 0;
+
+        return {
+            ...m,
+            completed: !!moduleState.completed,
+            lessons,
+            progress: moduleProgress,
+        };
+    });
+};
+
+/**
+ * Async helper to find lesson completion object (moduleId and lesson state)
+ */
+export const getLessonCompletion = async (lessonId) => {
+    const state = await getCompletionState();
+    if (!state || !state.modules) return null;
+    for (const moduleId of Object.keys(state.modules)) {
+        const lessons = state.modules[moduleId].lessons || {};
+        if (lessons[lessonId]) {
+            return { moduleId, ...lessons[lessonId] };
+        }
+    }
+    return null;
+};
+
+/**
+ * Async helper to get module completion state
+ */
+export const getModuleCompletion = async (moduleId) => {
+    const state = await getCompletionState();
+    if (!state || !state.modules) return null;
+    return state.modules[moduleId] || null;
+};
+
+/**
+ * Async helper to get the saved current page index for a lesson
+ */
+export const getLessonCurrentPageIndex = async (lessonId) => {
+    const comp = await getLessonCompletion(lessonId);
+    return comp?.currentPageIndex ?? 0;
+};
+
+/**
+ * Async helper to return the modules merged with persistent completion state.
+ * Use this in UI code instead of importing PREPARE_MODULES directly when you
+ * want the latest completion flags from AsyncStorage/Firebase.
+ */
+export const getPrepareModules = async () => {
+    return await getModulesWithCompletion();
 };

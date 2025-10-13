@@ -3,7 +3,8 @@ import { Alert, Dimensions, ScrollView as HScrollView, SafeAreaView, ScrollView,
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { colors } from '../../css';
 import prepareLessonStyles from './prepareLessonStyles';
-import { getLessonById, getLessonPages, getModuleById } from './prepareModules';
+import { getLessonById, getLessonCurrentPageIndex, getLessonPages, getModuleById } from './prepareModules';
+import completion from './prepareModulesCompletion';
 
 // Main component for displaying and navigating through lesson content
 const PrepareLessons = ({ route, navigation }) => {
@@ -38,7 +39,12 @@ const PrepareLessons = ({ route, navigation }) => {
           };
         }));
         console.log('prepareLessons: set screens length ->', pages.length);
-        setCurrentScreenIndex(initialPageIndex || 0);
+        // read saved page index from completion state, fallback to initialPageIndex
+        (async () => {
+          const saved = await getLessonCurrentPageIndex(lesson.id);
+          const start = saved ?? initialPageIndex ?? 0;
+          setCurrentScreenIndex(start);
+        })();
       } else {
         // Lesson not found - show error and navigate back
         Alert.alert('Error', 'Lesson not found');
@@ -113,16 +119,23 @@ const PrepareLessons = ({ route, navigation }) => {
   }
 
   // Handles progression to next screen or lesson completion
-  const markScreenComplete = () => {
+  const markScreenComplete = async () => {
     console.log('markScreenComplete called, currentScreenIndex=', currentScreenIndex, 'screens.length=', screens.length);
     if (currentScreenIndex < screens.length - 1) {
       // Move to next screen
-      setCurrentScreenIndex((s) => s + 1);
+      const next = currentScreenIndex + 1;
+      setCurrentScreenIndex(next);
+      // persist current page
+      await completion.setLessonCurrentPage(currentModule.id, currentLesson.id, next);
     } else {
       // All screens completed - show completion message
       Alert.alert('Lesson Complete!', 'Congratulations! You have completed this lesson.',
         [{ text: 'Continue', onPress: () => navigation.goBack() }]
       );
+      // mark lesson completed and update UI state
+      await completion.markLessonCompleted(currentModule.id, currentLesson.id);
+      setCurrentLesson(prev => prev ? { ...prev, completed: true } : prev);
+      setCurrentModule(prev => prev ? { ...prev, completed: true } : prev);
     }
   };
 
