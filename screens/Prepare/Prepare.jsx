@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { colors, globalStyles } from '../../css';
-import { PREPARE_MODULES } from './prepareModules';
+import { PREPARE_MODULES, findFirstIncompletePageIndex, getLessonCurrentPageIndex } from './prepareModules';
 import prepareStyles from './prepareStyles';
 
 const Prepare = () => {
@@ -63,7 +63,11 @@ const Prepare = () => {
                   index === module.lessons.length - 1 && prepareStyles.lastLessonItem
                 ]}
                 activeOpacity={0.6}
-                onPress={() => navigation.navigate("prepareLessons", { lessonId: lesson.id, moduleId: module.id, lessonData: lesson })}
+                onPress={async () => {
+                  const saved = await getLessonCurrentPageIndex(lesson.id);
+                  const pageIndex = saved ?? findFirstIncompletePageIndex(lesson);
+                  navigation.navigate('prepareLessons', { lessonId: lesson.id, moduleId: module.id, lessonData: lesson, initialPageIndex: pageIndex });
+                }}
               >
                 <View style={prepareStyles.lessonLeft}>
                   <MaterialCommunityIcons 
@@ -89,9 +93,13 @@ const Prepare = () => {
               {module.progress === 0 ? (
                 <TouchableOpacity
                   style={prepareStyles.primaryButton}
-                  onPress={() => {
+                  onPress={async () => {
                     const first = module.lessons && module.lessons[0];
-                    if (first) navigation.navigate('prepareLessons', { lessonId: first.id, moduleId: module.id, lessonData: first });
+                    if (first) {
+                      const saved = await getLessonCurrentPageIndex(first.id);
+                      const pageIndex = saved ?? findFirstIncompletePageIndex(first);
+                      navigation.navigate('prepareLessons', { lessonId: first.id, moduleId: module.id, lessonData: first, initialPageIndex: pageIndex });
+                    }
                   }}
                 >
                   <Text style={prepareStyles.primaryButtonText}>Start</Text>
@@ -99,20 +107,28 @@ const Prepare = () => {
               ) : module.progress >= 0.9 && module.progress < 1 ? (
                 <TouchableOpacity
                   style={prepareStyles.primaryButton}
-                  onPress={() => {
+                  onPress={async () => {
                     // Finish: go to first incomplete lesson page (or first lesson)
                     const next = (module.lessons || []).find(l => !l.completed) || (module.lessons && module.lessons[0]);
-                    if (next) navigation.navigate('prepareLessons', { lessonId: next.id, moduleId: module.id, lessonData: next });
-                  }}
+                    if (next) {
+                      const saved = await getLessonCurrentPageIndex(next.id);
+                      const pageIndex = saved ?? findFirstIncompletePageIndex(next);
+                      navigation.navigate('prepareLessons', { lessonId: next.id, moduleId: module.id, lessonData: next, initialPageIndex: pageIndex });
+                    }
+                   }}
                 >
                   <Text style={prepareStyles.primaryButtonText}>Finish</Text>
                 </TouchableOpacity>
               ) : module.progress === 1 ? (
                 <TouchableOpacity
                   style={prepareStyles.secondaryButton}
-                  onPress={() => {
+                  onPress={async () => {
                     const first = module.lessons && module.lessons[0];
-                    if (first) navigation.navigate('prepareLessons', { lessonId: first.id, moduleId: module.id, lessonData: first });
+                    if (first) {
+                      const saved = await getLessonCurrentPageIndex(first.id);
+                      const pageIndex = saved ?? findFirstIncompletePageIndex(first);
+                      navigation.navigate('prepareLessons', { lessonId: first.id, moduleId: module.id, lessonData: first, initialPageIndex: pageIndex });
+                    }
                   }}
                 >
                   <Text style={prepareStyles.secondaryButtonText}>Review</Text>
@@ -120,9 +136,13 @@ const Prepare = () => {
               ) : (
                 <TouchableOpacity
                   style={prepareStyles.primaryButton}
-                  onPress={() => {
+                  onPress={async () => {
                     const next = (module.lessons || []).find(l => !l.completed) || (module.lessons && module.lessons[0]);
-                    if (next) navigation.navigate('prepareLessons', { lessonId: next.id, moduleId: module.id, lessonData: next });
+                    if (next) {
+                      const saved = await getLessonCurrentPageIndex(next.id);
+                      const pageIndex = saved ?? findFirstIncompletePageIndex(next);
+                      navigation.navigate('prepareLessons', { lessonId: next.id, moduleId: module.id, lessonData: next, initialPageIndex: pageIndex });
+                    }
                   }}
                 >
                   <Text style={prepareStyles.primaryButtonText}>Continue</Text>

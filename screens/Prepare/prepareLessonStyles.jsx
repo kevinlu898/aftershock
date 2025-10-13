@@ -1,5 +1,5 @@
 import { StyleSheet } from 'react-native';
-import { globalStyles, colors, fontSizes } from '../../css';
+import { colors, fontSizes } from '../../css';
 
 const prepareLessonStyles = StyleSheet.create({
   // Main container and layout styles
@@ -28,10 +28,10 @@ const prepareLessonStyles = StyleSheet.create({
   // Header section with back button and titles
   lessonHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
     shadowColor: '#000',
@@ -39,7 +39,7 @@ const prepareLessonStyles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 3,
-    minHeight: 80,
+    minHeight: 68,
   },
   lessonHeaderLeft: {
     alignItems: 'center',
@@ -89,6 +89,55 @@ const prepareLessonStyles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
   },
+  // New: horizontal menu for lesson pages (compact)
+  lessonMenuContainer: {
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    elevation: 1,
+  },
+  lessonMenuScroll: {
+    // sits inside container
+  },
+  lessonMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginHorizontal: 6,
+    borderRadius: 18,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
+    minWidth: 110,
+  },
+  // Compact icon-only variant for inactive tabs
+  lessonMenuItemCompact: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 6,
+    borderRadius: 18,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
+    padding: 0,
+  },
+  lessonMenuItemActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  lessonMenuItemText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.secondary,
+  },
+  lessonMenuItemTextActive: {
+    color: '#fff',
+  },
   lessonNavTab: {
     flex: 1,
     flexDirection: 'column',
@@ -120,13 +169,16 @@ const prepareLessonStyles = StyleSheet.create({
   },
   lessonScreenContainer: {
     flex: 1,
-    padding: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
   },
   lessonContentScroll: {
-    flex: 1,
+    // removed flexGrow to avoid large empty space below content when using ScrollView
+    // flex: 1,
   },
   lessonScrollContent: {
-    flexGrow: 1,
+    // avoid forcing full-height content which created extra space under text
+    paddingBottom: 8,
   },
 
   // Content card container styles
@@ -134,7 +186,7 @@ const prepareLessonStyles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 20,
-    marginBottom: 16,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
@@ -142,12 +194,14 @@ const prepareLessonStyles = StyleSheet.create({
     elevation: 2,
     borderWidth: 1,
     borderColor: '#f3f4f6',
+    maxWidth: 900,
+    alignSelf: 'center',
   },
 
   // Lesson content text styles
   lessonContentText: {
     fontSize: 15,
-    lineHeight: 24,
+    lineHeight: 22,
     color: colors.secondary,
     textAlign: 'left',
   },
