@@ -28,8 +28,8 @@ export default function Dashboard() {
     return () => { isMounted = false; };
   }, []);
   return (
+    <ScrollView> 
     <View style={globalStyles.container}>
-    <ScrollView>  
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <Text style={globalStyles.heading}>
           {firstVisit && username
@@ -116,7 +116,7 @@ export default function Dashboard() {
           - Earthquake News{"\n"}
         </Text>
       </View>
-      </ScrollView>
     </View> 
+    </ScrollView>
   );
 }
