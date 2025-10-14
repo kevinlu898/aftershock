@@ -80,7 +80,7 @@ function MainTabs() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      {/* ✅ Ensures consistent status bar background on both iOS + Android */}
+      {/* Ensures consistent status bar background on both iOS + Android */}
       <StatusBar backgroundColor="#e7f0e7ff" barStyle="dark-content" />
       <ExpoStatusBar style="dark" backgroundColor="#e7f0e7ff" />
 

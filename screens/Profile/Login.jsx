@@ -77,7 +77,7 @@ export default function LoginPage() {
       Alert.alert("Success", "You are logged in!");
       storeData("isLoggedIn", "yes");
       storeData("username", username);
-      navigation.navigate("MainApp");
+      navigation.replace("MainApp");
     } else {
       console.log("acc doesn't");
       Alert.alert(

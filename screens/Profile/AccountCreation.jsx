@@ -21,8 +21,10 @@ import {
 import { colors, fontSizes, globalStyles } from "../../css";
 import { db } from "../../db/firebaseConfig";
 import { backendHash } from "../../requests";
+import { getData, storeData } from "../../storage/storageUtils";
 
 export default function AccountFlow() {
+
   const navigation = useNavigation();
   const [step, setStep] = useState(1);
 
@@ -159,7 +161,7 @@ export default function AccountFlow() {
 
   const handleNavigateToLogin = () => {
     console.log("Navigating to Login...");
-    navigation.navigate("Login"); // Changed from replace to navigate
+    navigation.replace("Login");
   };
 
   return (
