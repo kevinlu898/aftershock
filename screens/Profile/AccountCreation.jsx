@@ -21,6 +21,7 @@ import {
 import { colors, fontSizes, globalStyles } from "../../css";
 import { db } from "../../db/firebaseConfig";
 import { backendHash } from "../../requests";
+import { storeData } from "../../storage/storageUtils";
 
 export default function AccountFlow() {
   const navigation = useNavigation();
@@ -59,6 +60,9 @@ export default function AccountFlow() {
         zip_code: zipCode,
         phone_number: phoneNumber,
       });
+      storeData("isLoggedIn", "yes");
+      storeData("username", username);
+      storeData("firstname", firstName);
       console.log("Document written with ID:", docRef.id);
     } catch (e) {
       console.error("Error adding document:", e);
