@@ -23,7 +23,7 @@ const globalStyles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    paddingTop: 30,
+    paddingTop: 50,
     backgroundColor: colors.light,
   },
   contentContainer: {

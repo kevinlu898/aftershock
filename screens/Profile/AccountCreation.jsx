@@ -163,7 +163,7 @@ export default function AccountFlow() {
 
   const handleNavigateToLogin = () => {
     console.log("Navigating to Login...");
-    navigation.navigate("Login"); // Changed from replace to navigate
+    navigation.replace("Login");
   };
 
   return (

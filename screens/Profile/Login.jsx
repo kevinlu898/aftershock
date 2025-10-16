@@ -78,7 +78,7 @@ export default function LoginPage() {
       storeData("isLoggedIn", "yes");
       storeData("username", username);
       await fillFirstName(username);
-      navigation.navigate("MainApp");
+      navigation.replace("MainApp");
     } else {
       console.log("acc doesn't");
       Alert.alert(
