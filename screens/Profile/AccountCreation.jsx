@@ -63,6 +63,7 @@ export default function AccountFlow() {
       storeData("isLoggedIn", "yes");
       storeData("username", username);
       storeData("firstname", firstName);
+      storeData("postalcode", zipCode);
       console.log("Document written with ID:", docRef.id);
     } catch (e) {
       console.error("Error adding document:", e);

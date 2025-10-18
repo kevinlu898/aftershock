@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -21,7 +22,10 @@ export default function LocalRisk({ navigation }) {
     const getData = async () => {
       try {
         setLoading(true);
-        const data = await fetchEarthquakeData(95425);
+        const rawPostal = await AsyncStorage.getItem("postalcode");
+        const postal_code = Number(rawPostal) || 95425;
+        console.log(postal_code);
+        const data = await fetchEarthquakeData(postal_code);
         setEarthquakeData(data);
       } catch (err) {
         console.error("Error fetching earthquake data:", err);

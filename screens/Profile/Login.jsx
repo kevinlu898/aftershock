@@ -13,7 +13,7 @@ import {
 import { colors, fontSizes, globalStyles } from "../../css";
 import { db } from "../../db/firebaseConfig";
 import { backendHash } from "../../requests";
-import { fillFirstName, storeData } from "../../storage/storageUtils";
+import { fillData, storeData } from "../../storage/storageUtils";
 
 const styles = {
   input: {
@@ -77,7 +77,7 @@ export default function LoginPage() {
       Alert.alert("Success", "You are logged in!");
       storeData("isLoggedIn", "yes");
       storeData("username", username);
-      await fillFirstName(username);
+      await fillData(username);
       navigation.replace("MainApp");
     } else {
       console.log("acc doesn't");

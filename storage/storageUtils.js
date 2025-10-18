@@ -18,7 +18,7 @@ export const getData = async (key) => {
   }
 };
 
-export const fillFirstName = async (username) => {
+export const fillData = async (username) => {
   try {
     const queryToCheck = query(
       collection(db, "user"),
@@ -31,6 +31,8 @@ export const fillFirstName = async (username) => {
       const firstname = doc.data().first_name;
       console.log("First name:", firstname);
       storeData("firstname", firstname);
+      const postal_code = doc.data().zip_code;
+      storeData("postalcode", postal_code);
     });
   } catch (e) {
     console.log("Error finding first name:", e);
