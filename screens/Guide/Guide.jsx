@@ -16,7 +16,7 @@ import Markdown from "react-native-markdown-display";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { colors } from "../../css";
 import { aiResponse } from "../../requests";
-import styles, { markdownStyles } from "./GuideStyles";
+import { markdownStyles, styles } from "./GuideStyles";
 
 export default function Guide() {
   const [inputValue, setInputValue] = useState("");
@@ -89,7 +89,13 @@ export default function Guide() {
             id: `chat_1`,
             name: "Chat 1",
             createdAt: new Date().toISOString(),
-            messages,
+            messages: [
+              {
+                from: "bot",
+                text: "Hello! I'm Epicenter AI, your earthquake safety assistant. I can help you with earthquake preparedness, safety procedures, and emergency planning, as well as assisting with app features.",
+                time: new Date().toISOString(),
+              },
+            ],
           };
           setChats([defaultChat]);
           setSelectedChatId(defaultChat.id);
@@ -101,9 +107,25 @@ export default function Guide() {
         }
         const parsed = JSON.parse(raw);
         setChats(parsed || []);
+        // try to restore previously selected chat id
+        try {
+          const storedSelected = await AsyncStorage.getItem(
+            "guide_selected_chat"
+          );
+          if (storedSelected) {
+            const found = (parsed || []).find((c) => c.id === storedSelected);
+            if (found) {
+              setSelectedChatId(found.id);
+              setMessages(found.messages || []);
+              return;
+            }
+          }
+        } catch (_err) {
+          // ignore
+        }
         if (parsed && parsed.length) {
           setSelectedChatId(parsed[0].id);
-          setMessages(parsed[0].messages || messages);
+          setMessages(parsed[0].messages || []);
         }
       } catch (_err) {
         // ignore
@@ -119,6 +141,12 @@ export default function Guide() {
       // ignore
     }
   };
+
+  // ensure chats are persisted whenever they change (extra safety)
+  useEffect(() => {
+    if (!chats) return;
+    saveChats(chats);
+  }, [chats]);
 
   // Persist messages to the selected chat whenever messages change
   useEffect(() => {
@@ -162,6 +190,12 @@ export default function Guide() {
     const next = [newChat, ...(chats || [])];
     setChats(next);
     setSelectedChatId(newChat.id);
+    // persist selected chat id
+    try {
+      AsyncStorage.setItem("guide_selected_chat", newChat.id);
+    } catch (_err) {
+      // ignore
+    }
     setMessages(newChat.messages);
     setDrafts((prev) => ({ ...prev, [newChat.id]: "" }));
     await saveChats(next);
@@ -171,6 +205,9 @@ export default function Guide() {
     const chat = (chats || []).find((c) => c.id === chatId);
     if (!chat) return;
     setSelectedChatId(chatId);
+    try {
+      AsyncStorage.setItem("guide_selected_chat", chatId);
+    } catch (_err) {}
     setMessages(chat.messages || []);
     setInputValue(drafts[chatId] || "");
   };
@@ -228,21 +265,34 @@ export default function Guide() {
       return;
     }
 
+    const chatId = selectedChatId;
+    if (!chatId) return;
+
     const userMsg = { from: "user", text, time: new Date().toISOString() };
-    setMessages((prev) => [...prev, userMsg]);
+    const tempBotMsg = {
+      from: "bot",
+      text: "Thinking...",
+      time: new Date().toISOString(),
+      temp: true,
+    };
+
+    // Add both user message and temp bot message to the originating chat
+    setChats((prev) => {
+      const next = (prev || []).map((c) =>
+        c.id === chatId
+          ? { ...c, messages: [...(c.messages || []), userMsg, tempBotMsg] }
+          : c
+      );
+      saveChats(next);
+      return next;
+    });
+
+    if (selectedChatId === chatId)
+      setMessages((prev) => [...prev, userMsg, tempBotMsg]);
+
     setInputValue("");
     setInputHeight(40);
     setIsThinking(true);
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        from: "bot",
-        text: "Thinking...",
-        time: new Date().toISOString(),
-        temp: true,
-      },
-    ]);
 
     // increment and persist request count immediately
     const newCount = (currentCount || 0) + 1;
@@ -251,9 +301,15 @@ export default function Guide() {
     saveRequestCount(today, newCount);
 
     try {
-      // Build context: include up to the last 8 user messages to provide context
-      const priorUserMessages = messages
-        .filter((m) => m.from === "user")
+      // Build context from the originating chat's messages (including the new user message)
+      const chat = (chats || []).find((c) => c.id === chatId) || {
+        messages: [],
+      };
+      const allUserMessages = [
+        ...(chat.messages || []).filter((m) => m.from === "user"),
+        userMsg,
+      ];
+      const priorUserMessages = allUserMessages
         .slice(-8)
         .map((m) => `User: ${m.text.replace(/\n/g, " ")}`)
         .join("\n");
@@ -281,10 +337,10 @@ export default function Guide() {
       });
       setIsOnline(true);
       // clear draft for this chat after successful handling
-      if (selectedChatId) {
+      if (chatId) {
         setDrafts((prev) => {
           const next = { ...prev };
-          delete next[selectedChatId];
+          delete next[chatId];
           return next;
         });
       }
@@ -342,6 +398,9 @@ export default function Guide() {
                 };
                 setChats([defaultChat]);
                 setSelectedChatId(defaultChat.id);
+                try {
+                  AsyncStorage.setItem("guide_selected_chat", defaultChat.id);
+                } catch (_err) {}
                 setMessages(defaultChat.messages);
                 await saveChats([defaultChat]);
                 return;
@@ -350,6 +409,9 @@ export default function Guide() {
               setChats(next);
               // select the first remaining chat
               setSelectedChatId(next[0].id);
+              try {
+                AsyncStorage.setItem("guide_selected_chat", next[0].id);
+              } catch (_err) {}
               setMessages(next[0].messages || []);
               await saveChats(next);
             } catch (_err) {
