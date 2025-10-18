@@ -1,11 +1,11 @@
 import { Platform, StyleSheet } from 'react-native';
 
 const colors = {
-  primary: '#519872',   // sea green from your palette
-  secondary: '#445c52ff', // feldgrau
-  accent: '#34252F',    // raisin black
-  light: '#e7f0e7ff',     // ash gray
-  muted: '#97b4a1ff',     // 9ecaaeff 
+  primary: '#519872',   
+  secondary: '#445c52ff', 
+  accent: '#34252F',   
+  light: '#e7f0e7ff',     
+  muted: '#97b4a1ff',     
   danger: 'red',
   white: '#ffffff',
   black: '#000000',

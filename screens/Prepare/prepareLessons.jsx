@@ -7,6 +7,96 @@ import prepareLessonStyles from './prepareLessonStyles';
 import { getLessonById, getLessonCurrentPageIndex, getLessonPages, getModuleById } from './prepareModules';
 import completion from './prepareModulesCompletion';
 
+// Simple in-file HTML renderer to avoid external dependency on react-native-render-html
+// Supports basic tags: <h3>, <p>, <ul>, <li>, <strong>
+import { Platform } from 'react-native';
+
+const SimpleHtmlRenderer = ({ html = '', contentWidth, config = {} }) => {
+    if (!html) return null;
+    // Very small parser: split by tags and render basics
+    // Normalize newlines
+    const trimmed = String(html).replace(/\r/g, '').trim();
+
+    // Extract list blocks and paragraphs
+    const elements = [];
+    // Handle <h3>
+    const h3Regex = /<h3>(.*?)<\/h3>/gi;
+    let lastIndex = 0;
+    let match;
+    // Split into tokens: headings, ul blocks, paragraphs
+    // First handle UL blocks
+    const ulRegex = /<ul>([\s\S]*?)<\/ul>/gi;
+    let cursor = 0;
+    const parts = [];
+    while ((match = ulRegex.exec(trimmed)) !== null) {
+        const start = match.index;
+        const before = trimmed.slice(cursor, start);
+        if (before.trim()) parts.push({ type: 'html', content: before });
+        parts.push({ type: 'ul', content: match[1] });
+        cursor = ulRegex.lastIndex;
+    }
+    const tail = trimmed.slice(cursor);
+    if (tail.trim()) parts.push({ type: 'html', content: tail });
+
+    // Render parts into React Native elements using Text and View
+    return (
+        <View>
+            {parts.map((part, idx) => {
+                if (part.type === 'ul') {
+                    // extract li items
+                    const liRegex = /<li>(.*?)<\/li>/gi;
+                    const items = [];
+                    let m;
+                    while ((m = liRegex.exec(part.content)) !== null) items.push(m[1]);
+                    return (
+                        <View key={`ul-${idx}`} style={{ paddingLeft: 12, marginBottom: 12 }}>
+                            {items.map((it, i) => (
+                                <Text key={`li-${i}`} style={config.tagsStyles?.li || { marginBottom: 8, lineHeight: 22 }}>
+                                    {'\u2022 '}{stripTags(it)}
+                                </Text>
+                            ))}
+                        </View>
+                    );
+                }
+
+                // For generic HTML part replace tags with newlines and basic bold handling
+                const cleaned = part.content
+                    .replace(/<h3>(.*?)<\/h3>/gi, (s, g1) => `\n__H3__${g1}__H3__\n`)
+                    .replace(/<p>(.*?)<\/p>/gi, (s, g1) => `\n${g1}\n`)
+                    .replace(/<strong>(.*?)<\/strong>/gi, (s, g1) => `**${g1}**`)
+                    .replace(/<br\/?\s*>/gi, '\n');
+
+                const segments = cleaned.split('\n').map(s => s.trim()).filter(Boolean);
+                return (
+                    <View key={`part-${idx}`} style={{ marginBottom: 8 }}>
+                        {segments.map((seg, i) => {
+                            if (seg.startsWith('__H3__') && seg.endsWith('__H3__')) {
+                                const text = seg.replace(/__H3__(.*)__H3__/i, '$1');
+                                return <Text key={`h3-${i}`} style={config.tagsStyles?.h3 || { fontSize: 18, fontWeight: '700', marginVertical: 8 }}>{stripTags(text)}</Text>;
+                            }
+                            // handle bold markers
+                            if (seg.includes('**')) {
+                                const partsBold = seg.split(/\*\*/g);
+                                return (
+                                    <Text key={`p-${i}`} style={config.tagsStyles?.p || { marginBottom: 12 }}>
+                                        {partsBold.map((pb, pi) => pi % 2 === 1 ? <Text key={`b-${pi}`} style={config.tagsStyles?.strong || { fontWeight: '700' }}>{stripTags(pb)}</Text> : stripTags(pb))}
+                                    </Text>
+                                );
+                            }
+                            return <Text key={`t-${i}`} style={config.tagsStyles?.p || { marginBottom: 12 }}>{stripTags(seg)}</Text>;
+                        })}
+                    </View>
+                );
+            })}
+        </View>
+    );
+};
+
+// Utility: remove remaining HTML tags and decode basic entities
+const stripTags = (s) => {
+    return String(s || '').replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+};
+
 // Helper: extract YouTube video id from common URL formats
 const extractYouTubeId = (url) => {
   if (!url || typeof url !== 'string') return null;
@@ -21,6 +111,13 @@ const extractYouTubeId = (url) => {
   return null;
 };
 
+// Helper to get rendered content for a page: prefer precomputed HTML for text pages
+const getPageContent = (page) => {
+  if (!page) return '';
+  if (page.type === 'text') return page.html || page.body || '';
+  return page.body;
+};
+
 // Main component for displaying and navigating through lesson content
 const PrepareLessons = ({ route, navigation }) => {
   // Extract parameters from navigation route with default values
@@ -32,6 +129,19 @@ const PrepareLessons = ({ route, navigation }) => {
   const [currentModule, setCurrentModule] = useState(null);        // Current module data
   const [screens, setScreens] = useState([]);                      // Array of available screens
   const [showCompletedView, setShowCompletedView] = useState(false);
+
+  // Get screen width for HTML rendering
+  const { width: screenWidth } = Dimensions.get('window');
+
+  // HTML rendering configuration
+  const htmlConfig = {
+    tagsStyles: {
+      h3: { marginBottom: 16, fontSize: 20, fontWeight: '700' },
+      p: { marginBottom: 12, lineHeight: 22 },
+      strong: { fontWeight: '700' },
+      li: { marginBottom: 8, lineHeight: 22 },
+    },
+  };
 
   // Loads lesson and module data when component mounts
   useEffect(() => {
@@ -47,14 +157,15 @@ const PrepareLessons = ({ route, navigation }) => {
         const pages = getLessonPages(lesson);
         console.log('prepareLessons: loaded lesson', lesson.id, 'pages:', pages.map(p => p.id));
         setScreens(pages.map(p => {
-          return {
-            type: p.type === 'text' ? 'lesson' : p.type,
-            title: p.title || 'Page',
-            icon: p.type === 'text' ? 'book-open-variant' : (p.type === 'video' ? 'play-circle' : (p.type === 'checklist' ? 'checklist' : 'puzzle')),
-            // For video pages pass an object with url + optional caption so VideoScreen can show a description
-            content: p.type === 'text' ? p.body : (p.type === 'video' ? { url: p.videoUrl, caption: p.description || p.caption || p.title || '' } : (p.type === 'checklist' ? p.items : p.questions)),
-          };
-        }));
+                    return {
+                        type: p.type === 'text' ? 'lesson' : p.type,
+                        title: p.title || 'Page',
+                        icon: p.type === 'text' ? 'book-open-variant' : (p.type === 'video' ? 'play-circle' : (p.type === 'checklist' ? 'checklist' : 'puzzle')),
+                        // For video pages pass an object with url + optional caption so VideoScreen can show a description
+                        // For text pages use the HTML content via helper (prefers page.html)
+                        content: p.type === 'text' ? getPageContent(p) : (p.type === 'video' ? { url: p.videoUrl, caption: p.description || p.caption || p.title || '' } : (p.type === 'checklist' ? p.items : p.questions)),
+                    };
+                }));
         console.log('prepareLessons: set screens length ->', pages.length);
         // read saved page index from completion state, fallback to initialPageIndex
         (async () => {
@@ -198,7 +309,11 @@ const PrepareLessons = ({ route, navigation }) => {
           contentContainerStyle={prepareLessonStyles.lessonScrollContent}
         >
           <View style={prepareLessonStyles.lessonContentCard}>
-            <Text style={prepareLessonStyles.lessonContentText}>{content}</Text>
+            <SimpleHtmlRenderer
+                            html={content}
+                            contentWidth={screenWidth - 48}
+                            config={htmlConfig}
+                        />
           </View>
         </ScrollView>
         {/* Continue button */}
@@ -252,10 +367,12 @@ const PrepareLessons = ({ route, navigation }) => {
 
                 {/* caption / content area with same padding as other pages */}
                 {caption ? (
-                  <View style={{ padding: 20 }}>
-                    <Text style={prepareLessonStyles.lessonContentText}>{caption}</Text>
-                  </View>
-                ) : null}
+                            caption.includes('<') ? (
+                                <SimpleHtmlRenderer html={caption} contentWidth={screenWidth - 48} config={htmlConfig} />
+                            ) : (
+                                <Text style={prepareLessonStyles.lessonContentText}>{caption}</Text>
+                            )
+                        ) : null}
               </View>
             </View>
           </View>
