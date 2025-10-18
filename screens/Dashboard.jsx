@@ -93,8 +93,8 @@ export default function Dashboard() {
       onPress: () => navigation.navigate("Emergency"),
     },
     {
-      title: "Ask AI Chatbot",
-      text: "Get instant help and advice.",
+      title: "Epicenter AI",
+      text: "Ask AI for instant help and advice.",
       icon: "robot",
       button: "Ask",
       onPress: () => navigation.navigate("Guide"),
@@ -103,7 +103,6 @@ export default function Dashboard() {
 
   const feedItems = [
     { icon: "check-circle", text: "Recent Activity", color: "#10B981" },
-    { icon: "lightbulb-on", text: "Motivation", color: "#F59E0B" },
     { icon: "map-marker-radius", text: "Local Risk", color: "#EF4444" },
     { icon: "newspaper", text: "Earthquake News", color: "#3B82F6" },
   ];
