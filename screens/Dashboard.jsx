@@ -102,9 +102,24 @@ export default function Dashboard() {
   ];
 
   const feedItems = [
-    { icon: "check-circle", text: "Recent Activity", color: "#10B981" },
-    { icon: "map-marker-radius", text: "Local Risk", color: "#EF4444" },
-    { icon: "newspaper", text: "Earthquake News", color: "#3B82F6" },
+    {
+      icon: "check-circle",
+      text: "Recent Activity",
+      color: "#10B981",
+      onPress: () => navigation.navigate("Prepare"),
+    },
+    {
+      icon: "map-marker-radius",
+      text: "Local Risk",
+      color: "#EF4444",
+      onPress: () => navigation.navigate("LocalRisk"),
+    },
+    {
+      icon: "newspaper",
+      text: "Earthquake News",
+      color: "#3B82F6",
+      onPress: () => navigation.navigate("News"),
+    },
   ];
 
   // Calculate proper centering
@@ -264,7 +279,12 @@ export default function Dashboard() {
                     size={24}
                     color={item.color}
                   />
-                  <Text style={styles.feedText}>{item.text}</Text>
+                  <TouchableOpacity
+                    style={styles.feedText}
+                    onPress={item.onPress}
+                  >
+                    <Text>{item.text}</Text>
+                  </TouchableOpacity>
                 </View>
               ))}
             </View>

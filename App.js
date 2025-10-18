@@ -1,30 +1,34 @@
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
-import { Platform, StatusBar, View } from 'react-native';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { StatusBar as ExpoStatusBar } from "expo-status-bar";
+import { Platform, StatusBar, View } from "react-native";
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
-import Dashboard from './screens/Dashboard';
-import Emergency from './screens/Emergency/Emergency';
-import Guide from './screens/Guide/Guide';
-import Home from './screens/Home';
-import Prepare from './screens/Prepare/Prepare';
-import prepareLessons from './screens/Prepare/prepareLessons';
-import AccountCreation from './screens/Profile/AccountCreation';
-import Login from './screens/Profile/Login';
-import Profile from './screens/Profile/Profile';
+import Dashboard from "./screens/Dashboard";
+import LocalRisk from "./screens/Dashboard/LocalRisk";
+import Emergency from "./screens/Emergency/Emergency";
+import Guide from "./screens/Guide/Guide";
+import Home from "./screens/Home";
+import Prepare from "./screens/Prepare/Prepare";
+import prepareLessons from "./screens/Prepare/prepareLessons";
+import AccountCreation from "./screens/Profile/AccountCreation";
+import Login from "./screens/Profile/Login";
+import Profile from "./screens/Profile/Profile";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const TAB_ICONS = {
-  Dashboard: { outline: 'home-outline', filled: 'home' },
-  Prepare: { outline: 'clipboard-list-outline', filled: 'clipboard-list' },
-  Emergency: { outline: 'alert-circle-outline', filled: 'alert-circle' },
-  Guide: { outline: 'message-question-outline', filled: 'message-question' },
-  Profile: { outline: 'account-outline', filled: 'account' },
+  Dashboard: { outline: "home-outline", filled: "home" },
+  Prepare: { outline: "clipboard-list-outline", filled: "clipboard-list" },
+  Emergency: { outline: "alert-circle-outline", filled: "alert-circle" },
+  Guide: { outline: "message-question-outline", filled: "message-question" },
+  Profile: { outline: "account-outline", filled: "account" },
 };
 
 // Tabs Navigator
@@ -35,8 +39,9 @@ function MainTabs() {
     <View
       style={{
         flex: 1,
-        backgroundColor: '#e7f0e7ff', // 💚 matches theme background
-        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : insets.top,
+        backgroundColor: "#e7f0e7ff", // 💚 matches theme background
+        paddingTop:
+          Platform.OS === "android" ? StatusBar.currentHeight : insets.top,
       }}
     >
       {/* Controls status bar color */}
@@ -54,12 +59,12 @@ function MainTabs() {
               <MaterialCommunityIcons name={iconName} color={color} size={28} />
             );
           },
-          tabBarActiveTintColor: '#519872',
-          tabBarInactiveTintColor: '#3B5249',
+          tabBarActiveTintColor: "#519872",
+          tabBarInactiveTintColor: "#3B5249",
           tabBarStyle: {
-            backgroundColor: '#ffffff',
+            backgroundColor: "#ffffff",
             borderTopWidth: 1,
-            borderTopColor: '#e5e7eb',
+            borderTopColor: "#e5e7eb",
             height: 80,
             paddingBottom: 20,
             paddingTop: 12,
@@ -94,6 +99,7 @@ export default function App() {
           <Stack.Screen name="AccountCreation" component={AccountCreation} />
           <Stack.Screen name="MainApp" component={MainTabs} />
           <Stack.Screen name="prepareLessons" component={prepareLessons} />
+          <Stack.Screen name="LocalRisk" component={LocalRisk} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
