@@ -20,6 +20,7 @@ import styles, { markdownStyles } from "./GuideStyles";
 
 export default function Guide() {
   const [inputValue, setInputValue] = useState("");
+  const [drafts, setDrafts] = useState({});
   const [messages, setMessages] = useState([
     {
       from: "bot",
@@ -33,6 +34,8 @@ export default function Guide() {
   const [requestCount, setRequestCount] = useState(0);
   const [requestDate, setRequestDate] = useState(null);
   const scrollViewRef = useRef(null);
+  const [chats, setChats] = useState([]);
+  const [selectedChatId, setSelectedChatId] = useState(null);
 
   const quickPrompts = [
     "Create earthquake kit",
@@ -75,6 +78,103 @@ export default function Guide() {
     loadCount();
   }, []);
 
+  // Load chats from AsyncStorage on mount
+  useEffect(() => {
+    const loadChats = async () => {
+      try {
+        const raw = await AsyncStorage.getItem("guide_chats");
+        if (!raw) {
+          // create a default chat
+          const defaultChat = {
+            id: `chat_1`,
+            name: "Chat 1",
+            createdAt: new Date().toISOString(),
+            messages,
+          };
+          setChats([defaultChat]);
+          setSelectedChatId(defaultChat.id);
+          await AsyncStorage.setItem(
+            "guide_chats",
+            JSON.stringify([defaultChat])
+          );
+          return;
+        }
+        const parsed = JSON.parse(raw);
+        setChats(parsed || []);
+        if (parsed && parsed.length) {
+          setSelectedChatId(parsed[0].id);
+          setMessages(parsed[0].messages || messages);
+        }
+      } catch (_err) {
+        // ignore
+      }
+    };
+    loadChats();
+  }, []);
+
+  const saveChats = async (nextChats) => {
+    try {
+      await AsyncStorage.setItem("guide_chats", JSON.stringify(nextChats));
+    } catch (_err) {
+      // ignore
+    }
+  };
+
+  // Persist messages to the selected chat whenever messages change
+  useEffect(() => {
+    if (!selectedChatId) return;
+    setChats((prev) => {
+      const next = prev.map((c) =>
+        c.id === selectedChatId ? { ...c, messages } : c
+      );
+      saveChats(next);
+      return next;
+    });
+  }, [messages, selectedChatId]);
+
+  const createNewChat = async () => {
+    // Determine next chat number by scanning existing chat names for the largest numeric suffix
+    const nextIndex = (() => {
+      try {
+        const nums = (chats || []).map((c) => {
+          const m = c?.name && c.name.match(/Chat\s*(\d+)$/);
+          return m ? parseInt(m[1], 10) : 0;
+        });
+        const max = nums.length ? Math.max(...nums) : 0;
+        return max + 1;
+      } catch (_err) {
+        return chats && chats.length ? chats.length + 1 : 1;
+      }
+    })();
+
+    const newChat = {
+      id: `chat_${Date.now()}`,
+      name: `Chat ${nextIndex}`,
+      createdAt: new Date().toISOString(),
+      messages: [
+        {
+          from: "bot",
+          text: "Hello! I'm Epicenter AI, your earthquake safety assistant. I can help you with earthquake preparedness, safety procedures, and emergency planning.",
+          time: new Date().toISOString(),
+        },
+      ],
+    };
+    const next = [newChat, ...(chats || [])];
+    setChats(next);
+    setSelectedChatId(newChat.id);
+    setMessages(newChat.messages);
+    setDrafts((prev) => ({ ...prev, [newChat.id]: "" }));
+    await saveChats(next);
+  };
+
+  const selectChat = (chatId) => {
+    const chat = (chats || []).find((c) => c.id === chatId);
+    if (!chat) return;
+    setSelectedChatId(chatId);
+    setMessages(chat.messages || []);
+    setInputValue(drafts[chatId] || "");
+  };
+
   const saveRequestCount = async (date, count) => {
     try {
       await AsyncStorage.setItem(
@@ -97,6 +197,7 @@ export default function Guide() {
 
   const handleQuickPrompt = (prompt) => {
     setInputValue(prompt);
+    if (selectedChatId) setDrafts((p) => ({ ...p, [selectedChatId]: prompt }));
   };
 
   const handleSubmission = async () => {
@@ -179,6 +280,14 @@ export default function Guide() {
         return next;
       });
       setIsOnline(true);
+      // clear draft for this chat after successful handling
+      if (selectedChatId) {
+        setDrafts((prev) => {
+          const next = { ...prev };
+          delete next[selectedChatId];
+          return next;
+        });
+      }
     } catch (_e) {
       setMessages((prev) => {
         const next = [...prev];
@@ -200,23 +309,53 @@ export default function Guide() {
     }
   };
 
-  const clearChat = () => {
+  // Delete the entire selected chat
+  const deleteChat = () => {
+    if (!selectedChatId) return;
+    const chat = (chats || []).find((c) => c.id === selectedChatId);
+    if (!chat) return;
+
     Alert.alert(
-      "Clear Chat",
-      "Are you sure you want to clear the conversation?",
+      "Delete Chat",
+      `Are you sure you want to delete '${chat.name}'? This will remove the entire conversation.`,
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Clear",
+          text: "Delete",
           style: "destructive",
-          onPress: () =>
-            setMessages([
-              {
-                from: "bot",
-                text: "Hello! I'm your earthquake safety assistant. I can help you with earthquake preparedness, safety procedures, and emergency planning.",
-                time: new Date().toISOString(),
-              },
-            ]),
+          onPress: async () => {
+            try {
+              const next = (chats || []).filter((c) => c.id !== selectedChatId);
+              if (!next || next.length === 0) {
+                // create a default chat if none left
+                const defaultChat = {
+                  id: `chat_1`,
+                  name: "Chat 1",
+                  createdAt: new Date().toISOString(),
+                  messages: [
+                    {
+                      from: "bot",
+                      text: "Hello! I'm Epicenter AI, your earthquake safety assistant. I can help you with earthquake preparedness, safety procedures, and emergency planning.",
+                      time: new Date().toISOString(),
+                    },
+                  ],
+                };
+                setChats([defaultChat]);
+                setSelectedChatId(defaultChat.id);
+                setMessages(defaultChat.messages);
+                await saveChats([defaultChat]);
+                return;
+              }
+
+              setChats(next);
+              // select the first remaining chat
+              setSelectedChatId(next[0].id);
+              setMessages(next[0].messages || []);
+              await saveChats(next);
+            } catch (_err) {
+              // ignore
+            }
+          },
         },
       ]
     );
@@ -227,6 +366,19 @@ export default function Guide() {
       Math.min(100, Math.max(40, event.nativeEvent.contentSize.height))
     );
   };
+
+  // whether any other chat has a non-empty draft
+  const otherHasDraft = (() => {
+    try {
+      const keys = Object.keys(drafts || {});
+      for (let k of keys) {
+        if (k !== selectedChatId && drafts[k] && drafts[k].trim()) return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  })();
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -247,20 +399,55 @@ export default function Guide() {
               />
               <Text style={styles.headerTitle}>Epicenter AI</Text>
             </View>
-            <TouchableOpacity
-              onPress={clearChat}
-              style={[
-                styles.clearButton,
-                messages.length <= 1 && { opacity: 0.3 },
-              ]}
-              disabled={messages.length <= 1}
-            >
-              <MaterialCommunityIcons
-                name="trash-can-outline"
-                size={20}
-                color={colors.muted}
-              />
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <TouchableOpacity
+                onPress={deleteChat}
+                style={[
+                  styles.clearButton,
+                  !(chats && chats.length > 1) && { opacity: 0.3 },
+                ]}
+                disabled={!(chats && chats.length > 1)}
+              >
+                <MaterialCommunityIcons
+                  name="trash-can-outline"
+                  size={20}
+                  color={colors.muted}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={createNewChat}
+                style={{ marginLeft: 10, padding: 6 }}
+                accessibilityLabel="New chat"
+              >
+                <MaterialCommunityIcons
+                  name="plus"
+                  size={20}
+                  color={colors.primary}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={async () => {
+                  // temp dev button: reset daily request limit
+                  const today = new Date().toISOString().slice(0, 10);
+                  setRequestCount(0);
+                  setRequestDate(today);
+                  try {
+                    await AsyncStorage.setItem(
+                      "guide_request_count",
+                      JSON.stringify({ date: today, count: 0 })
+                    );
+                  } catch (_err) {}
+                }}
+                style={{ marginLeft: 10, padding: 6 }}
+                accessibilityLabel="Reset rate limits"
+              >
+                <MaterialCommunityIcons
+                  name="refresh"
+                  size={18}
+                  color={colors.primary}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
           <Text
             style={{
@@ -272,6 +459,39 @@ export default function Guide() {
           >
             {`${requestCount}/10 requests today`}
           </Text>
+          {/* Chat menu */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ paddingHorizontal: 12, paddingTop: 8 }}
+          >
+            {(chats || []).map((c) => (
+              <TouchableOpacity
+                key={c.id}
+                onPress={() => selectChat(c.id)}
+                style={{
+                  paddingVertical: 6,
+                  paddingHorizontal: 12,
+                  borderRadius: 20,
+                  backgroundColor:
+                    c.id === selectedChatId ? colors.primary : "#fff",
+                  marginRight: 8,
+                  borderWidth: 1,
+                  borderColor:
+                    c.id === selectedChatId ? colors.primary : "#E5E7EB",
+                }}
+              >
+                <Text
+                  style={{
+                    color: c.id === selectedChatId ? "#fff" : colors.secondary,
+                    fontWeight: "600",
+                  }}
+                >
+                  {c.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
 
         {/* Messages */}
@@ -380,7 +600,11 @@ export default function Guide() {
           <View style={styles.inputBar}>
             <TextInput
               value={inputValue}
-              onChangeText={setInputValue}
+              onChangeText={(t) => {
+                setInputValue(t);
+                if (selectedChatId)
+                  setDrafts((p) => ({ ...p, [selectedChatId]: t }));
+              }}
               placeholder="Ask about earthquake safety..."
               style={[styles.input, { height: inputHeight }]}
               onSubmitEditing={handleSubmission}
@@ -388,7 +612,7 @@ export default function Guide() {
               returnKeyType="send"
               multiline
               maxLength={500}
-              editable={!isThinking && isOnline}
+              editable={!isThinking && isOnline && !otherHasDraft}
               placeholderTextColor={colors.muted}
             />
             <TouchableOpacity
