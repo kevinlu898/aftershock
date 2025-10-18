@@ -15,31 +15,20 @@ export const PREPARE_MODULES = [
                 type: 'lesson',
                 content: {
                     pages: [
-                        {
+{
                             id: '1-1-p1',
                             type: 'text',
                             title: 'What Causes Earthquakes',
-                            body: `Earthquakes occur when stress builds up along fractures in the Earth's crust, called faults, and is suddenly released. The Earth's crust is divided into massive slabs called tectonic plates, which slowly move relative to one another. When these plates grind, collide, or slide past each other, they create stress along faults. When the stress exceeds the friction holding the rocks together, the rocks slip, sending seismic waves through the ground — shaking the surface.
+                            body: `<p>Earthquakes occur when stress builds up along fractures in the Earth's crust, called faults, and is suddenly released. The Earth's crust is divided into massive slabs called tectonic plates, which slowly move relative to one another. When these plates grind, collide, or slide past each other, they create stress along faults. When the stress exceeds the friction holding the rocks together, the rocks slip, sending seismic waves through the ground — shaking the surface.</p>
 
-Key Concepts:
-• Faults: Fractures in the Earth's crust where movement occurs.
-• Epicenter: The point on the surface directly above the quake's origin.
-• Hypocenter (Focus): The actual subsurface origin of the quake.
-• Magnitude: Measures the energy released by the quake. A one-unit increase (e.g., 6.0 → 7.0) represents ~32 times more energy.
-• Intensity: How strong the shaking feels in a particular location.`
-                        },
-                        {
-                            id: '1-1-p2',
-                            type: 'text',
-                            title: 'Types of Earthquakes',
-                            body: `Not all earthquakes are the same. Shallow quakes (0–70 km deep) usually cause the most damage because energy reaches the surface with little dissipation. Deep quakes can be strong but often affect wider areas with less surface damage.
-
-Shaking varies depending on:
-• Distance from epicenter
-• Local geology: Loose soils amplify shaking; bedrock reduces it.
-• Building design: Older, unreinforced structures are most at risk.
-
-Even minor quakes can be dangerous, especially in areas with poorly secured furniture, gas lines, or tall glass windows.`
+<h3>Key Concepts:</h3>
+<ul>
+<li><strong>Faults:</strong> Fractures in the Earth's crust where movement occurs.</li>
+<li><strong>Epicenter:</strong> The point on the surface directly above the quake's origin.</li>
+<li><strong>Hypocenter (Focus):</strong> The actual subsurface origin of the quake.</li>
+<li><strong>Magnitude:</strong> Measures the energy released by the quake. A one-unit increase (e.g., 6.0 → 7.0) represents ~32 times more energy.</li>
+<li><strong>Intensity:</strong> How strong the shaking feels in a particular location.</li>
+</ul>`
                         },
                         {
                             id: '1-1-p3',
@@ -264,7 +253,7 @@ Key Steps:
                                 },
                                 {
                                     id: 3,
-                                    question: 'Where should you place heavy objects in your home?',
+                                    question: 'Where should heavy objects in your home?',
                                     options: ['High shelves', 'Middle shelves', 'Lower shelves', 'On the floor'],
                                     correctAnswer: 2
                                 },
@@ -382,21 +371,124 @@ Key Steps:
             {
                 id: '3-1',
                 title: 'Go-Bag Essentials',
-                duration: '20 min',
-                type: 'checklist',
+                duration: '15 min',
+                type: 'lesson',
                 content: {
                     pages: [
                         {
                             id: '3-1-p1',
                             type: 'text',
-                            title: 'Go-Bag Checklist',
+                            title: 'Your Grab-and-Go Survival Kit',
+                            body: `A Go-Bag is your immediate survival kit designed to sustain you for the first 72 hours after a disaster. Keep it lightweight, portable, and easily accessible near your primary exit.
+
+Key Principles:
+• Store in a durable, waterproof backpack
+• Keep it accessible (not buried in storage)
+• Weight under 25 pounds for easy carrying
+• Personalize for your family's specific needs
+• Check and refresh contents every 6 months`
+                        },
+                        {
+                            id: '3-1-p2',
+                            type: 'video',
+                            title: 'How to Pack a Go-Bag',
+                            videoUrl: 'https://www.youtube.com/watch?v=2lkFZ1sqa54',
+                            description: 'City Prepping demonstrates how to pack and organize an effective Go-Bag for earthquakes.'
+                        },
+                        {
+                            id: '3-1-p3',
+                            type: 'text',
+                            title: 'Essential Go-Bag Contents',
+                            body: `Water & Food:
+• 3 liters of water per person (or purification tablets)
+• 3-day supply of non-perishable food
+• Manual can opener
+• High-energy snacks
+
+Shelter & Warmth:
+• Emergency blanket or sleeping bag
+• Poncho or rain gear
+• Warm hat and gloves
+• Change of clothes
+
+Light & Communication:
+• LED flashlight and extra batteries
+• Headlamp
+• Battery-powered or hand-crank radio
+• Whistle
+
+First Aid & Health:
+• Comprehensive first aid kit
+• Personal medications (7-day supply)
+• Prescription copies
+• Hygiene items and N95 masks
+
+Tools & Safety:
+• Multi-tool or pocket knife
+• Work gloves
+• Duct tape
+• Local maps
+• Emergency cash in small bills`
+                        },
+                        {
+                            id: '3-1-p4',
+                            type: 'text',
+                            title: 'Personalize Your Go-Bag',
+                            body: `Special Considerations:
+• Infants: Formula, diapers, wipes, baby food
+• Children: Comfort items, activities, favorite snacks
+• Elderly: Medications, mobility aids
+• Pets: Food, leash, carrier, vaccination records
+• Medical needs: Insulin, epinephrine, oxygen
+
+Important Documents:
+• Copies of ID, insurance, prescriptions
+• Emergency contact list
+• Photos of family members
+• Cash and coins`
+                        },
+                        {
+                            id: '3-1-p5',
+                            type: 'checklist',
+                            title: 'Checklist: Go-Bag Essentials',
                             items: [
-                                { id: 1, text: 'Water (1 gallon per person per day)', completed: true },
-                                { id: 2, text: 'Non-perishable food', completed: true },
+                                { id: 1, text: 'Water (3 liters per person)', completed: false },
+                                { id: 2, text: '3-day food supply', completed: false },
                                 { id: 3, text: 'First aid kit', completed: false },
-                                { id: 4, text: 'Flashlight and batteries', completed: false },
-                                { id: 5, text: 'Portable radio', completed: false },
-                                { id: 6, text: 'Important documents copies', completed: false }
+                                { id: 4, text: 'Medications', completed: false },
+                                { id: 5, text: 'Flashlight and batteries', completed: false },
+                                { id: 6, text: 'Emergency radio', completed: false },
+                                { id: 7, text: 'Warm clothing', completed: false },
+                                { id: 8, text: 'Personal documents', completed: false },
+                                { id: 9, text: 'Cash', completed: false },
+                                { id: 10, text: 'Multi-tool', completed: false },
+                                { id: 11, text: 'Personal hygiene items', completed: false },
+                                { id: 12, text: 'Special needs items', completed: false }
+                            ]
+                        },
+                        {
+                            id: '3-1-p6',
+                            type: 'quiz',
+                            title: 'Go-Bag Knowledge',
+                            questions: [
+                                {
+                                    id: 1,
+                                    question: 'How long should your Go-Bag sustain you?',
+                                    options: ['24 hours', '72 hours', '1 week', '2 weeks'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 2,
+                                    question: 'Where should you store your Go-Bag?',
+                                    options: ['Buried in storage', 'Near your primary exit', 'In the garage', 'At work only'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 3,
+                                    question: "What's the maximum recommended weight for a Go-Bag?",
+                                    options: ['15 pounds', '25 pounds', '40 pounds', '50 pounds'],
+                                    correctAnswer: 1
+                                }
                             ]
                         }
                     ]
@@ -405,26 +497,108 @@ Key Steps:
             {
                 id: '3-2',
                 title: 'Home Kit',
-                duration: '25 min',
-                type: 'checklist',
+                duration: '20 min',
+                type: 'lesson',
                 content: {
                     pages: [
                         {
                             id: '3-2-p1',
                             type: 'text',
-                            title: 'Home Kit',
-                            body: `Your home emergency kit should support your family for up to two weeks.`
+                            title: 'Comprehensive Home Preparedness',
+                            body: `Your home emergency kit should sustain your household for 7–14 days without outside assistance. This is your main supply for sheltering in place after a major earthquake.
+
+Storage Tips:
+• Use clear, stackable containers
+• Store in accessible, dry locations
+• Organize by category (food, medical, tools)
+• Rotate supplies every 6–12 months`
                         },
                         {
                             id: '3-2-p2',
+                            type: 'video',
+                            title: 'Building an Emergency Home Supply Kit',
+                            videoUrl: 'https://www.youtube.com/watch?v=7lNFVpgRe-0',
+                            description: 'A 4-minute guide on organizing and storing your long-term home emergency supplies.'
+                        },
+                        {
+                            id: '3-2-p3',
+                            type: 'text',
+                            title: 'Home Kit Essentials',
+                            body: `Water Supply:
+• 1 gallon per person per day for 14 days
+• Purification tablets, filters, or bleach
+• Water storage containers
+
+Food Supplies:
+• 2-week supply of non-perishable food
+• Manual can opener
+• Camp stove with fuel
+• Eating utensils and plates
+• High-nutrition ready-to-eat meals
+
+Medical & Sanitation:
+• Comprehensive first aid kit
+• 30-day medication supply
+• Toilet paper, garbage bags, and hygiene items
+• Bleach for disinfection`
+                        },
+                        {
+                            id: '3-2-p4',
+                            type: 'text',
+                            title: 'Comfort & Tools',
+                            body: `Shelter & Comfort:
+• Sleeping bags or blankets
+• Extra clothes and sturdy shoes
+• Tent or tarp for outdoor shelter
+• Emergency heating source
+
+Tools & Equipment:
+• Fire extinguisher, crowbar, shovel, rope
+• Work gloves and dust masks
+• Flashlights and batteries
+• Solar charger or power bank
+• Battery-powered radio`
+                        },
+                        {
+                            id: '3-2-p5',
                             type: 'checklist',
-                            title: 'Home Kit Checklist',
+                            title: 'Checklist: Home Kit Inventory',
                             items: [
-                                { id: 1, text: 'Two-week water supply', completed: false },
-                                { id: 2, text: 'Canned and dry foods', completed: false },
-                                { id: 3, text: 'Manual can opener', completed: false },
-                                { id: 4, text: 'Cooking supplies', completed: false },
-                                { id: 5, text: 'Sanitation supplies', completed: false }
+                                { id: 1, text: '14-day water supply', completed: false },
+                                { id: 2, text: '14-day food supply', completed: false },
+                                { id: 3, text: 'Comprehensive first aid kit', completed: false },
+                                { id: 4, text: '30-day medication supply', completed: false },
+                                { id: 5, text: 'Sanitation supplies', completed: false },
+                                { id: 6, text: 'Cooking equipment', completed: false },
+                                { id: 7, text: 'Lighting sources', completed: false },
+                                { id: 8, text: 'Communication devices', completed: false },
+                                { id: 9, text: 'Tools and safety equipment', completed: false },
+                                { id: 10, text: 'Warmth and shelter items', completed: false }
+                            ]
+                        },
+                        {
+                            id: '3-2-p6',
+                            type: 'quiz',
+                            title: 'Home Kit Preparedness',
+                            questions: [
+                                {
+                                    id: 1,
+                                    question: 'How long should your home kit sustain your family?',
+                                    options: ['3 days', '7–14 days', '1 month', '2 months'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 2,
+                                    question: 'What is the daily water requirement per person?',
+                                    options: ['1 quart', '1 gallon', '2 gallons', '3 gallons'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 3,
+                                    question: 'Why rotate supplies every 6–12 months?',
+                                    options: ['To change brands', 'To prevent expiration', 'To save money', 'For better organization'],
+                                    correctAnswer: 1
+                                }
                             ]
                         }
                     ]
@@ -433,62 +607,232 @@ Key Steps:
             {
                 id: '3-3',
                 title: 'Car Kit',
-                duration: '15 min',
-                type: 'checklist',
+                duration: '10 min',
+                type: 'lesson',
                 content: {
                     pages: [
                         {
                             id: '3-3-p1',
                             type: 'text',
-                            title: 'Car Kit',
-                            body: `Keep emergency supplies in your vehicle in case you're away from home during a quake.`
+                            title: 'Vehicle Emergency Preparedness',
+                            body: `A car kit ensures safety during earthquakes while traveling or evacuating. Keep it compact but complete.
+
+Storage Strategy:
+• Use a container that fits in your trunk
+• Secure items to prevent shifting
+• Adjust contents for the season
+• Keep your fuel tank at least half full`
                         },
                         {
                             id: '3-3-p2',
+                            type: 'video',
+                            title: 'Essential Car Emergency Kit Setup',
+                            videoUrl: 'https://www.youtube.com/watch?v=RI17Eb7_rqg',
+                            description: 'An 8-minute demonstration of organizing a complete car emergency kit.'
+                        },
+                        {
+                            id: '3-3-p3',
+                            type: 'text',
+                            title: 'Car Kit Essentials',
+                            body: `Basic Survival:
+• Bottled water and snacks
+• Warm blanket or sleeping bag
+• Extra warm clothing and sturdy shoes
+
+Safety & Tools:
+• Jumper cables
+• Tire repair kit and air compressor
+• Basic tool kit
+• Flashlight with batteries
+• Reflective triangles or flares
+
+Emergency Items:
+• First aid kit
+• Whistle
+• Local maps
+• Cash and coins
+• Phone charger and power bank`
+                        },
+                        {
+                            id: '3-3-p4',
+                            type: 'text',
+                            title: 'Seasonal Considerations',
+                            body: `Winter Additions:
+• Ice scraper and snow brush
+• Cat litter or sand for traction
+• Warm gloves and hat
+• Windshield washer fluid
+
+Summer Additions:
+• Extra water
+• Sun protection and cooling towels
+• Battery-operated fan
+
+Universal Additions:
+• Work gloves, multi-tool, duct tape
+• Emergency contact list`
+                        },
+                        {
+                            id: '3-3-p5',
                             type: 'checklist',
-                            title: 'Car Kit Checklist',
+                            title: 'Checklist: Car Kit Essentials',
                             items: [
-                                { id: 1, text: 'Emergency blanket', completed: false },
-                                { id: 2, text: 'Jumper cables', completed: false },
-                                { id: 3, text: 'Road flares', completed: false },
-                                { id: 4, text: 'Basic tools', completed: false },
-                                { id: 5, text: 'Water and snacks', completed: false }
+                                { id: 1, text: 'Water and snacks', completed: false },
+                                { id: 2, text: 'Warm blanket', completed: false },
+                                { id: 3, text: 'First aid kit', completed: false },
+                                { id: 4, text: 'Jumper cables', completed: false },
+                                { id: 5, text: 'Basic tools', completed: false },
+                                { id: 6, text: 'Flashlight', completed: false },
+                                { id: 7, text: 'Reflective signals', completed: false },
+                                { id: 8, text: 'Seasonal items', completed: false },
+                                { id: 9, text: 'Emergency contacts', completed: false },
+                                { id: 10, text: 'Cash', completed: false }
+                            ]
+                        },
+                        {
+                            id: '3-3-p6',
+                            type: 'quiz',
+                            title: 'Car Kit Safety',
+                            questions: [
+                                {
+                                    id: 1,
+                                    question: 'When should you keep your fuel tank filled?',
+                                    options: ['Only before long trips', 'Always at least half full', 'When the light comes on', 'Once a month'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 2,
+                                    question: 'What’s the most important reason for having a car kit?',
+                                    options: ['Earthquakes while traveling', 'Routine maintenance', 'Impressing friends', 'Saving money'],
+                                    correctAnswer: 0
+                                },
+                                {
+                                    id: 3,
+                                    question: 'Why include seasonal items in your car kit?',
+                                    options: ['Changing weather conditions', 'More storage space', 'Legal requirements', 'Better organization'],
+                                    correctAnswer: 0
+                                }
                             ]
                         }
                     ]
                 }
-            },
+            }
         ]
     },
     {
         id: '4',
         title: 'Secure Your Home',
-        icon: 'home-alert',
-        description: 'Prevent injuries and damage',
+        icon: 'home',
+        description: 'Prevent hazards and damages',
         lessons: [
             {
                 id: '4-1',
-                title: 'Identify Hazards',
+                title: 'Home Hazard Assessment',
                 duration: '15 min',
-                type: 'checklist',
+                type: 'lesson',
                 content: {
                     pages: [
                         {
                             id: '4-1-p1',
                             type: 'text',
-                            title: 'Identify Hazards',
-                            body: `Walk through your home room by room to identify potential earthquake hazards.`
+                            title: 'Room-by-Room Safety Inspection',
+                            body: `Conducting a thorough home hazard assessment is your first step toward earthquake safety. This process helps identify potential dangers before an earthquake strikes.
+
+Assessment Principles:
+• Involve all household members in the inspection  
+• Look at each room from an earthquake perspective  
+• Consider both structural and non-structural hazards  
+• Document findings with photos or notes  
+• Prioritize fixes based on risk level`
                         },
                         {
                             id: '4-1-p2',
+                            type: 'video',
+                            title: 'Protect Your Home Agaisnt Earthquake',
+                            videoUrl: 'https://www.youtube.com/watch?v=jWwCoWS3rVo',
+                            description: 'A 3-minute video showing how to inspect each room of your home for earthquake hazards and prioritize fixes.'
+                        },
+                        {
+                            id: '4-1-p3',
+                            type: 'text',
+                            title: 'Common Hazard Identification',
+                            body: `Living Areas:
+• Unsecured bookshelves and cabinets  
+• Heavy wall hangings and mirrors  
+• Tall furniture that could tip over  
+• Glass tables and overhead light fixtures  
+
+Kitchen & Bathroom:
+• Unsecured refrigerator and appliances  
+• Overhead cabinet contents  
+• Glass shower doors and mirrors  
+• Water heater and gas connections  
+
+Bedrooms:
+• Heavy objects above beds  
+• Unsecured dressers and wardrobes  
+• Mirrors and wall decor near beds  
+• Electronics on unstable surfaces`
+                        },
+                        {
+                            id: '4-1-p4',
+                            type: 'text',
+                            title: 'Creating Your Home Safety Map',
+                            body: `Mapping Process:
+• Draw a simple floor plan of your home  
+• Mark hazardous items with red stickers  
+• Identify safe zones in each room  
+• Note emergency exits and alternatives  
+• Locate utility shut-off points  
+
+Priority Categories:
+• Immediate Hazards: Items that could cause injury or block exits  
+• Secondary Hazards: Items that could cause property damage  
+• Long-term Improvements: Structural upgrades needed`
+                        },
+                        {
+                            id: '4-1-p5',
                             type: 'checklist',
-                            title: 'Hazards Checklist',
+                            title: 'Checklist: Home Hazard Assessment',
                             items: [
-                                { id: 1, text: 'Secure tall furniture to walls', completed: false },
-                                { id: 2, text: 'Move heavy objects to lower shelves', completed: false },
-                                { id: 3, text: 'Check for unsecured water heater', completed: false },
-                                { id: 4, text: 'Identify broken glass risks', completed: false },
-                                { id: 5, text: 'Secure overhead light fixtures', completed: false }
+                                { id: 1, text: 'Living room hazards identified', completed: false },
+                                { id: 2, text: 'Kitchen hazards identified', completed: false },
+                                { id: 3, text: 'Bedroom hazards identified', completed: false },
+                                { id: 4, text: 'Bathroom hazards identified', completed: false },
+                                { id: 5, text: 'Utility areas hazards marked', completed: false },
+                                { id: 6, text: 'Emergency exits mapped', completed: false },
+                                { id: 7, text: 'Safe zones identified', completed: false },
+                                { id: 8, text: 'Utility shut-off points noted', completed: false }
+                            ]
+                        },
+                        {
+                            id: '4-1-p6',
+                            type: 'quiz',
+                            title: 'Hazard Assessment Knowledge',
+                            questions: [
+                                {
+                                    id: 1,
+                                    question: 'What should you use to mark hazardous items during inspection?',
+                                    options: ['Green stickers', 'Red stickers', 'Blue tape', 'Yellow flags'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 2,
+                                    question: 'Which room typically has the most earthquake hazards?',
+                                    options: ['Bedroom', 'Kitchen', 'Bathroom', 'Living room'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 3,
+                                    question: 'Why involve all household members in the inspection?',
+                                    options: [
+                                        'Different perspectives spot different hazards',
+                                        'To assign blame for clutter',
+                                        'To speed up the process',
+                                        'For entertainment value'
+                                    ],
+                                    correctAnswer: 0
+                                }
                             ]
                         }
                     ]
@@ -496,85 +840,356 @@ Key Steps:
             },
             {
                 id: '4-2',
-                title: 'Shut Off Utilities',
-                duration: '10 min',
+                title: 'Furniture & Appliance Securing',
+                duration: '20 min',
                 type: 'lesson',
                 content: {
                     pages: [
                         {
                             id: '4-2-p1',
                             type: 'text',
-                            title: 'Shut Off Utilities',
-                            body: `Learn how and when to shut off your gas, water, and electricity after an earthquake.`
+                            title: 'Anchoring Tall Furniture',
+                            body: `Properly securing furniture prevents tip-overs that cause most earthquake injuries. Focus on items that could fall, block exits, or cause harm.
+
+Basic Securing Principles:
+• Anchor to wall studs, not just drywall  
+• Use appropriate brackets for furniture type  
+• Consider both earthquakes and child safety  
+• Test stability after installation  
+• Follow manufacturer recommendations`
                         },
                         {
                             id: '4-2-p2',
                             type: 'video',
-                            title: 'Utility Shutoff',
-                            videoUrl: 'utility_shutoff'
+                            title: 'How to Secure Furniture and Appliances',
+                            videoUrl: 'https://www.youtube.com/watch?v=efl6-V7OjDc',
+                            description: 'A demonstration on how to properly anchor furniture and heavy appliances.'
                         },
                         {
                             id: '4-2-p3',
-                            type: 'checklist',
-                            title: 'Utility Checklist',
-                            items: [
-                                { id: 1, text: 'Locate gas shut-off valve', completed: false },
-                                { id: 2, text: 'Find main water shut-off', completed: false },
-                                { id: 3, text: 'Identify circuit breaker', completed: false },
-                                { id: 4, text: 'Practice shutting off utilities', completed: false }
-                            ]
+                            type: 'text',
+                            title: 'Furniture Securing Techniques',
+                            body: `Bookshelves & Cabinets:
+• Use L-brackets or straps for top anchoring  
+• Secure glass doors with safety film  
+• Use museum putty for small items  
+• Install lip guards on open shelves  
+
+Electronics & Appliances:
+• Secure televisions with anti-tip straps  
+• Use Velcro or mounts for computers  
+• Install latches on cabinet doors  
+• Anchor refrigerators and heavy equipment`
                         },
                         {
                             id: '4-2-p4',
+                            type: 'text',
+                            title: 'Advanced Securing Methods',
+                            body: `Heavy Furniture:
+• Piano and china cabinet bracing  
+• File cabinet interlocks  
+• Art and mirror safety hanging systems  
+
+Special Considerations:
+• Historic homes and rental properties  
+• Temporary securing options  
+• Child-proofing combined with quake safety  
+• Furniture placement to avoid exit blockage`
+                        },
+                        {
+                            id: '4-2-p5',
+                            type: 'checklist',
+                            title: 'Checklist: Furniture Securing',
+                            items: [
+                                { id: 1, text: 'Tall bookshelves secured to walls', completed: false },
+                                { id: 2, text: 'Televisions and electronics anchored', completed: false },
+                                { id: 3, text: 'Refrigerator and appliances secured', completed: false },
+                                { id: 4, text: 'Cabinet doors latched', completed: false },
+                                { id: 5, text: 'Heavy art and mirrors secured', completed: false },
+                                { id: 6, text: 'Furniture not blocking exits', completed: false },
+                                { id: 7, text: 'Shelf items secured with putty', completed: false },
+                                { id: 8, text: 'All hardware inspected', completed: false }
+                            ]
+                        },
+                        {
+                            id: '4-2-p6',
                             type: 'quiz',
-                            title: 'Utility Quiz',
+                            title: 'Furniture Safety',
                             questions: [
                                 {
                                     id: 1,
-                                    question: 'When should you shut off your gas?',
-                                    options: [
-                                        'After every earthquake',
-                                        'Only if you smell gas or hear hissing',
-                                        'Immediately after shaking stops',
-                                        'Never - wait for utility company'
-                                    ],
+                                    question: 'What should you anchor furniture to in walls?',
+                                    options: ['Drywall only', 'Wall studs', 'Electrical wires', 'Pipes'],
                                     correctAnswer: 1
+                                },
+                                {
+                                    id: 2,
+                                    question: 'Why use flexible straps for appliances?',
+                                    options: ['They allow some movement', 'They’re cheaper', 'They’re invisible', 'They’re lighter'],
+                                    correctAnswer: 0
+                                },
+                                {
+                                    id: 3,
+                                    question: 'What’s the main benefit of securing furniture?',
+                                    options: [
+                                        'Prevents most earthquake injuries',
+                                        'Makes cleaning easier',
+                                        'Improves home appearance',
+                                        'Increases resale value'
+                                    ],
+                                    correctAnswer: 0
                                 }
                             ]
                         }
                     ]
                 }
             },
+            {
+                id: '4-3',
+                title: 'Structural Safety & Utilities',
+                duration: '15 min',
+                type: 'lesson',
+                content: {
+                    pages: [
+                        {
+                            id: '4-3-p1',
+                            type: 'text',
+                            title: 'Water Heater Securing',
+                            body: `Water heaters are particularly dangerous during earthquakes. If they fall or rupture, they can cause fires, gas leaks, and flooding.
+
+Critical Safety Steps:
+• Use two metal straps around the tank  
+• Anchor to wall studs, not drywall  
+• Install flexible gas and water connections  
+• Maintain clearance from walls  
+• Know how to shut off gas and water`
+                        },
+                        {
+                            id: '4-3-p3',
+                            type: 'text',
+                            title: 'Utility Safety Measures',
+                            body: `Gas Line Safety:
+• Install automatic gas shut-off valves  
+• Use flexible gas connectors  
+• Know where to turn off the gas manually  
+
+Electrical Safety:
+• Secure panels and large appliances  
+• Know circuit breaker location  
+• Consider surge protection  
+
+Water Safety:
+• Know main shut-off location  
+• Secure water filtration and pumps  
+• Anchor plumbing in crawl spaces`
+                        },
+                        {
+                            id: '4-3-p4',
+                            type: 'text',
+                            title: 'Window and Glass Safety',
+                            body: `Glass Hazard Reduction:
+• Apply safety film or use tempered glass  
+• Secure mirrors and glass tables  
+• Keep sleeping areas away from windows  
+
+Structural Reinforcement:
+• Brace cripple walls  
+• Secure chimneys and masonry  
+• Anchor house to foundation  
+• Consult a professional for major work`
+                        },
+                        {
+                            id: '4-3-p5',
+                            type: 'checklist',
+                            title: 'Checklist: Utility Safety',
+                            items: [
+                                { id: 1, text: 'Water heater strapped', completed: false },
+                                { id: 2, text: 'Flexible gas connectors installed', completed: false },
+                                { id: 3, text: 'Know gas shut-off valve location', completed: false },
+                                { id: 4, text: 'Know main water shut-off', completed: false },
+                                { id: 5, text: 'Know electrical panel location', completed: false },
+                                { id: 6, text: 'Windows have safety film', completed: false },
+                                { id: 7, text: 'Chimney or masonry reinforced', completed: false },
+                                { id: 8, text: 'Emergency tools nearby', completed: false }
+                            ]
+                        },
+                        {
+                            id: '4-3-p6',
+                            type: 'quiz',
+                            title: 'Utility Safety',
+                            questions: [
+                                {
+                                    id: 1,
+                                    question: 'Why are water heaters dangerous in earthquakes?',
+                                    options: ['They can cause fires and gas leaks', 'They’re heavy', 'They block exits', 'They’re made of glass'],
+                                    correctAnswer: 0
+                                },
+                                {
+                                    id: 2,
+                                    question: 'What type of gas connectors should appliances have?',
+                                    options: ['Rigid pipes', 'Flexible connectors', 'Plastic tubing', 'Rubber hoses'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 3,
+                                    question: 'What’s the purpose of window safety film?',
+                                    options: ['To contain broken glass', 'To darken rooms', 'To insulate windows', 'To reduce glare'],
+                                    correctAnswer: 0
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                id: '4-4',
+                title: 'Outdoor & Property Safety',
+                duration: '15 min',
+                type: 'lesson',
+                content: {
+                    pages: [
+                        {
+                            id: '4-4-p1',
+                            type: 'text',
+                            title: 'Securing Exterior Hazards',
+                            body: `Outdoor areas contain significant earthquake hazards that can block exits or injure people. A quick inspection can greatly reduce these risks.
+
+Exterior Hazard Assessment:
+• Walk around your property systematically  
+• Look for potential falling hazards  
+• Identify exit path obstructions  
+• Involve neighbors for community safety`
+                        },
+                        {
+                            id: '4-4-p3',
+                            type: 'text',
+                            title: 'Garage and Storage Safety',
+                            body: `Garage Hazards:
+• Anchor shelving and storage units  
+• Secure hazardous materials and fuel  
+• Ensure manual garage door release  
+• Keep vehicles ready for evacuation  
+
+Storage Tips:
+• Organize supplies  
+• Label hazardous materials  
+• Maintain clear access to emergency gear`
+                        },
+                        {
+                            id: '4-4-p4',
+                            type: 'text',
+                            title: 'Landscape and Tree Safety',
+                            body: `Tree and Plant Management:
+• Trim overhanging branches  
+• Anchor outdoor furniture and structures  
+• Maintain clear evacuation paths  
+• Avoid planting trees too close to foundations`
+                        },
+                        {
+                            id: '4-4-p5',
+                            type: 'checklist',
+                            title: 'Checklist: Outdoor Safety',
+                            items: [
+                                { id: 1, text: 'Garage hazards secured', completed: false },
+                                { id: 2, text: 'Storage areas anchored', completed: false },
+                                { id: 3, text: 'Hazardous materials stored safely', completed: false },
+                                { id: 4, text: 'Trees trimmed', completed: false },
+                                { id: 5, text: 'Outdoor furniture secured', completed: false },
+                                { id: 6, text: 'Evacuation paths clear', completed: false },
+                                { id: 7, text: 'Emergency supplies accessible', completed: false },
+                                { id: 8, text: 'Vehicle readiness checked', completed: false }
+                            ]
+                        },
+                        {
+                            id: '4-4-p6',
+                            type: 'quiz',
+                            title: 'Outdoor Safety',
+                            questions: [
+                                {
+                                    id: 1,
+                                    question: 'Why trim overhanging branches?',
+                                    options: ['To prevent blocking exits', 'To improve appearance', 'To reduce shade', 'To encourage growth'],
+                                    correctAnswer: 0
+                                },
+                                {
+                                    id: 2,
+                                    question: 'How should propane tanks be stored?',
+                                    options: ['Upright and outside', 'Lying down in garage', 'Buried underground', 'Inside house'],
+                                    correctAnswer: 0
+                                },
+                                {
+                                    id: 3,
+                                    question: 'Why maintain clear evacuation paths?',
+                                    options: ['For safe exit during emergencies', 'For landscaping', 'For gardening', 'For convenience'],
+                                    correctAnswer: 0
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
         ]
     },
     {
         id: '5',
-        title: 'Finalize & Review',
+        title: 'Finalize and Review',
         icon: 'check-circle',
-        description: 'Tie up loose ends',
+        description: 'Review, strengthen, and finalize your preparedness plan',
         lessons: [
             {
                 id: '5-1',
-                title: 'Document Belongings',
-                duration: '30 min',
-                type: 'checklist',
+                title: 'Review Plans',
+                duration: '10 min',
+                type: 'lesson',
                 content: {
                     pages: [
                         {
                             id: '5-1-p1',
                             type: 'text',
-                            title: 'Document Belongings',
-                            body: `Create a home inventory for insurance purposes. Take photos or videos of your belongings.`
+                            title: 'Why Review Your Plan',
+                            body: `Even with a completed plan, reviewing it ensures it stays relevant, practical, and actionable. Practicing and revisiting your plan strengthens confidence and preparedness.
+
+Key Points:
+• Review safe spots, meeting points, and contact info  
+• Reassess special needs for household members, pets, and medical conditions  
+• Update after major life changes (moving, adding new family members)  
+• Identify gaps or risks not considered previously`
                         },
                         {
                             id: '5-1-p2',
                             type: 'checklist',
-                            title: 'Inventory Checklist',
+                            title: 'Checklist: Plan Review',
                             items: [
-                                { id: 1, text: 'Photograph each room', completed: false },
-                                { id: 2, text: 'Document valuable items', completed: false },
-                                { id: 3, text: 'Keep receipts for major purchases', completed: false },
-                                { id: 4, text: 'Store documentation in cloud storage', completed: false }
+                                { id: 1, text: 'Reviewed safe spots in each room', completed: false },
+                                { id: 2, text: 'Checked all meeting places', completed: false },
+                                { id: 3, text: 'Confirmed emergency contacts', completed: false },
+                                { id: 4, text: 'Updated Go-Bag contents', completed: false },
+                                { id: 5, text: 'Reviewed plan after recent changes', completed: false }
+                            ]
+                        },
+                        {
+                            id: '5-1-p3',
+                            type: 'quiz',
+                            title: 'Plan Review Quiz',
+                            questions: [
+                                {
+                                    id: 1,
+                                    question: 'How often should you review your earthquake plan?',
+                                    options: ['Only after earthquakes', 'Yearly or after life changes', 'Every month', 'Never'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 2,
+                                    question: 'What is a key reason to review your plan?',
+                                    options: ['To impress neighbors', 'To ensure it remains practical and updated', 'To spend time with family', 'To test your internet'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 3,
+                                    question: 'Who should participate in reviewing the plan?',
+                                    options: ['Adults only', 'All household members', 'Pets only', 'Neighbors'],
+                                    correctAnswer: 1
+                                }
                             ]
                         }
                     ]
@@ -582,7 +1197,7 @@ Key Steps:
             },
             {
                 id: '5-2',
-                title: 'Review Insurance',
+                title: 'Document Belongings',
                 duration: '15 min',
                 type: 'lesson',
                 content: {
@@ -590,34 +1205,67 @@ Key Steps:
                         {
                             id: '5-2-p1',
                             type: 'text',
-                            title: 'Review Insurance',
-                            body: `Understand your insurance coverage and consider earthquake insurance if you don't have it.`
+                            title: 'Why Document Your Belongings',
+                            body: `Documenting your belongings ensures you can recover quickly and accurately after an earthquake. Insurance claims, replacement of lost items, and proof of ownership all become easier when you have organized records.
+
+Key Points:
+• Create a detailed inventory of all valuable items: electronics, appliances, jewelry, furniture, artwork, sentimental items  
+• Include purchase dates, prices, serial numbers, and photos/videos  
+• Store digital records securely on your device, cloud, or encrypted USB drive  
+• Update regularly`
                         },
                         {
                             id: '5-2-p2',
-                            type: 'checklist',
-                            title: 'Insurance Checklist',
-                            items: [
-                                { id: 1, text: 'Review homeowners/renters policy', completed: false },
-                                { id: 2, text: 'Check earthquake insurance coverage', completed: false },
-                                { id: 3, text: 'Understand your deductible', completed: false },
-                                { id: 4, text: 'Know how to file a claim', completed: false }
-                            ]
+                            type: 'video',
+                            title: 'Documenting Your Belongings',
+                            videoUrl: 'https://www.youtube.com/watch?v=wc9SG6FD8S0',
+                            description: 'A disaster recovery specialist teaches you tips on documenting your property.'
                         },
                         {
                             id: '5-2-p3',
+                            type: 'text',
+                            title: 'Using Your Inventory for Recovery',
+                            body: `Inventory is only helpful if you can use it effectively.
+
+Steps for Recovery:
+• Insurance Claims: Submit inventory with photos, receipts, and serial numbers  
+• Replacement Planning: Prioritize essential items first  
+• Sharing with Contacts: Give a copy to an out-of-area contact  
+• Regular Review: Update at least annually or after major changes`
+                        },
+                        {
+                            id: '5-2-p4',
+                            type: 'checklist',
+                            title: 'Checklist: Inventory Readiness',
+                            items: [
+                                { id: 1, text: 'Take photos/videos of all rooms and belongings', completed: false },
+                                { id: 2, text: 'Record item names, values, and serial numbers', completed: false },
+                                { id: 3, text: 'Upload to secure storage (cloud/encrypted device)', completed: false },
+                                { id: 4, text: 'Share with a trusted contact', completed: false },
+                                { id: 5, text: 'Update inventory annually or after major purchases', completed: false }
+                            ]
+                        },
+                        {
+                            id: '5-2-p5',
                             type: 'quiz',
-                            title: 'Insurance Quiz',
+                            title: 'Inventory Quiz',
                             questions: [
                                 {
                                     id: 1,
-                                    question: 'Is earthquake damage covered by standard homeowners insurance?',
-                                    options: [
-                                        'Yes, always',
-                                        'No, you need separate earthquake insurance',
-                                        'Only in California',
-                                        'Only for renters'
-                                    ],
+                                    question: 'Why document your belongings?',
+                                    options: ['Impress neighbors', 'Simplify insurance claims', 'Sell items', 'Avoid taxes'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 2,
+                                    question: 'Where should digital copies be stored?',
+                                    options: ['Only phone', 'Cloud, local encrypted device, and trusted contact', 'Only wallet', 'Publicly online'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 3,
+                                    question: 'How often should the inventory be updated?',
+                                    options: ['Only when moving', 'Annually or after major purchases', 'Never', 'Only after earthquakes'],
                                     correctAnswer: 1
                                 }
                             ]
@@ -625,127 +1273,399 @@ Key Steps:
                     ]
                 }
             },
+            {
+                id: '5-3',
+                title: 'Financial Preparedness and Insurance',
+                duration: '20 min',
+                type: 'lesson',
+                content: {
+                    pages: [
+                        {
+                            id: '5-3-p1',
+                            type: 'text',
+                            title: 'Financial Preparedness',
+                            body: `Financial readiness gives you flexibility to respond to emergencies.
+
+Key Points:
+• Keep an emergency cash reserve (small bills in waterproof container)  
+• Maintain accessible bank accounts with online access  
+• Track important accounts, investments, and credit card info  
+• Pre-arrange access to emergency funds for household members`
+                        },
+                        {
+                            id: '5-3-p2',
+                            type: 'checklist',
+                            title: 'Checklist: Financial Preparedness',
+                            items: [
+                                { id: 1, text: 'Emergency cash stored securely', completed: false },
+                                { id: 2, text: 'Bank accounts updated and accessible', completed: false },
+                                { id: 3, text: 'List of critical financial information maintained', completed: false },
+                                { id: 4, text: 'Plan for immediate expenses after earthquake', completed: false }
+                            ]
+                        },
+                        {
+                            id: '5-3-p3',
+                            type: 'quiz',
+                            title: 'Financial Preparedness Quiz',
+                            questions: [
+                                {
+                                    id: 1,
+                                    question: 'Why have an emergency cash reserve?',
+                                    options: ['To pay bills normally', 'For essential purchases when electronic systems fail', 'To buy gifts', 'To invest in stocks'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 2,
+                                    question: 'How should financial information be stored?',
+                                    options: ['On sticky notes', 'Digitally and/or physically, securely', 'Only in your wallet', 'On social media'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 3,
+                                    question: 'Who should have access to emergency funds?',
+                                    options: ['Only adults', 'Trusted household members', 'Neighbors', 'No one'],
+                                    correctAnswer: 1
+                                }
+                            ]
+                        },
+                        {
+                            id: '5-3-p4',
+                            type: 'text',
+                            title: 'Insurance Recommendations',
+                            body: `Insurance helps you recover financially after damage.
+
+Key Points:
+• Homeowner/Renter Insurance: Covers building damage and personal property  
+• Earthquake Insurance: Consider separate coverage if earthquakes are common in your area  
+• Auto Insurance: Covers damage to vehicles during quakes  
+• Health Insurance: Ensures access to medical care after disasters  
+• Maintain copies of all policies, digitally and physically  
+• Update policies annually or after major purchases`
+                        },
+                        {
+                            id: '5-3-p5',
+                            type: 'checklist',
+                            title: 'Checklist: Insurance Readiness',
+                            items: [
+                                { id: 1, text: 'Home/renter insurance verified and updated', completed: false },
+                                { id: 2, text: 'Earthquake coverage evaluated', completed: false },
+                                { id: 3, text: 'Auto insurance reviewed', completed: false },
+                                { id: 4, text: 'Health insurance cards and details accessible', completed: false },
+                                { id: 5, text: 'Copies of all policies stored securely', completed: false }
+                            ]
+                        },
+                        {
+                            id: '5-3-p6',
+                            type: 'quiz',
+                            title: 'Insurance Quiz',
+                            questions: [
+                                {
+                                    id: 1,
+                                    question: 'What type of insurance specifically covers earthquake damage?',
+                                    options: ['Health', 'Auto', 'Earthquake', 'Travel'],
+                                    correctAnswer: 2
+                                },
+                                {
+                                    id: 2,
+                                    question: 'How often should insurance policies be reviewed?',
+                                    options: ['Only after disaster', 'Annually or after major purchases', 'Never', 'Only when moving'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 3,
+                                    question: 'Where should copies of insurance policies be stored?',
+                                    options: ['Only in the cloud', 'Digital and physical, securely', 'Only at work', 'Memorized'],
+                                    correctAnswer: 1
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                id: '5-4',
+                title: 'Mental Readiness',
+                duration: '15 min',
+                type: 'lesson',
+                content: {
+                    pages: [
+                        {
+                            id: '5-4-p1',
+                            type: 'text',
+                            title: 'Coping with Stress',
+                            body: `Being prepared reduces fear and panic. Practicing your plan builds confidence.
+
+Key Points:
+• Understand that fear is normal, but knowledge reduces anxiety  
+• Breathing exercises help during shaking  
+• Encourage household members to talk openly about feelings  
+• Focus on what you can control: safe spots, Go-Bag, communication`
+                        },
+                        {
+                            id: '5-4-p3',
+                            type: 'text',
+                            title: 'Mental Strength Practices',
+                            body: `Exercises:
+• Simulate drills calmly; notice how you react  
+• Visualize completing each step successfully  
+• Practice positive reinforcement with household members  
+• Encourage community participation — mental resilience spreads`
+                        },
+                        {
+                            id: '5-4-p4',
+                            type: 'checklist',
+                            title: 'Checklist: Mental Readiness',
+                            items: [
+                                { id: 1, text: 'Household has practiced drills calmly', completed: false },
+                                { id: 2, text: 'Members know calming techniques', completed: false },
+                                { id: 3, text: 'Regular discussions about emergency feelings', completed: false },
+                                { id: 4, text: 'Positive reinforcement after each practice', completed: false }
+                            ]
+                        },
+                        {
+                            id: '5-4-p5',
+                            type: 'quiz',
+                            title: 'Mental Readiness Quiz',
+                            questions: [
+                                {
+                                    id: 1,
+                                    question: 'Why is mental preparation important?',
+                                    options: ['To memorize exits', 'To reduce panic and improve response', 'To predict earthquakes', 'To control neighbors'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 2,
+                                    question: 'How can you calm yourself during shaking?',
+                                    options: ['Run immediately', 'Breathing exercises and focusing on safe spots', 'Watch TV', 'Ignore the shaking'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 3,
+                                    question: 'Should you fear earthquakes excessively?',
+                                    options: ['Yes, always', 'No, knowledge and preparation reduce fear', 'Only if alone', 'Only during nighttime'],
+                                    correctAnswer: 1
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                id: '5-5',
+                title: 'Community Strength',
+                duration: '10 min',
+                type: 'lesson',
+                content: {
+                    pages: [
+                        {
+                            id: '5-5-p1',
+                            type: 'text',
+                            title: 'Neighborhood Support',
+                            body: `A strong community helps everyone respond more effectively.
+
+Key Points:
+• Know your neighbors and their special needs  
+• Share resources and skills (first aid, tools, evacuation info)  
+• Establish local support networks for aftershocks  
+• Volunteer with community preparedness programs`
+                        },
+                        {
+                            id: '5-5-p2',
+                            type: 'checklist',
+                            title: 'Checklist: Community Engagement',
+                            items: [
+                                { id: 1, text: 'Met neighbors and exchanged contact info', completed: false },
+                                { id: 2, text: 'Identified community meeting points', completed: false },
+                                { id: 3, text: 'Shared skills/resources with neighbors', completed: false },
+                                { id: 4, text: 'Joined local preparedness groups', completed: false }
+                            ]
+                        },
+                        {
+                            id: '5-5-p3',
+                            type: 'quiz',
+                            title: 'Community Strength Quiz',
+                            questions: [
+                                {
+                                    id: 1,
+                                    question: 'Why is community strength important after earthquakes?',
+                                    options: ['To compete', 'To help everyone respond effectively', 'To reduce insurance costs', 'To socialize'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 2,
+                                    question: 'What can neighbors share for preparedness?',
+                                    options: ['Food, tools, and skills', 'Pets only', 'Furniture', 'Furniture only'],
+                                    correctAnswer: 0
+                                },
+                                {
+                                    id: 3,
+                                    question: 'How can you engage with your community?',
+                                    options: ['Join local preparedness programs', 'Wait for government alerts', 'Avoid talking', 'Only during disasters'],
+                                    correctAnswer: 0
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                id: '5-6',
+                title: 'Stay Updated, Celebrate and Reflect',
+                duration: '5 min',
+                type: 'lesson',
+                content: {
+                    pages: [
+                        {
+                            id: '5-6-p1',
+                            type: 'text',
+                            title: 'Using Aftershock for Continuous Improvement',
+                            body: `The Aftershock app helps you keep your emergency preparedness up to date and connected with your household and community. Preparedness is ongoing, and Aftershock makes it easier to review, update, and share plans.
+
+Key Points:
+• Use Aftershock to store, access, and update your emergency plan anytime  
+• Invite friends, family, and neighbors to join Aftershock and create their plans  
+• Check Aftershock regularly for updates, safety tips, and new guidelines  
+• Revisit and refine your plans based on drills, new hazards, or community feedback  
+• Celebrate milestones and improvements in your preparedness through the app's tracking features`
+                        }
+                    ]
+                }
+            }
         ]
-    },
+    }
+
 ];
 
-// Ensure default progress fields for backward compatibility (synchronous UIs)
-PREPARE_MODULES.forEach(m => {
-    if (typeof m.progress !== 'number') m.progress = 0;
-    if (!Array.isArray(m.lessons)) return;
-    m.lessons.forEach(l => {
-        if (typeof l.progress !== 'number') l.progress = 0;
+// Helper function to convert plain text to HTML
+const convertTextToHTML = (text) => {
+    if (!text || typeof text !== 'string') return '';
+    
+    // Replace bullet points with HTML lists
+    let html = text
+        .replace(/\r\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n') // Normalize multiple newlines
+        .trim();
+
+    // Process sections with headings and bullet points
+    const lines = html.split('\n');
+    let inList = false;
+    let processedLines = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        
+        if (!line) {
+            if (inList) {
+                processedLines.push('</ul>');
+                inList = false;
+            }
+            continue;
+        }
+        
+        // Detect headings (lines ending with colon)
+        if (line.endsWith(':')) {
+            if (inList) {
+                processedLines.push('</ul>');
+                inList = false;
+            }
+            const headingText = line.slice(0, -1).trim();
+            processedLines.push(`<h3>${headingText}</h3>`);
+            continue;
+        }
+        
+        // Detect bullet points
+        if (/^[•\-\*]\s+/.test(line) || /^\d+\.\s+/.test(line)) {
+            if (!inList) {
+                processedLines.push('<ul>');
+                inList = true;
+            }
+            const listItem = line.replace(/^[•\-\*]\s+/, '').replace(/^\d+\.\s+/, '').trim();
+            processedLines.push(`<li>${listItem}</li>`);
+            continue;
+        }
+        
+        // Regular paragraph
+        if (inList) {
+            processedLines.push('</ul>');
+            inList = false;
+        }
+        
+        // Check if this is a bolded section (text with asterisks)
+        if (/^\*\*.+\*\*$/.test(line)) {
+            const boldText = line.replace(/\*\*/g, '').trim();
+            processedLines.push(`<p><strong>${boldText}</strong></p>`);
+        } else {
+            processedLines.push(`<p>${line}</p>`);
+        }
+    }
+    
+    // Close any open list
+    if (inList) {
+        processedLines.push('</ul>');
+    }
+    
+    return processedLines.join('\n');
+};
+
+// Prepare HTML fields for text pages (do not mutate original body)
+// This ensures a separate html property is available for rendering
+PREPARE_MODULES.forEach(module => {
+    module.lessons.forEach(lesson => {
+        if (lesson.content && Array.isArray(lesson.content.pages)) {
+            lesson.content.pages.forEach(page => {
+                if (page.type === 'text' && page.body) {
+                    page.html = page.body.includes('<') ? page.body : convertTextToHTML(page.body);
+                    // Replace the original body with the HTML version so data consumers can use page.body directly
+                    page.body = page.html;
+                }
+            });
+        }
     });
 });
 
-/**
- * Return PREPARE_MODULES augmented with completion info and computed progress.
- * - lesson.progress = pagesCompleted / pageCount
- * - module.progress = totalCompletedPages / totalPages (weighted by pages)
- */
- export const getModulesWithCompletion = async () => {
-     const state = await getCompletionState();
-
-    // Helper to compute page completions from a lesson when no state is available
-    const computeCompletedPagesFromCatalog = (lesson) => {
-        const pages = (lesson.content && Array.isArray(lesson.content.pages)) ? lesson.content.pages : [];
-        let completed = 0;
-        for (const p of pages) {
-            if (p.completed === true) {
-                completed += 1;
-                continue;
-            }
-            if (p.type === 'checklist' && Array.isArray(p.items)) {
-                const all = p.items.every(it => it.completed === true);
-                if (all) completed += 1;
-            }
-            // quiz/video/text require explicit completed flag to count as complete in static catalog
-        }
-        return { completed, total: pages.length };
-    };
-
-    return PREPARE_MODULES.map((m) => {
-        const moduleState = state?.modules?.[m.id] || null;
-
-        let totalPages = 0;
-        let totalCompletedPages = 0;
-
-        const lessons = Array.isArray(m.lessons) ? m.lessons.map((l) => {
-            let pageCount = (l.content && Array.isArray(l.content.pages)) ? l.content.pages.length : 0;
-            pageCount = Number(pageCount) || 0;
-            totalPages += pageCount;
-
-            let pagesCompleted = 0;
-            let completedFlag = false;
-            let currentPageIndex = 0;
-
-            if (moduleState) {
-                const lState = moduleState.lessons?.[l.id] || {};
-                completedFlag = !!lState.completed;
-                currentPageIndex = Number(lState.currentPageIndex ?? 0) || 0;
-                pagesCompleted = completedFlag ? pageCount : Math.max(0, Math.min(currentPageIndex, pageCount));
-            } else {
-                // no persisted state: infer from static catalog where possible
-                const inferred = computeCompletedPagesFromCatalog(l);
-                pagesCompleted = Number(inferred.completed) || 0;
-                const inferredTotal = Number(inferred.total) || 0;
-                completedFlag = inferredTotal > 0 && (Number(inferred.completed) >= inferredTotal);
-                currentPageIndex = pagesCompleted; // best-effort
-            }
-
-            totalCompletedPages += Number(pagesCompleted) || 0;
-
-            const lessonProgressRaw = pageCount > 0 ? (pagesCompleted / pageCount) : (completedFlag ? 1 : 0);
-            const lessonProgress = (Number(lessonProgressRaw) && isFinite(lessonProgressRaw)) ? Number(lessonProgressRaw) : (lessonProgressRaw === 0 ? 0 : Number(0));
-
+export const getModulesWithCompletion = async () => {
+    const state = await getCompletionState();
+    const modules = PREPARE_MODULES.map(m => {
+        const mState = state?.modules?.[m.id] ?? {};
+        const lessons = m.lessons.map(l => {
+            const lState = mState.lessons?.[l.id] ?? {};
             return {
                 ...l,
-                pageCount,
-                currentPageIndex,
-                completed: completedFlag,
-                progress: lessonProgress || 0,
+                progress: typeof lState.progress === 'number' ? lState.progress : (lState.completed ? 1 : 0),
+                completed: !!lState.completed
             };
-        }) : [];
-
-        let moduleProgress = 0;
-        if (Number(totalPages) > 0) {
-            moduleProgress = Number(totalCompletedPages) / Number(totalPages);
-        } else if (lessons.length > 0) {
-            moduleProgress = lessons.filter(ln => ln.completed).length / lessons.length;
-        }
-        if (!isFinite(moduleProgress) || Number.isNaN(moduleProgress)) {
-            console.warn('prepareModules: computed NaN moduleProgress for module', m.id, { totalPages, totalCompletedPages, lessonsCount: lessons.length });
-            moduleProgress = 0;
-        }
-
-        // final coercion
-        moduleProgress = Number(moduleProgress) || 0;
-
+        });
+        const progress = typeof mState.progress === 'number' ? mState.progress : (lessons.length ? lessons.reduce((s, ll) => s + (ll.progress ?? 0), 0) / lessons.length : 0);
         return {
             ...m,
             lessons,
-            completed: moduleState ? !!moduleState.completed : m.completed || false,
-            progress: moduleProgress || 0,
+            progress,
+            completed: !!mState.completed
         };
     });
+    return modules;
+};
+
+export const getLessonCompletion = async (lessonId) => {
+    const state = await getCompletionState();
+    if (!state || !state.modules) return null;
+    for (const modId of Object.keys(state.modules)) {
+        const mod = state.modules[modId];
+        if (mod && mod.lessons && mod.lessons[lessonId]) return mod.lessons[lessonId];
+    }
+    return null;
 };
 
 export const getPrepareModules = async () => {
     return await getModulesWithCompletion();
 };
 
-/**
- * Return computed progress for a module (0..1)
- */
 export const getModuleProgress = async (moduleId) => {
     const modules = await getModulesWithCompletion();
     const m = modules.find(mm => mm.id === moduleId);
     return m ? (m.progress ?? 0) : 0;
 };
 
-/**
- * Return computed progress for a lesson (0..1)
- */
 export const getLessonProgress = async (lessonId) => {
     const modules = await getModulesWithCompletion();
     for (const m of modules) {
@@ -755,11 +1675,7 @@ export const getLessonProgress = async (lessonId) => {
     return 0;
 };
 
-/**
- * Get lesson by ID
- * - ensures synchronous consumers can find lessons/modules by ID
- */
- export const getLessonById = (lessonId) => {
+export const getLessonById = (lessonId) => {
     for (const module of PREPARE_MODULES) {
         const lesson = module.lessons.find(l => l.id === lessonId);
         if (lesson) {
@@ -769,93 +1685,37 @@ export const getLessonProgress = async (lessonId) => {
     }
     console.warn('prepareModules: getLessonById -> not found', lessonId);
     return null;
- };
- 
- // Helper function to get module data by ID
- export const getModuleById = (moduleId) => {
+};
+
+export const getModuleById = (moduleId) => {
     const m = PREPARE_MODULES.find(module => module.id === moduleId) || null;
     if (m) console.log('prepareModules: getModuleById -> found', moduleId);
     else console.warn('prepareModules: getModuleById -> not found', moduleId);
     return m;
- };
- 
- // synchronous access to the static catalog for components that import PREPARE_MODULES synchronously
- export const getCatalogModules = () => PREPARE_MODULES;
- 
- // default export for backward compatibility
- export default PREPARE_MODULES;
+};
 
-// Normalize lesson pages: prefer content.pages, ensure each page has an id, and normalize field names
+export const getCatalogModules = () => PREPARE_MODULES;
+
+export default PREPARE_MODULES;
+
 export const getLessonPages = (lesson) => {
     if (!lesson || !lesson.content) return [];
     const pages = lesson.content.pages;
     if (!Array.isArray(pages) || pages.length === 0) return [];
-
-    return pages.map((page, idx) => {
-        const id = page.id || `${lesson.id}-p${idx + 1}`;
-        const type = page.type || 'text';
-        return {
-            id,
-            type,
-            title: page.title || lesson.title || '',
-            body: page.body || page.text || null,
-            videoUrl: page.videoUrl || page.url || null,
-            items: page.items || page.checklistItems || null,
-            questions: page.questions || page.quizQuestions || null,
-            description: page.description || page.caption || '',
-            completed: page.completed === true,
-        };
-    });
+    
+    return pages.map(page => ({
+        ...page,
+        // For text pages expose 'body' as precomputed html field
+        body: page.type === 'text' ? (page.html || page.body || '') : page.body
+    }));
 };
 
-// Finds the first incomplete page index for a lesson's pages. Returns 0 if none found.
-export const findFirstIncompletePageIndex = (lesson) => {
-    const pages = getLessonPages(lesson);
-    for (let i = 0; i < pages.length; i++) {
-        const p = pages[i];
-        if (p.completed) continue;
-
-        // For checklist pages, consider completed if all items have completed === true
-        if (p.type === 'checklist' && Array.isArray(p.items)) {
-            const all = p.items.every(it => it.completed === true);
-            if (!all) return i; else continue;
-        }
-
-        // For quiz, video, and text pages treat as incomplete unless flagged
-        if (p.type === 'quiz' || p.type === 'video' || p.type === 'text') return i;
-
-        if (!p.completed) return i;
-    }
-    return 0;
-};
-
-/**
- * Async helper to find lesson completion object (moduleId and lesson state)
- */
-export const getLessonCompletion = async (lessonId) => {
-    const state = await getCompletionState();
-    if (!state || !state.modules) return null;
-    for (const moduleId of Object.keys(state.modules)) {
-        const lessons = state.modules[moduleId].lessons || {};
-        if (lessons[lessonId]) {
-            return { moduleId, ...lessons[lessonId] };
-        }
-    }
-    return null;
-};
-
-/**
- * Async helper to get module completion state
- */
 export const getModuleCompletion = async (moduleId) => {
     const state = await getCompletionState();
     if (!state || !state.modules) return null;
     return state.modules[moduleId] || null;
 };
 
-/**
- * Async helper to get the saved current page index for a lesson
- */
 export const getLessonCurrentPageIndex = async (lessonId) => {
     const comp = await getLessonCompletion(lessonId);
     return comp?.currentPageIndex ?? 0;
