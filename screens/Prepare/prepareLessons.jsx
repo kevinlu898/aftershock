@@ -9,7 +9,6 @@ import completion from './prepareModulesCompletion';
 
 // Simple in-file HTML renderer to avoid external dependency on react-native-render-html
 // Supports basic tags: <h3>, <p>, <ul>, <li>, <strong>
-import { Platform } from 'react-native';
 
 const SimpleHtmlRenderer = ({ html = '', contentWidth, config = {} }) => {
     if (!html) return null;
