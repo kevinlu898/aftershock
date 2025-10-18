@@ -22,7 +22,7 @@ export default function Guide() {
   const [messages, setMessages] = useState([
     {
       from: "bot",
-      text: "Hello! I'm your earthquake safety assistant. I can help you with earthquake preparedness, safety procedures, and emergency planning.",
+      text: "Hello! I'm Epicenter AI, your earthquake safety assistant. I can help you with earthquake preparedness, safety procedures, and emergency planning, as well as assisting with app features.",
       time: new Date().toISOString(),
     },
   ]);
@@ -33,7 +33,7 @@ export default function Guide() {
 
   const quickPrompts = [
     "Create earthquake kit",
-    "During earthquake safety",
+    "How to stay safe during an earthquake",
     "Secure my home",
     "Emergency contacts",
     "Make a family plan",
@@ -163,7 +163,7 @@ export default function Guide() {
                   isOnline ? styles.statusOnline : styles.statusOffline,
                 ]}
               />
-              <Text style={styles.headerTitle}>AI Guide</Text>
+              <Text style={styles.headerTitle}>Epicenter AI</Text>
             </View>
             <TouchableOpacity
               onPress={clearChat}
@@ -215,7 +215,7 @@ export default function Guide() {
                     </View>
                   )}
                   <Text style={styles.timestamp}>
-                    {isUser ? "You" : "AI Guide"} • {formatTime(msg.time)}
+                    {isUser ? "You" : "Epicenter AI"} • {formatTime(msg.time)}
                   </Text>
                   {isUser && (
                     <View style={styles.avatar}>
