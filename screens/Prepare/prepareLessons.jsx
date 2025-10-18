@@ -1,10 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Dimensions, ScrollView as HScrollView, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Dimensions, ScrollView as HScrollView, Linking, SafeAreaView, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import YoutubePlayer from 'react-native-youtube-iframe';
 import { colors } from '../../css';
 import prepareLessonStyles from './prepareLessonStyles';
 import { getLessonById, getLessonCurrentPageIndex, getLessonPages, getModuleById } from './prepareModules';
 import completion from './prepareModulesCompletion';
+
+// Helper: extract YouTube video id from common URL formats
+const extractYouTubeId = (url) => {
+  if (!url || typeof url !== 'string') return null;
+  const patterns = [
+    /(?:v=|\/embed\/|youtu\.be\/)([A-Za-z0-9_-]{11})/, // common
+    /youtube\.com\/(?:watch\?v=)([A-Za-z0-9_-]{11})/
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m && m[1]) return m[1];
+  }
+  return null;
+};
 
 // Main component for displaying and navigating through lesson content
 const PrepareLessons = ({ route, navigation }) => {
@@ -36,7 +51,8 @@ const PrepareLessons = ({ route, navigation }) => {
             type: p.type === 'text' ? 'lesson' : p.type,
             title: p.title || 'Page',
             icon: p.type === 'text' ? 'book-open-variant' : (p.type === 'video' ? 'play-circle' : (p.type === 'checklist' ? 'checklist' : 'puzzle')),
-            content: p.type === 'text' ? p.body : (p.type === 'video' ? p.videoUrl : (p.type === 'checklist' ? p.items : p.questions)),
+            // For video pages pass an object with url + optional caption so VideoScreen can show a description
+            content: p.type === 'text' ? p.body : (p.type === 'video' ? { url: p.videoUrl, caption: p.description || p.caption || p.title || '' } : (p.type === 'checklist' ? p.items : p.questions)),
           };
         }));
         console.log('prepareLessons: set screens length ->', pages.length);
@@ -199,52 +215,58 @@ const PrepareLessons = ({ route, navigation }) => {
 
   // Displays video content with completion tracking
   const VideoScreen = ({ content }) => {
-    const [watched, setWatched] = useState(false); // Track if video has been watched
+    const videoUrl = content?.url || '';
+    const caption = content?.caption || '';
+    const videoId = extractYouTubeId(videoUrl);
+
+    const { width: screenWidth } = Dimensions.get('window');
+    const sideMargin = 16;
+    const playerWidth = Math.max(0, screenWidth - sideMargin * 2);
+    const playerHeight = Math.round(playerWidth * 9 / 16);
 
     return (
       <View style={prepareLessonStyles.lessonScreenContainer}>
-        <View style={prepareLessonStyles.lessonContentCard}>
-          {/* Video placeholder and description */}
-          <View style={prepareLessonStyles.lessonVideoContainer}>
-            <View style={prepareLessonStyles.lessonVideoPlaceholder}>
-              <MaterialCommunityIcons name="play" size={48} color="#fff" />
-            </View>
-            <Text style={prepareLessonStyles.lessonVideoCaption}>
-              {content || 'Earthquake Safety Demonstration'}
-            </Text>
-          </View>
-
-          {/* Conditional rendering based on watched state */}
-          {!watched ? (
-            // Show watch button if not watched
-            <TouchableOpacity 
-              style={prepareLessonStyles.lessonWatchButton}
-              onPress={() => setWatched(true)}
-            >
-              <Text style={prepareLessonStyles.lessonWatchButtonText}>Mark as Watched</Text>
-            </TouchableOpacity>
-          ) : (
-            // Show completion badge if watched
-            <View style={prepareLessonStyles.lessonCompletedBadge}>
-              <MaterialCommunityIcons name="check-circle" size={20} color="#10B981" />
-              <Text style={prepareLessonStyles.lessonCompletedText}>Video Watched</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Continue button (disabled until video is watched) */}
-        <TouchableOpacity 
-          style={[
-            prepareLessonStyles.lessonContinueButton,
-            !watched && prepareLessonStyles.lessonContinueButtonDisabled
-          ]}
-          onPress={markScreenComplete}
-          disabled={!watched}
+        <ScrollView
+          style={prepareLessonStyles.lessonContentScroll}
+          contentContainerStyle={prepareLessonStyles.lessonScrollContent}
+          scrollEnabled={false}
         >
-          <Text style={prepareLessonStyles.lessonContinueButtonText}>
-            {watched ? 'Continue' : 'Watch Video to Continue'}
-          </Text>
-          {watched && <MaterialCommunityIcons name="chevron-right" size={20} color="#fff" />}
+          <View style={{ padding: 12, alignItems: 'center' }}>
+            {/* subtle background card behind the white content card */}
+            <View style={{ width: '100%', borderRadius: 14, backgroundColor: '#f8faf8', padding: 8 }}>
+              <View style={[prepareLessonStyles.lessonContentCard, { borderRadius: 12, overflow: 'hidden', padding: 0 }]}>
+                {/* video full-bleed */}
+                <View style={{ backgroundColor: '#000', alignItems: 'center' }}>
+                  {videoId ? (
+                    <View style={{ width: playerWidth, height: playerHeight }}>
+                      <YoutubePlayer height={playerHeight} play={false} videoId={videoId} />
+                    </View>
+                  ) : (
+                    <TouchableOpacity onPress={() => Linking.openURL(String(videoUrl))} activeOpacity={0.8}>
+                      <View style={[prepareLessonStyles.lessonVideoPlaceholder, { width: playerWidth, height: playerHeight, borderRadius: 0 }]}>
+                        <MaterialCommunityIcons name="play" size={48} color="#fff" />
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* caption / content area with same padding as other pages */}
+                {caption ? (
+                  <View style={{ padding: 20 }}>
+                    <Text style={prepareLessonStyles.lessonContentText}>{caption}</Text>
+                  </View>
+                ) : null}
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+
+        <TouchableOpacity
+          style={prepareLessonStyles.lessonContinueButton}
+          onPress={markScreenComplete}
+        >
+          <Text style={prepareLessonStyles.lessonContinueButtonText}>Continue</Text>
+          <MaterialCommunityIcons name="chevron-right" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
     );
@@ -551,66 +573,69 @@ const PrepareLessons = ({ route, navigation }) => {
 
   // Main component render
   return (
-    <SafeAreaView style={prepareLessonStyles.lessonSafeArea}>
-      <View style={prepareLessonStyles.lessonContainer}>
-        {/* Redesigned Header - Clean layout with back button top left */}
-        <View style={prepareLessonStyles.lessonHeader}>
-          <View style={prepareLessonStyles.lessonHeaderLeft}>
-            <TouchableOpacity 
-              style={prepareLessonStyles.lessonBackButton}
-              onPress={() => navigation.goBack()}
-            >
-              <MaterialCommunityIcons name="chevron-left" size={24} color={colors.primary} />
-            </TouchableOpacity>
-            <View style={prepareLessonStyles.lessonProgressContainer}>
-              <Text style={prepareLessonStyles.lessonProgressText}>{Math.round(progress * 100)}%</Text>
+    <>
+      <StatusBar backgroundColor="colors.light" barStyle="dark-content" />
+      <SafeAreaView style={prepareLessonStyles.lessonSafeArea}>
+        <View style={prepareLessonStyles.lessonContainer}>
+          {/* Redesigned Header - Clean layout with back button top left */}
+          <View style={prepareLessonStyles.lessonHeader}>
+            <View style={prepareLessonStyles.lessonHeaderLeft}>
+              <TouchableOpacity 
+                style={prepareLessonStyles.lessonBackButton}
+                onPress={() => navigation.goBack()}
+              >
+                <MaterialCommunityIcons name="chevron-left" size={24} color={colors.primary} />
+              </TouchableOpacity>
+              <View style={prepareLessonStyles.lessonProgressContainer}>
+                <Text style={prepareLessonStyles.lessonProgressText}>{Math.round(progress * 100)}%</Text>
+              </View>
+            </View>
+            
+            <View style={prepareLessonStyles.lessonHeaderContent}>
+              <Text style={prepareLessonStyles.lessonModuleTitle} numberOfLines={1}>
+                {currentModule?.title || 'Module'}
+              </Text>
+              <Text style={prepareLessonStyles.lessonPageTitle} numberOfLines={2}>
+                {currentLesson?.title}
+              </Text>
             </View>
           </View>
-          
-          <View style={prepareLessonStyles.lessonHeaderContent}>
-            <Text style={prepareLessonStyles.lessonModuleTitle} numberOfLines={1}>
-              {currentModule?.title || 'Module'}
-            </Text>
-            <Text style={prepareLessonStyles.lessonPageTitle} numberOfLines={2}>
-              {currentLesson?.title}
-            </Text>
+
+          {/* Horizontal menu for lesson pages */}
+          <View style={prepareLessonStyles.lessonMenuContainer}>
+            <HScrollView ref={menuRef} horizontal showsHorizontalScrollIndicator={false} style={prepareLessonStyles.lessonMenuScroll} contentContainerStyle={{ paddingHorizontal: 6 }}>
+              {screens.map((screen, index) => (
+                <TouchableOpacity
+                  key={screen.id || index}
+                  style={index === currentScreenIndex ? [
+                    prepareLessonStyles.lessonMenuItem,
+                    prepareLessonStyles.lessonMenuItemActive
+                  ] : prepareLessonStyles.lessonMenuItemCompact}
+                  onPress={() => goToScreen(index)}
+                >
+                  <MaterialCommunityIcons name={screen.icon} size={18} color={index === currentScreenIndex ? '#fff' : colors.muted} />
+                  {/* show label only for active tab */}
+                  {index === currentScreenIndex && (
+                    <Text style={[
+                      prepareLessonStyles.lessonMenuItemText,
+                      prepareLessonStyles.lessonMenuItemTextActive,
+                      { marginLeft: 8 }
+                    ]}>
+                      {index + 1}. {screen.title}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </HScrollView>
+          </View>
+
+          {/* Dynamic content area */}
+          <View style={prepareLessonStyles.lessonContentArea}>
+            {renderCurrentScreen()}
           </View>
         </View>
-
-        {/* Horizontal menu for lesson pages */}
-        <View style={prepareLessonStyles.lessonMenuContainer}>
-          <HScrollView ref={menuRef} horizontal showsHorizontalScrollIndicator={false} style={prepareLessonStyles.lessonMenuScroll} contentContainerStyle={{ paddingHorizontal: 6 }}>
-            {screens.map((screen, index) => (
-              <TouchableOpacity
-                key={screen.id || index}
-                style={index === currentScreenIndex ? [
-                  prepareLessonStyles.lessonMenuItem,
-                  prepareLessonStyles.lessonMenuItemActive
-                ] : prepareLessonStyles.lessonMenuItemCompact}
-                onPress={() => goToScreen(index)}
-              >
-                <MaterialCommunityIcons name={screen.icon} size={18} color={index === currentScreenIndex ? '#fff' : colors.muted} />
-                {/* show label only for active tab */}
-                {index === currentScreenIndex && (
-                  <Text style={[
-                    prepareLessonStyles.lessonMenuItemText,
-                    prepareLessonStyles.lessonMenuItemTextActive,
-                    { marginLeft: 8 }
-                  ]}>
-                    {index + 1}. {screen.title}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            ))}
-          </HScrollView>
-        </View>
-
-        {/* Dynamic content area */}
-        <View style={prepareLessonStyles.lessonContentArea}>
-          {renderCurrentScreen()}
-        </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 };
 

@@ -11,44 +11,45 @@ export const PREPARE_MODULES = [
             {
                 id: '1-1',
                 title: 'How Earthquakes Work',
-                duration: '5 min',
+                duration: '10 min',
                 type: 'lesson',
                 content: {
                     pages: [
                         {
                             id: '1-1-p1',
                             type: 'text',
-                            title: 'How Earthquakes Work',
-                            body: `Earthquakes are caused by the sudden movement of tectonic plates beneath the Earth's surface. These plates are constantly moving, but sometimes they get stuck at their edges due to friction. When the stress on the edge overcomes the friction, there is an earthquake that releases energy in waves that travel through the earth's crust.
+                            title: 'What Causes Earthquakes',
+                            body: `Earthquakes occur when stress builds up along fractures in the Earth's crust, called faults, and is suddenly released. The Earth's crust is divided into massive slabs called tectonic plates, which slowly move relative to one another. When these plates grind, collide, or slide past each other, they create stress along faults. When the stress exceeds the friction holding the rocks together, the rocks slip, sending seismic waves through the ground — shaking the surface.
 
-Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lines: Where plates meet and can slip\n• Epicenter: Point on surface directly above where quake starts\n• Magnitude: Measures energy released\n\nRemember: Even small earthquakes can be warning signs for larger ones. Always be prepared!`,
+Key Concepts:
+• Faults: Fractures in the Earth's crust where movement occurs.
+• Epicenter: The point on the surface directly above the quake's origin.
+• Hypocenter (Focus): The actual subsurface origin of the quake.
+• Magnitude: Measures the energy released by the quake. A one-unit increase (e.g., 6.0 → 7.0) represents ~32 times more energy.
+• Intensity: How strong the shaking feels in a particular location.`
                         },
                         {
                             id: '1-1-p2',
                             type: 'text',
-                            title: 'How d Work',
-                            body: `Earthquakes are caused by the sudden movement of tectonic plates beneath the Earth's surface. These plates are constantly moving, but sometimes they get stuck at their edges due to friction. When the stress on the edge overcomes the friction, there is an earthquake that releases energy in waves that travel through the earth's crust.
+                            title: 'Types of Earthquakes',
+                            body: `Not all earthquakes are the same. Shallow quakes (0–70 km deep) usually cause the most damage because energy reaches the surface with little dissipation. Deep quakes can be strong but often affect wider areas with less surface damage.
 
-Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lines: Where plates meet and can slip\n• Epicenter: Point on surface directly above where quake starts\n• Magnitude: Measures energy released\n\nRemember: Even small earthquakes can be warning signs for larger ones. Always be prepared!`,
+Shaking varies depending on:
+• Distance from epicenter
+• Local geology: Loose soils amplify shaking; bedrock reduces it.
+• Building design: Older, unreinforced structures are most at risk.
+
+Even minor quakes can be dangerous, especially in areas with poorly secured furniture, gas lines, or tall glass windows.`
                         },
                         {
                             id: '1-1-p3',
                             type: 'video',
-                            title: 'Explainer Video',
-                            videoUrl: 'earthquake_science'
+                            title: 'Earthquake Video',
+                            videoUrl: 'https://www.youtube.com/watch?v=cavq2HFBa-U',
+                            description: 'Discover how tectonic plates and molten mantle create earthquakes and why some are stronger than others.'
                         },
                         {
                             id: '1-1-p4',
-                            type: 'checklist',
-                            title: 'Quick Checklist',
-                            items: [
-                                { id: 1, text: 'Understand plate tectonics basics', completed: false },
-                                { id: 2, text: 'Learn about fault lines in your area', completed: false },
-                                { id: 3, text: 'Know the difference between magnitude and intensity', completed: false }
-                            ]
-                        },
-                        {
-                            id: '1-1-p5',
                             type: 'quiz',
                             title: 'Knowledge Check',
                             questions: [
@@ -56,10 +57,10 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
                                     id: 1,
                                     question: 'What causes earthquakes?',
                                     options: [
-                                        'Weather changes',
-                                        'Tectonic plate movement',
-                                        'Ocean currents',
-                                        'Volcanic activity only'
+                                        'Weather changes and temperature shifts',
+                                        'Movement of tectonic plates along faults',
+                                        'Volcanic eruptions only',
+                                        'Ocean currents and tides'
                                     ],
                                     correctAnswer: 1
                                 },
@@ -67,46 +68,85 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
                                     id: 2,
                                     question: 'What is the epicenter of an earthquake?',
                                     options: [
-                                        'The point where it starts underground',
-                                        'The point on the surface directly above where it starts',
-                                        'The area with the most damage',
-                                        'The location of the seismic station'
+                                        'The origin underground',
+                                        'The point directly above the origin on the surface',
+                                        'The strongest shaking zone',
+                                        'The location of the nearest city'
                                     ],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 3,
+                                    question: 'Which factor can amplify earthquake shaking locally?',
+                                    options: [
+                                        'Bedrock',
+                                        'Loose soil',
+                                        'Cold weather',
+                                        'Wind speed'
+                                    ],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 4,
+                                    question: 'How much more energy is released when a magnitude 7.0 quake occurs compared to a 6.0?',
+                                    options: ['10x', '32x', '100x', '2x'],
                                     correctAnswer: 1
                                 }
                             ]
-                        },
+                        }
                     ]
                 }
             },
             {
                 id: '1-2',
                 title: 'Know Your Risk',
-                duration: '8 min',
+                duration: '15 min',
                 type: 'lesson',
                 content: {
                     pages: [
                         {
                             id: '1-2-p1',
                             type: 'text',
-                            title: 'Know Your Risk',
-                            body: `Understanding your local earthquake risk is crucial for proper preparation. Different regions face different levels of seismic activity based on their proximity to fault lines and geological conditions.\n\nCalifornia-Specific Risks:\n• San Andreas Fault System\n• Hayward Fault in Bay Area\n• Cascadia Subduction Zone potential\n• Local soil conditions affecting shaking intensity\n\nCheck your area's seismic hazard maps and know if you're in a liquefaction zone or landslide-prone area.`
+                            title: 'Regional Earthquake Risks',
+                            body: `The United States faces diverse earthquake risks across multiple regions, with over 50% of Americans living in areas prone to damaging quakes. Understanding your regional risk is the first step toward safety.
+
+High-Risk Regions & Statistics:
+• California: 15,000+ known faults. The "Big One" on the San Andreas Fault could affect 25 million people and cause $200+ billion in damage
+• Pacific Northwest: Cascadia Subduction Zone capable of magnitude 9+ quakes affecting 12 million people
+• Alaska: 11% of world's earthquakes occur here, with 40,000+ quakes annually
+• Central U.S.: New Madrid Seismic Zone caused major quakes in 1811-1812
+• Utah: Wasatch Fault threatens 80% of Utah's population
+• Northeast U.S.: Ancient faults affecting dense urban populations`
                         },
                         {
                             id: '1-2-p2',
-                            type: 'video',
-                            title: 'Local Risks Video',
-                            videoUrl: 'local_risks'
+                            type: 'text',
+                            title: 'Earthquake Dangers & Hazards',
+                            body: `Immediate Life-Threatening Dangers:
+• Falling Hazards: Unsecured furniture and fixtures
+• Structural Collapse: Older unreinforced buildings
+• Flying Glass: Broken windows
+• Gas Line Ruptures: Can lead to fires and poisoning
+
+Secondary Hazards:
+• Urban Fires
+• Tsunamis
+• Landslides & Rockslides
+• Liquefaction
+• Infrastructure Failure
+
+Long-Term Challenges:
+• Water Contamination
+• Medical Crisis
+• Communication Breakdown
+• Economic Devastation`
                         },
                         {
                             id: '1-2-p3',
-                            type: 'checklist',
-                            title: 'Risk Checklist',
-                            items: [
-                                { id: 1, text: 'Research local fault lines', completed: false },
-                                { id: 2, text: 'Check if you are in a liquefaction zone', completed: false },
-                                { id: 3, text: 'Identify local emergency resources', completed: false }
-                            ]
+                            type: 'video',
+                            title: 'Earthquake Risk Video',
+                            videoUrl: 'https://www.youtube.com/watch?v=3sWLGL6gsbM',
+                            description: 'Learn about San Francisco Bay Area’s growing earthquake risk.'
                         },
                         {
                             id: '1-2-p4',
@@ -115,13 +155,38 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
                             questions: [
                                 {
                                     id: 1,
-                                    question: 'Which fault is most dangerous for the Bay Area?',
-                                    options: [
-                                        'San Andreas Fault',
-                                        'Hayward Fault',
-                                        'Calaveras Fault',
-                                        'All of the above'
-                                    ],
+                                    question: 'Which U.S. state has the highest earthquake risk with over 15,000 known faults?',
+                                    options: ['Alaska', 'California', 'Utah', 'Washington'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 2,
+                                    question: 'What percentage of Americans live in earthquake-prone areas?',
+                                    options: ['25%', 'Over 50%', '75%', '10%'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 3,
+                                    question: 'Which of these is considered an immediate life-threatening danger during earthquakes?',
+                                    options: ['Economic devastation', 'Falling hazards', 'Communication breakdown', 'Job loss'],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 4,
+                                    question: 'What earthquake hazard occurs when solid ground turns to quicksand-like material?',
+                                    options: ['Tsunamis', 'Landslides', 'Liquefaction', 'Urban fires'],
+                                    correctAnswer: 2
+                                },
+                                {
+                                    id: 5,
+                                    question: 'The "Big One" on California\'s San Andreas Fault could affect how many people?',
+                                    options: ['5 million', '12 million', '25 million', '40 million'],
+                                    correctAnswer: 2
+                                },
+                                {
+                                    id: 6,
+                                    question: 'Which secondary hazard can be triggered by coastal earthquakes and travel inland at highway speeds?',
+                                    options: ['Landslides', 'Tsunamis', 'Liquefaction', 'Urban fires'],
                                     correctAnswer: 1
                                 }
                             ]
@@ -133,50 +198,84 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
                 id: '1-3',
                 title: 'Myths vs Facts',
                 duration: '5 min',
-                type: 'quiz',
+                type: 'lesson',
                 content: {
                     pages: [
                         {
                             id: '1-3-p1',
                             type: 'text',
-                            title: 'Myths vs Facts',
-                            body: `Test your knowledge about common earthquake misconceptions. Knowing the facts could save your life!`
+                            title: 'Common Misconceptions',
+                            body: `Misunderstanding earthquake safety can dramatically increase your risk. Many common myths persist that could put you in danger during and after an earthquake.
+
+Dangerous Myths Debunked:
+• "Stand in a doorway — it's the safest place." → FACT: Drop, Cover, and Hold On under sturdy furniture is safe.
+• "Earthquakes only happen along the coast." → FACT: Faults exist throughout the US.
+• "Small earthquakes prevent big ones." → FACT: Minor quakes don't prevent larger ones.
+• "We can predict earthquakes precisely." → FACT: Only probabilities can be forecasted.
+• "California will fall into the ocean during the Big One." → FACT: Geologically impossible.
+• "The ground opens up and swallows people during quakes." → FACT: Most damage comes from shaking, not chasms.`
+                        }
+                    ]
+                }
+            },
+            {
+                id: '1-4',
+                title: 'Staying Safe',
+                duration: '15 min',
+                type: 'lesson',
+                content: {
+                    pages: [
+                        {
+                            id: '1-4-p1',
+                            type: 'text',
+                            title: 'Before an Earthquake – Preparation',
+                            body: `Secure your space, create emergency plans, and build emergency kits.
+
+Key Steps:
+• Anchor furniture and appliances
+• Identify safe spots and meeting places
+• Practice "Drop, Cover, and Hold On"
+• Plan for pets
+• Build home, go-bag, and car kits`
                         },
                         {
-                            id: '1-3-p2',
+                            id: '1-4-p2',
+                            type: 'video',
+                            title: 'FEMA Safety Video',
+                            videoUrl: 'https://www.youtube.com/watch?v=MKILThtPxQs',
+                            description: 'Watch a short video on the damage earthquakes can cause.'
+                        },
+                        {
+                            id: '1-4-p3',
                             type: 'quiz',
-                            title: 'Myths Quiz',
+                            title: 'Preparation Quiz',
                             questions: [
                                 {
                                     id: 1,
-                                    question: 'During an earthquake, you should:',
-                                    options: [
-                                        'Stand in a doorway',
-                                        'Run outside immediately',
-                                        'Drop, Cover, and Hold On',
-                                        'Get in your car and drive away'
-                                    ],
+                                    question: 'What is the recommended water supply for your home emergency kit?',
+                                    options: ['3-day supply', '1-week supply', '2-week supply', '1-month supply'],
                                     correctAnswer: 2
                                 },
                                 {
                                     id: 2,
-                                    question: 'Earthquakes can be predicted:',
-                                    options: [
-                                        'True - scientists know exactly when they will happen',
-                                        'False - we can only forecast probabilities',
-                                        'Only in California',
-                                        'Only for large earthquakes'
-                                    ],
-                                    correctAnswer: 1
+                                    question: 'How often should you practice "Drop, Cover, and Hold On" drills?',
+                                    options: ['Every month', 'Every year', 'Every six months', 'Only once'],
+                                    correctAnswer: 2
                                 },
                                 {
                                     id: 3,
-                                    question: 'Small earthquakes relieve pressure and prevent big ones:',
+                                    question: 'Where should you place heavy objects in your home?',
+                                    options: ['High shelves', 'Middle shelves', 'Lower shelves', 'On the floor'],
+                                    correctAnswer: 2
+                                },
+                                {
+                                    id: 4,
+                                    question: 'What should you include in your emergency plan for pets?',
                                     options: [
-                                        'True - they release built-up energy',
-                                        'False - they don\'t prevent larger quakes',
-                                        'Only in some cases',
-                                        'Scientists are not sure'
+                                        'Leave them behind',
+                                        'Include them in evacuation plans',
+                                        'Prepare a pet emergency kit',
+                                        'Arrange care with neighbors'
                                     ],
                                     correctAnswer: 1
                                 }
@@ -184,7 +283,7 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
                         }
                     ]
                 }
-            },
+            }
         ]
     },
     {
@@ -290,12 +389,6 @@ Key Concepts:\n• Tectonic Plates: Large pieces of Earth's crust\n• Fault Lin
                         {
                             id: '3-1-p1',
                             type: 'text',
-                            title: 'Go-Bag Essentials',
-                            body: `Your go-bag should contain supplies to survive for at least 72 hours. Keep it by your door or in your car.`
-                        },
-                        {
-                            id: '3-1-p2',
-                            type: 'checklist',
                             title: 'Go-Bag Checklist',
                             items: [
                                 { id: 1, text: 'Water (1 gallon per person per day)', completed: true },
@@ -577,7 +670,7 @@ PREPARE_MODULES.forEach(m => {
         let totalPages = 0;
         let totalCompletedPages = 0;
 
-        const lessons = m.lessons.map((l) => {
+        const lessons = Array.isArray(m.lessons) ? m.lessons.map((l) => {
             let pageCount = (l.content && Array.isArray(l.content.pages)) ? l.content.pages.length : 0;
             pageCount = Number(pageCount) || 0;
             totalPages += pageCount;
@@ -612,7 +705,7 @@ PREPARE_MODULES.forEach(m => {
                 completed: completedFlag,
                 progress: lessonProgress || 0,
             };
-        });
+        }) : [];
 
         let moduleProgress = 0;
         if (Number(totalPages) > 0) {
@@ -709,6 +802,7 @@ export const getLessonPages = (lesson) => {
             videoUrl: page.videoUrl || page.url || null,
             items: page.items || page.checklistItems || null,
             questions: page.questions || page.quizQuestions || null,
+            description: page.description || page.caption || '',
             completed: page.completed === true,
         };
     });

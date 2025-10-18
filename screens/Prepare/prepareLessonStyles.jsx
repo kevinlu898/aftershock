@@ -187,6 +187,7 @@ const prepareLessonStyles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     marginBottom: 12,
+    // shadow
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
@@ -210,6 +211,7 @@ const prepareLessonStyles = StyleSheet.create({
   lessonVideoContainer: {
     alignItems: 'center',
     marginBottom: 16,
+    borderRadius: 12,
   },
   lessonVideoPlaceholder: {
     width: '100%',

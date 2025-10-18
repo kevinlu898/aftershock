@@ -71,6 +71,7 @@ export const aiResponse = async (prompt) => {
         Example: "You can track this in the Prepare tab under Build Your Kits."
       5. Handle greetings lightly.  
         Example: "Hi there! I can help you get earthquake-ready. Would you like to start by checking your preparedness or reviewing your plan?"
+      6. When you redirect user to other tabs, do so naturally within your response. Suggest actions they can take there, but if they want detailed steps or information, provide them directly.
       ---
       User Message:
       "${prompt}"
