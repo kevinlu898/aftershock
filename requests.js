@@ -77,8 +77,6 @@ export const aiResponse = async (prompt) => {
       "${prompt}"
       `;
 
-
-
     const res = await fetch("https://aftershock-backend.vercel.app/api/ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -95,4 +93,23 @@ export const aiResponse = async (prompt) => {
   } catch (err) {
     console.error("Request failed:", err);
   }
+};
+
+export const fetchEarthquakeData = async (postal) => {
+  const res = await fetch(
+    "https://aftershock-backend.vercel.app/api/earthquake",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ postal_code: postal }),
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error(`Server error: ${res.status}`);
+  }
+
+  const data = await res.json();
+  console.log("Earthquake response has worked!");
+  return data;
 };
