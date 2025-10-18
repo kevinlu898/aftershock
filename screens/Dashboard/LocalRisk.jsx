@@ -21,7 +21,7 @@ export default function LocalRisk({ navigation }) {
     const getData = async () => {
       try {
         setLoading(true);
-        const data = await fetchEarthquakeData(94404);
+        const data = await fetchEarthquakeData(95425);
         setEarthquakeData(data);
       } catch (err) {
         console.error("Error fetching earthquake data:", err);

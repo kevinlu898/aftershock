@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -9,13 +10,13 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import Markdown from "react-native-markdown-display";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { colors } from "../../css";
 import { aiResponse } from "../../requests";
-import styles, { markdownStyles } from './GuideStyles';
+import styles, { markdownStyles } from "./GuideStyles";
 
 export default function Guide() {
   const [inputValue, setInputValue] = useState("");
@@ -29,6 +30,8 @@ export default function Guide() {
   const [isThinking, setIsThinking] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [inputHeight, setInputHeight] = useState(40);
+  const [requestCount, setRequestCount] = useState(0);
+  const [requestDate, setRequestDate] = useState(null);
   const scrollViewRef = useRef(null);
 
   const quickPrompts = [
@@ -46,9 +49,42 @@ export default function Guide() {
     setTimeout(() => {
       try {
         scrollViewRef.current.scrollToEnd({ animated: true });
-      } catch (e) {}
+      } catch (_e) {}
     }, 100);
   }, [messages]);
+
+  // Load daily request count from AsyncStorage
+  useEffect(() => {
+    const loadCount = async () => {
+      try {
+        const raw = await AsyncStorage.getItem("guide_request_count");
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        const today = new Date().toISOString().slice(0, 10);
+        if (parsed?.date === today) {
+          setRequestCount(parsed.count || 0);
+          setRequestDate(parsed.date);
+        } else {
+          setRequestCount(0);
+          setRequestDate(today);
+        }
+      } catch (_err) {
+        // ignore
+      }
+    };
+    loadCount();
+  }, []);
+
+  const saveRequestCount = async (date, count) => {
+    try {
+      await AsyncStorage.setItem(
+        "guide_request_count",
+        JSON.stringify({ date, count })
+      );
+    } catch (_err) {
+      // ignore
+    }
+  };
 
   const formatTime = (iso) => {
     try {
@@ -68,7 +104,26 @@ export default function Guide() {
     if (!text) return;
 
     if (!isOnline) {
-      Alert.alert("Offline", "Please check your internet connection and try again.");
+      Alert.alert(
+        "Offline",
+        "Please check your internet connection and try again."
+      );
+      return;
+    }
+
+    // enforce daily limit (10 requests per day)
+    const today = new Date().toISOString().slice(0, 10);
+    let currentCount = requestCount || 0;
+    if (requestDate !== today) {
+      currentCount = 0;
+      setRequestDate(today);
+      setRequestCount(0);
+    }
+    if (currentCount >= 10) {
+      Alert.alert(
+        "Daily limit reached",
+        "You have reached your daily limit of 10 AI requests. Please try again tomorrow."
+      );
       return;
     }
 
@@ -80,11 +135,33 @@ export default function Guide() {
 
     setMessages((prev) => [
       ...prev,
-      { from: "bot", text: "Thinking...", time: new Date().toISOString(), temp: true },
+      {
+        from: "bot",
+        text: "Thinking...",
+        time: new Date().toISOString(),
+        temp: true,
+      },
     ]);
 
+    // increment and persist request count immediately
+    const newCount = (currentCount || 0) + 1;
+    setRequestCount(newCount);
+    setRequestDate(today);
+    saveRequestCount(today, newCount);
+
     try {
-      const resp = await aiResponse(text);
+      // Build context: include up to the last 8 user messages to provide context
+      const priorUserMessages = messages
+        .filter((m) => m.from === "user")
+        .slice(-8)
+        .map((m) => `User: ${m.text.replace(/\n/g, " ")}`)
+        .join("\n");
+
+      const promptWithContext = priorUserMessages
+        ? `Conversation history:\n${priorUserMessages}\n\nCurrent question: ${text}`
+        : text;
+
+      const resp = await aiResponse(promptWithContext);
       setMessages((prev) => {
         const next = [...prev];
         for (let i = next.length - 1; i >= 0; i--) {
@@ -102,15 +179,14 @@ export default function Guide() {
         return next;
       });
       setIsOnline(true);
-    } catch (e) {
+    } catch (_e) {
       setMessages((prev) => {
         const next = [...prev];
         for (let i = next.length - 1; i >= 0; i--) {
           if (next[i].from === "bot" && next[i].temp) {
             next[i] = {
               from: "bot",
-              text:
-                "⚠️ **Connection Issue**\n\nI'm having trouble connecting. Please check your internet connection and try again.",
+              text: "⚠️ **Connection Issue**\n\nI'm having trouble connecting. Please check your internet connection and try again.",
               time: new Date().toISOString(),
             };
             break;
@@ -125,25 +201,31 @@ export default function Guide() {
   };
 
   const clearChat = () => {
-    Alert.alert("Clear Chat", "Are you sure you want to clear the conversation?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Clear",
-        style: "destructive",
-        onPress: () =>
-          setMessages([
-            {
-              from: "bot",
-              text: "Hello! I'm your earthquake safety assistant. I can help you with earthquake preparedness, safety procedures, and emergency planning.",
-              time: new Date().toISOString(),
-            },
-          ]),
-      },
-    ]);
+    Alert.alert(
+      "Clear Chat",
+      "Are you sure you want to clear the conversation?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: () =>
+            setMessages([
+              {
+                from: "bot",
+                text: "Hello! I'm your earthquake safety assistant. I can help you with earthquake preparedness, safety procedures, and emergency planning.",
+                time: new Date().toISOString(),
+              },
+            ]),
+        },
+      ]
+    );
   };
 
   const handleInputContentSizeChange = (event) => {
-    setInputHeight(Math.min(100, Math.max(40, event.nativeEvent.contentSize.height)));
+    setInputHeight(
+      Math.min(100, Math.max(40, event.nativeEvent.contentSize.height))
+    );
   };
 
   return (
@@ -167,7 +249,10 @@ export default function Guide() {
             </View>
             <TouchableOpacity
               onPress={clearChat}
-              style={[styles.clearButton, messages.length <= 1 && { opacity: 0.3 }]}
+              style={[
+                styles.clearButton,
+                messages.length <= 1 && { opacity: 0.3 },
+              ]}
               disabled={messages.length <= 1}
             >
               <MaterialCommunityIcons
@@ -177,6 +262,16 @@ export default function Guide() {
               />
             </TouchableOpacity>
           </View>
+          <Text
+            style={{
+              fontSize: 12,
+              color: colors.muted,
+              textAlign: "center",
+              marginTop: 6,
+            }}
+          >
+            {`${requestCount}/10 requests today`}
+          </Text>
         </View>
 
         {/* Messages */}
@@ -229,7 +324,12 @@ export default function Guide() {
                 </View>
 
                 {/* Message Bubble */}
-                <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleBot]}>
+                <View
+                  style={[
+                    styles.bubble,
+                    isUser ? styles.bubbleUser : styles.bubbleBot,
+                  ]}
+                >
                   {msg.from === "bot" && msg.text === "Thinking..." ? (
                     <View style={styles.thinkingRow}>
                       <ActivityIndicator
@@ -241,10 +341,14 @@ export default function Guide() {
                     </View>
                   ) : msg.from === "bot" ? (
                     <>
-                      <Markdown style={markdownStyles}>{msg.text || ""}</Markdown>
+                      <Markdown style={markdownStyles}>
+                        {msg.text || ""}
+                      </Markdown>
                       {isFirstMessage && messages.length === 1 && (
                         <View style={styles.quickPromptsContainer}>
-                          <Text style={styles.quickPromptsTitle}>Quick questions:</Text>
+                          <Text style={styles.quickPromptsTitle}>
+                            Quick questions:
+                          </Text>
                           <View style={styles.quickPromptsGrid}>
                             {quickPrompts.map((prompt, index) => (
                               <TouchableOpacity
@@ -253,7 +357,9 @@ export default function Guide() {
                                 onPress={() => handleQuickPrompt(prompt)}
                                 disabled={isThinking}
                               >
-                                <Text style={styles.quickPromptText}>{prompt}</Text>
+                                <Text style={styles.quickPromptText}>
+                                  {prompt}
+                                </Text>
                               </TouchableOpacity>
                             ))}
                           </View>
@@ -304,7 +410,11 @@ export default function Guide() {
 
           {!isOnline && (
             <View style={styles.offlineWarning}>
-              <MaterialCommunityIcons name="wifi-off" size={14} color="#EF4444" />
+              <MaterialCommunityIcons
+                name="wifi-off"
+                size={14}
+                color="#EF4444"
+              />
               <Text style={styles.offlineText}>Offline - check connection</Text>
             </View>
           )}
