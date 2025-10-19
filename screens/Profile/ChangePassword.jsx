@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   heading: { marginBottom: 8 },
-  infoText: { marginBottom: 12, color: colors.primary, lineHeight: 20 },
+  infoText: { marginBottom: 12, color: colors.secondary, lineHeight: 20 },
   input: {
     borderWidth: 1,
     borderColor: '#E6EEF3',
