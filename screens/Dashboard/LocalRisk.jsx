@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../css";
 import { fetchEarthquakeData } from "../../requests";
 
@@ -17,6 +18,7 @@ export default function LocalRisk({ navigation }) {
   const [earthquakeData, setEarthquakeData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     const getData = async () => {
@@ -65,8 +67,13 @@ export default function LocalRisk({ navigation }) {
   const depth =
     earthquakeData?.depth || earthquakeData?.geometry?.coordinates?.[2];
 
+  const topPadding =
+    Platform.OS === "android" ? StatusBar.currentHeight || 0 : insets.top || 20;
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.light }}>
+    <View
+      style={{ flex: 1, backgroundColor: colors.light, paddingTop: topPadding }}
+    >
       <StatusBar
         barStyle="dark-content"
         backgroundColor={colors.light}
@@ -76,7 +83,7 @@ export default function LocalRisk({ navigation }) {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
       >
-        <View style={styles.container}>
+        <View style={[styles.container, { paddingTop: 8 }]}>
           <TouchableOpacity
             onPress={() => navigation?.goBack?.()}
             style={styles.backButton}
