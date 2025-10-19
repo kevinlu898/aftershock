@@ -2,7 +2,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar as ExpoStatusBar } from "expo-status-bar";
-import { Platform, StatusBar, View } from "react-native";
+import { Image, Platform, StatusBar, View } from "react-native";
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
@@ -13,7 +13,7 @@ import Dashboard from "./screens/Dashboard";
 import LocalRisk from "./screens/Dashboard/LocalRisk";
 import News from "./screens/Dashboard/News";
 import Emergency from "./screens/Emergency/Emergency";
-import Guide from "./screens/Guide/Guide";
+import Guide from "./screens/Emergency/Guide/Guide";
 import Home from "./screens/Home";
 import Prepare from "./screens/Prepare/Prepare";
 import prepareLessons from "./screens/Prepare/prepareLessons";
@@ -33,7 +33,7 @@ const TAB_ICONS = {
   Dashboard: { outline: "home-outline", filled: "home" },
   Prepare: { outline: "clipboard-list-outline", filled: "clipboard-list" },
   Emergency: { outline: "alert-circle-outline", filled: "alert-circle" },
-  Guide: { outline: "message-question-outline", filled: "message-question" },
+  Guide: { outline: require("./assets/images/outlineEpicenter.png"), filled: require("./assets/images/filledEpicenter1.png") },
   Profile: { outline: "account-outline", filled: "account" },
 };
 
@@ -60,9 +60,18 @@ function MainTabs() {
           tabBarShowLabel: false,
           tabBarIcon: ({ focused, color }) => {
             const iconSet = TAB_ICONS[route.name];
-            const iconName = focused ? iconSet.filled : iconSet.outline;
+            const icon = focused ? iconSet.filled : iconSet.outline;
+            // If icon is a bundled asset (require(...)) it may be a number (native) or an object (web) — render Image
+            if (icon && (typeof icon === 'number' || typeof icon === 'object')) {
+              return (
+                <Image
+                  source={icon}
+                  style={{ width: 28, height: 28, tintColor: color, resizeMode: 'contain' }}
+                />
+              );
+            }
             return (
-              <MaterialCommunityIcons name={iconName} color={color} size={28} />
+              <MaterialCommunityIcons name={icon} color={color} size={28} />
             );
           },
           tabBarActiveTintColor: "#519872",

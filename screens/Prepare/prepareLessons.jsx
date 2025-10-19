@@ -7,23 +7,14 @@ import prepareLessonStyles from './prepareLessonStyles';
 import { getLessonById, getLessonCurrentPageIndex, getLessonPages, getModuleById } from './prepareModules';
 import completion from './prepareModulesCompletion';
 
-// Simple in-file HTML renderer to avoid external dependency on react-native-render-html
-// Supports basic tags: <h3>, <p>, <ul>, <li>, <strong>
-
 const SimpleHtmlRenderer = ({ html = '', contentWidth, config = {} }) => {
     if (!html) return null;
-    // Very small parser: split by tags and render basics
-    // Normalize newlines
     const trimmed = String(html).replace(/\r/g, '').trim();
 
-    // Extract list blocks and paragraphs
     const elements = [];
-    // Handle <h3>
     const h3Regex = /<h3>(.*?)<\/h3>/gi;
     let lastIndex = 0;
     let match;
-    // Split into tokens: headings, ul blocks, paragraphs
-    // First handle UL blocks
     const ulRegex = /<ul>([\s\S]*?)<\/ul>/gi;
     let cursor = 0;
     const parts = [];
@@ -37,7 +28,6 @@ const SimpleHtmlRenderer = ({ html = '', contentWidth, config = {} }) => {
     const tail = trimmed.slice(cursor);
     if (tail.trim()) parts.push({ type: 'html', content: tail });
 
-    // Render parts into React Native elements using Text and View
     return (
         <View>
             {parts.map((part, idx) => {

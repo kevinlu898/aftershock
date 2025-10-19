@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -95,7 +96,7 @@ export default function Dashboard() {
     {
       title: "Epicenter AI",
       text: "Ask AI for instant help and advice.",
-      icon: "robot",
+      iconImage: require('../assets/images/filledEpicenter.png'),
       button: "Ask",
       onPress: () => navigation.navigate("Guide"),
     },
@@ -233,12 +234,19 @@ export default function Dashboard() {
                     { marginRight: idx === cards.length - 1 ? 0 : CARD_GAP },
                   ]}
                 >
-                  <MaterialCommunityIcons
-                    name={item.icon}
-                    size={44}
-                    color={colors.primary}
-                    style={styles.horizontalCardIcon}
-                  />
+                  {item.iconImage ? (
+                    <Image
+                      source={item.iconImage}
+                      style={[styles.horizontalCardIcon, { width: 46, height: 46 }]}
+                    />
+                  ) : (
+                    <MaterialCommunityIcons
+                      name={item.icon}
+                      size={44}
+                      color={colors.primary}
+                      style={styles.horizontalCardIcon}
+                    />
+                  )}
                   <Text style={styles.horizontalCardTitle}>{item.title}</Text>
                   <Text style={styles.horizontalCardBody}>{item.text}</Text>
                   <TouchableOpacity

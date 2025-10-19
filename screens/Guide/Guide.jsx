@@ -1,21 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View, } from "react-native";
 import Markdown from "react-native-markdown-display";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import { colors } from "../../css";
-import { aiResponse } from "../../requests";
+import { colors } from "../../../css";
+import { aiResponse } from "../../../requests";
 import { markdownStyles, styles } from "./GuideStyles";
 
 export default function Guide() {
@@ -584,10 +573,13 @@ export default function Guide() {
                 >
                   {!isUser && (
                     <View style={styles.avatar}>
-                      <MaterialCommunityIcons
-                        name="robot"
-                        size={16}
-                        color={isOnline ? colors.primary : colors.muted}
+                      <Image
+                        source={
+                          isOnline
+                            ? require('../../../assets/images/filledEpicenter.png')
+                            : require('../../../assets/images/outlineEpicenter.png')
+                        }
+                        style={{ width: 16, height: 16, resizeMode: 'contain' }}
                       />
                     </View>
                   )}
