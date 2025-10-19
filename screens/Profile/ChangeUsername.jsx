@@ -85,6 +85,9 @@ export default function ChangeUsername() {
           onChangeText={setCurrentPassword}
           secureTextEntry
           style={styles.input}
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType="password"
         />
 
         <TextInput
@@ -92,6 +95,9 @@ export default function ChangeUsername() {
           value={newUsername}
           onChangeText={setNewUsername}
           style={styles.input}
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType="username"
         />
         <TouchableOpacity onPress={handleSave} style={[styles.button, false && styles.buttonDisabled]}>
           <Text style={styles.buttonText}>Save</Text>

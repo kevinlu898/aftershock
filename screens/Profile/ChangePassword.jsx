@@ -50,7 +50,6 @@ export default function ChangePassword() {
       return;
     }
     const currentHash = await backendHash(currentPassword);
-    const userData = r2.docs[0].data();
     if (!currentHash || userData.password_hash !== currentHash) {
       Alert.alert('Error', 'Current password is incorrect.');
       return;
@@ -80,6 +79,9 @@ export default function ChangePassword() {
           onChangeText={setCurrentPassword}
           secureTextEntry
           style={styles.input}
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType="password"
         />
         <TextInput
           placeholder="New password"
@@ -87,6 +89,9 @@ export default function ChangePassword() {
           onChangeText={setNewPassword}
           secureTextEntry
           style={styles.input}
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType="newPassword"
         />
         <TouchableOpacity onPress={handleSave} style={[styles.button, false && styles.buttonDisabled]}>
           <Text style={styles.buttonText}>Save</Text>

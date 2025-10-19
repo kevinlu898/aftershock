@@ -229,6 +229,11 @@ export default function Profile() {
               title="Change Password" 
               onPress={changePassword} 
             />
+            <OptionRow 
+              title="Change Details"
+              subtitle="Update name, zip, phone, email"
+              onPress={() => navigation.navigate('ChangeDetails')}
+            />
             <OptionRow
               title="Export Data"
               subtitle="Download your emergency plan and records"
