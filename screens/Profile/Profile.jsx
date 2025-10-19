@@ -13,7 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { colors } from "../../css";
+import { colors, globalStyles } from "../../css";
 import { auth } from "../../db/firebaseConfig";
 import { clearData } from "../../storage/storageUtils";
 
@@ -152,10 +152,9 @@ export default function Profile() {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Text style={styles.heading}>Profile</Text>
+        
+          <Text style={globalStyles.heading}>Profile</Text>
           <Text style={styles.subtitle}>Manage your account and preferences</Text>
-        </View>
 
         {/* Emergency Hub */}
         <View style={styles.section}>

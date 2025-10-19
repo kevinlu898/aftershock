@@ -11,8 +11,16 @@ export default function ChangeUsername() {
   const navigation = useNavigation();
 
   const handleSave = async () => {
-    if (!newUsername || newUsername.length < 3) {
+    if (!newUsername || newUsername.length < 3|| newUsername.length > 20) {
       Alert.alert('Error', 'Please enter a username at least 3 characters long.');
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(newUsername)) {
+      Alert.alert(
+        "Error",
+        "Username must only contain letters, numbers, or underscores."
+      );
       return;
     }
 

@@ -13,10 +13,17 @@ export default function ChangePassword() {
   const navigation = useNavigation();
 
   const handleSave = async () => {
-    if (!newPassword || newPassword.length < 8) {
-      Alert.alert('Error', 'New password must be at least 8 characters.');
-      return;
-    }
+    if (newPassword.length < 8) {
+        Alert.alert("Error", "Password must be at least 8 characters long");
+        return;
+      }
+      if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword)) {
+        Alert.alert(
+          "Error",
+          "Password must contain a mix of uppercase and lowercase letters"
+        );
+        return;
+      }
 
     const username = await getData('username');
     if (!username) {
