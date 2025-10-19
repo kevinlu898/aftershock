@@ -23,6 +23,8 @@ import ChangeUsername from "./screens/Profile/ChangeUsername";
 import DeleteAccount from "./screens/Profile/DeleteAccount";
 import Login from "./screens/Profile/Login";
 import Profile from "./screens/Profile/Profile";
+import TermsOfService from "./screens/TermsOfService";
+import UserAgreement from "./screens/UserAgreement";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -104,6 +106,8 @@ export default function App() {
           <Stack.Screen name="ChangeUsername" component={ChangeUsername} options={{ headerShown: true, title: 'Change Username' }} />
           <Stack.Screen name="ChangePassword" component={ChangePassword} options={{ headerShown: true, title: 'Change Password' }} />
           <Stack.Screen name="DeleteAccount" component={DeleteAccount} options={{ headerShown: true, title: 'Delete Account' }} />
+          <Stack.Screen name="TermsOfService" component={TermsOfService} options={{ headerShown: true, title: 'Terms of Service' }} />
+          <Stack.Screen name="UserAgreement" component={UserAgreement} options={{ headerShown: true, title: 'User Agreement' }} />
           <Stack.Screen name="MainApp" component={MainTabs} />
           <Stack.Screen name="prepareLessons" component={prepareLessons} />
           <Stack.Screen name="LocalRisk" component={LocalRisk} />

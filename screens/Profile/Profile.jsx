@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { colors } from "../../css";
 import { auth } from "../../db/firebaseConfig";
-import { storeData } from "../../storage/storageUtils";
+import { clearData } from "../../storage/storageUtils";
 
 // Enhanced OptionRow with better styling and icons
 const OptionRow = ({ title, subtitle, onPress, rightElement, isDestructive = false }) => (
@@ -76,8 +76,13 @@ export default function Profile() {
       if (!confirmed) return;
       signOut(auth)
         .then(async () => {
-          await storeData("isLoggedIn", "no");
-          await storeData("username", "");
+          // clear user-related AsyncStorage keys
+          await clearData('isLoggedIn');
+          await clearData('username');
+          await clearData('emergencyContacts');
+          await clearData('riskdata');
+          await clearData('firstname');
+          await clearData('postalcode');
           navigation.replace("Login");
         })
         .catch(() => {
@@ -94,8 +99,13 @@ export default function Profile() {
             onPress: async () => {
               try {
                 await signOut(auth);
-                await storeData("isLoggedIn", "no");
-                await storeData("username", "");
+                // clear user-related AsyncStorage keys
+                await clearData('isLoggedIn');
+                await clearData('username');
+                await clearData('emergencyContacts');
+                await clearData('riskdata');
+                await clearData('firstname');
+                await clearData('postalcode');
                 navigation.replace("Login");
               } catch (e) {
                 Alert.alert("Error", "Failed to log out.");
@@ -133,10 +143,8 @@ export default function Profile() {
       Alert.alert("Error", "Unable to open mail client.")
     );
   };
-  const openPrivacy = () =>
-    Linking.openURL("https://example.com/privacy").catch(() => {});
-  const openTerms = () =>
-    Linking.openURL("https://example.com/terms").catch(() => {});
+  const openPrivacy = () => navigation.navigate('UserAgreement');
+  const openTerms = () => navigation.navigate('TermsOfService');
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.light }}>
