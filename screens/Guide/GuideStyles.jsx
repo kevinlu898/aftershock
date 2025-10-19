@@ -1,5 +1,5 @@
 import { Platform, StyleSheet } from 'react-native';
-import { colors } from '../../../css';
+import { colors } from '../../css';
 
 export const markdownStyles = {
   body: {
