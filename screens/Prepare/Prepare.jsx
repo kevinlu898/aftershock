@@ -195,6 +195,10 @@ const Prepare = () => {
         <Text style={globalStyles.heading}>Prepare</Text>
         <Text style={prepareStyles.subtitle}>Complete your journey to earthquake safety</Text>
 
+        <TouchableOpacity onPress={() => navigation.navigate("myPlan")}>
+          <Text style={prepareStyles.buttonText}>Get Started</Text>
+        </TouchableOpacity>
+
         <View style={[prepareStyles.overallProgress, { backgroundColor: colors.white }]}>
           <View style={prepareStyles.progressHeader}>
             <Text style={prepareStyles.progressLabel}>Overall Progress</Text>

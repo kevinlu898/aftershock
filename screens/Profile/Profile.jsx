@@ -169,22 +169,22 @@ export default function Profile() {
             <OptionRow
               title="Manage My Plan"
               subtitle="Review and update your emergency plan"
-              onPress={openManagePlan}
+              onPress={navigation.navigate.bind(this, "myPlan")}
             />
             <OptionRow
               title="Emergency Contacts"
               subtitle="Add or edit emergency contacts"
-              onPress={openContacts}
+              onPress={navigation.navigate.bind(this, "Contacts")}
             />
             <OptionRow
               title="Medical Information"
               subtitle="Allergies, medications, health notes"
-              onPress={openMedicalInfo}
+              onPress={navigation.navigate.bind(this, "Medical")}
             />
             <OptionRow
               title="Important Documents"
               subtitle="Store copies of IDs and insurance policies"
-              onPress={openDocuments}
+              onPress={navigation.navigate.bind(this, "Documents")}
             />
           </View>
         </View>
