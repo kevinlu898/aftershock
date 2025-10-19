@@ -18,6 +18,9 @@ import Home from "./screens/Home";
 import Prepare from "./screens/Prepare/Prepare";
 import prepareLessons from "./screens/Prepare/prepareLessons";
 import myPlan from "./screens/Prepare/myPlan";
+import medicalInfo from "./screens/Prepare/medicalInfo";
+import contactInfo from "./screens/Prepare/contactInfo";
+import importantDocuments from "./screens/Prepare/importantDocuments";
 import AccountCreation from "./screens/Profile/AccountCreation";
 import ChangePassword from "./screens/Profile/ChangePassword";
 import ChangeUsername from "./screens/Profile/ChangeUsername";
@@ -123,6 +126,9 @@ export default function App() {
           <Stack.Screen name="LocalRisk" component={LocalRisk} />
           <Stack.Screen name="News" component={News} />
           <Stack.Screen name="myPlan" component={myPlan} />
+          <Stack.Screen name="medicalInfo" component={medicalInfo} />
+          <Stack.Screen name="contactInfo" component={contactInfo} />
+          <Stack.Screen name="importantDocuments" component={importantDocuments} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
