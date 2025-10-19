@@ -113,3 +113,20 @@ export const fetchEarthquakeData = async (postal) => {
   console.log("Earthquake response has worked!");
   return data;
 };
+
+// Fetch the latest news stories (expected to return 3 stories)
+export const fetchNews = async () => {
+  const res = await fetch("https://aftershock-backend.vercel.app/api/news", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Server error: ${res.status}`);
+  }
+
+  const data = await res.json();
+  console.log("News response has worked!");
+  // return the stories array if present, otherwise return the whole payload
+  return data?.data?.data;
+};

@@ -1,8 +1,8 @@
 import { useNavigation } from '@react-navigation/native';
 import { collection, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { useState } from 'react';
-import { Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { globalStyles } from '../../css';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { colors, globalStyles } from '../../css';
 import { db } from '../../db/firebaseConfig';
 import { backendHash } from '../../requests';
 import { getData } from '../../storage/storageUtils';
@@ -45,25 +45,71 @@ export default function ChangePassword() {
   };
 
   return (
-    <View style={globalStyles.container}>
-      <Text style={globalStyles.heading}>Change Password</Text>
-      <TextInput
-        placeholder="Current password"
-        value={currentPassword}
-        onChangeText={setCurrentPassword}
-        secureTextEntry
-        style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 8, marginBottom: 12 }}
-      />
-      <TextInput
-        placeholder="New password"
-        value={newPassword}
-        onChangeText={setNewPassword}
-        secureTextEntry
-        style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 8, marginBottom: 12 }}
-      />
-      <TouchableOpacity onPress={handleSave} style={{ backgroundColor: '#519872', borderRadius: 8, padding: 12 }}>
-        <Text style={{ color: '#fff', textAlign: 'center' }}>Save</Text>
-      </TouchableOpacity>
+    <View style={styles.page}>
+      <View style={styles.card}>
+        <Text style={[globalStyles.heading, styles.heading]}>Change Password</Text>
+        <Text style={styles.infoText}>Update your account password. Make sure it's at least 8 characters long.</Text>
+
+        <TextInput
+          placeholder="Current password"
+          value={currentPassword}
+          onChangeText={setCurrentPassword}
+          secureTextEntry
+          style={styles.input}
+        />
+        <TextInput
+          placeholder="New password"
+          value={newPassword}
+          onChangeText={setNewPassword}
+          secureTextEntry
+          style={styles.input}
+        />
+        <TouchableOpacity onPress={handleSave} style={[styles.button, false && styles.buttonDisabled]}>
+          <Text style={styles.buttonText}>Save</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+    backgroundColor: colors.light,
+    padding: 18,
+    paddingTop: 24,
+    justifyContent: 'flex-start',
+  },
+  card: {
+    backgroundColor: '#fff',
+    padding: 18,
+    borderRadius: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 12,
+    elevation: 4,
+    marginBottom: 12,
+  },
+  heading: { marginBottom: 8 },
+  infoText: { marginBottom: 12, color: colors.secondary, lineHeight: 20 },
+  input: {
+    borderWidth: 1,
+    borderColor: '#E6EEF3',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    backgroundColor: '#FFF',
+    color: '#111827',
+  },
+  button: {
+    backgroundColor: '#519872',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonDisabled: { opacity: 0.6 },
+  buttonText: { color: '#fff', fontWeight: '700' },
+});

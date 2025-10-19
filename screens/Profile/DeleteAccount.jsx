@@ -2,8 +2,8 @@ import { useNavigation } from '@react-navigation/native';
 import { signOut } from 'firebase/auth';
 import { collection, deleteDoc, getDocs, query, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { globalStyles } from '../../css';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { colors, globalStyles } from '../../css';
 import { auth, db } from '../../db/firebaseConfig';
 import { backendHash } from '../../requests';
 import { clearData, getData } from '../../storage/storageUtils';
@@ -111,38 +111,124 @@ export default function DeleteAccount() {
   };
 
   return (
-    <View style={globalStyles.container}>
-      <Text style={globalStyles.heading}>Delete Account</Text>
-      <Text style={{ marginBottom: 8, color: '#666' }}>
-        To permanently delete your account, enter your username and password below.
-      </Text>
+    <View style={styles.page}>
+      <View style={styles.card}>
+        <Text style={[globalStyles.heading, styles.heading]}>Delete Account</Text>
+        <View style={styles.infoBox}>
+          <Text style={styles.infoBoxTitle}>Important</Text>
+          <Text style={styles.infoBoxText}>
+            Deleting your account will permanently remove all of your data — emergency contacts, plans, documents, and preferences. This action cannot be undone.
+          </Text>
+        </View>
+        <Text style={styles.infoText}>
+          To permanently delete your account, please verify your password.
+        </Text>
 
-      {/* Show the logged-in username but prevent editing so users can't delete other accounts */}
-      <TextInput
-        placeholder="Username"
-        value={usernameInput}
-        onChangeText={setUsernameInput}
-        style={{ borderWidth: 1, borderColor: '#eee', borderRadius: 8, padding: 8, marginBottom: 12, backgroundColor: '#f5f5f5', color: '#444' }}
-        autoCapitalize="none"
-        editable={false}
-        selectTextOnFocus={false}
-      />
+        {/* Show the logged-in username but prevent editing so users can't delete other accounts */}
+        <TextInput
+          placeholder="Username"
+          value={usernameInput}
+          onChangeText={setUsernameInput}
+          style={[styles.input, styles.disabledInput]}
+          autoCapitalize="none"
+          editable={false}
+          selectTextOnFocus={false}
+        />
 
-      <TextInput
-        placeholder="Password"
-        value={passwordInput}
-        onChangeText={setPasswordInput}
-        secureTextEntry
-        style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 8, marginBottom: 12 }}
-      />
+        <TextInput
+          placeholder="Password"
+          value={passwordInput}
+          onChangeText={setPasswordInput}
+          secureTextEntry
+          style={styles.input}
+        />
 
-      <TouchableOpacity
-        onPress={handleDelete}
-        style={{ backgroundColor: '#dc2626', borderRadius: 8, padding: 12 }}
-        disabled={loading}
-      >
-        <Text style={{ color: '#fff', textAlign: 'center' }}>{loading ? 'Deleting...' : 'Delete Account'}</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          onPress={handleDelete}
+          style={[styles.button, loading && styles.buttonDisabled]}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>{loading ? 'Deleting...' : 'Delete Account'}</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
+
+// Local styles for DeleteAccount
+const styles = StyleSheet.create({
+  page: {
+    flex: 1,
+    backgroundColor: colors.light,
+    padding: 18,
+    paddingTop: 24,
+    justifyContent: 'flex-start',
+  },
+  card: {
+    backgroundColor: '#fff',
+    padding: 18,
+    borderRadius: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 12,
+    elevation: 4,
+    marginBottom: 12,
+  },
+  infoBox: {
+    backgroundColor: '#FFFBEB',
+    borderLeftWidth: 4,
+    borderLeftColor: '#F97316',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    marginTop: 6, 
+  },
+  infoBoxTitle: {
+    fontWeight: '700',
+    color: '#92400E',
+    marginBottom: 4,
+  },
+  infoBoxText: {
+    color: '#92400E',
+    lineHeight: 18,
+    fontSize: 13,
+  },
+  heading: {
+    marginBottom: 8,
+  },
+  infoText: {
+    marginBottom: 14,
+    color: colors.secondary,
+    lineHeight: 20,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#E6EEF3',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    backgroundColor: '#FFF',
+    color: '#111827',
+  },
+  disabledInput: {
+    backgroundColor: '#F3F4F6',
+    color: '#6B7280',
+  },
+  button: {
+    backgroundColor: '#DC2626',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+});
