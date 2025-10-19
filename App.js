@@ -11,6 +11,7 @@ import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityI
 
 import Dashboard from "./screens/Dashboard";
 import LocalRisk from "./screens/Dashboard/LocalRisk";
+import News from "./screens/Dashboard/News";
 import Emergency from "./screens/Emergency/Emergency";
 import Guide from "./screens/Guide/Guide";
 import Home from "./screens/Home";
@@ -100,6 +101,7 @@ export default function App() {
           <Stack.Screen name="MainApp" component={MainTabs} />
           <Stack.Screen name="prepareLessons" component={prepareLessons} />
           <Stack.Screen name="LocalRisk" component={LocalRisk} />
+          <Stack.Screen name="News" component={News} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

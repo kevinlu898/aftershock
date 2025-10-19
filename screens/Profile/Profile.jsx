@@ -312,13 +312,13 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 32,
     fontWeight: "800",
-    color: colors.dark,
+    color: colors.primary,
     marginBottom: 10,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: colors.primary,
+    color: colors.muted,
     fontWeight: "500",
     textAlign: 'center',
   },
