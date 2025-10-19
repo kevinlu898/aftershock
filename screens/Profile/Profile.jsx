@@ -119,25 +119,12 @@ export default function Profile() {
   const changePassword = () => navigation.navigate('ChangePassword');
   const exportData = () => Alert.alert("Export Data", "Preparing export...");
   const deleteAccount = () => {
-    Alert.alert(
-      "Delete Account",
-      "This action is permanent. Are you sure?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () =>
-            Alert.alert("Deleted", "Account deleted (placeholder)."),
-        },
-      ],
-      { cancelable: true }
-    );
+    // Navigate to the DeleteAccount screen which handles confirmation and deletion
+    navigation.navigate('DeleteAccount');
   };
 
   // Support
   const openHelp = () => navigation.navigate("Help");
-  const openFAQ = () => navigation.navigate("FAQ");
   const sendFeedback = () => {
     const email = "support@aftershock.app";
     const subject = "Aftershock Feedback";
@@ -246,10 +233,6 @@ export default function Profile() {
             <OptionRow
               title="Help & Support"
               onPress={openHelp}
-            />
-            <OptionRow 
-              title="Frequently Asked Questions" 
-              onPress={openFAQ} 
             />
             <OptionRow 
               title="Send Feedback" 
