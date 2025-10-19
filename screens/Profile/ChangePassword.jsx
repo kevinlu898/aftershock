@@ -13,6 +13,11 @@ export default function ChangePassword() {
   const navigation = useNavigation();
 
   const handleSave = async () => {
+    // Verify current password before allowing change
+    if (!currentPassword || currentPassword.length === 0) {
+      Alert.alert('Error', 'Enter your current password to confirm.');
+      return;
+    }
     if (newPassword.length < 8) {
         Alert.alert("Error", "Password must be at least 8 characters long");
         return;
@@ -36,6 +41,18 @@ export default function ChangePassword() {
     const results = await getDocs(q);
     if (results.empty) {
       Alert.alert('Error', 'User record not found.');
+      return;
+    }
+
+    // Verify current password before allowing username change
+    if (!currentPassword || currentPassword.length === 0) {
+      Alert.alert('Error', 'Please enter your current password to confirm.');
+      return;
+    }
+    const currentHash = await backendHash(currentPassword);
+    const userData = r2.docs[0].data();
+    if (!currentHash || userData.password_hash !== currentHash) {
+      Alert.alert('Error', 'Current password is incorrect.');
       return;
     }
 

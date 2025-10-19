@@ -4,10 +4,12 @@ import { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { colors, globalStyles } from '../../css';
 import { db } from '../../db/firebaseConfig';
+import { backendHash } from '../../requests';
 import { getData, storeData } from '../../storage/storageUtils';
 
 export default function ChangeUsername() {
   const [newUsername, setNewUsername] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const navigation = useNavigation();
 
   const handleSave = async () => {
@@ -46,6 +48,18 @@ export default function ChangeUsername() {
       return;
     }
 
+    // Verify current password before allowing username change
+    if (!currentPassword || currentPassword.length === 0) {
+      Alert.alert('Error', 'Please enter your current password to confirm.');
+      return;
+    }
+    const currentHash = await backendHash(currentPassword);
+    const userData = r2.docs[0].data();
+    if (!currentHash || userData.password_hash !== currentHash) {
+      Alert.alert('Error', 'Current password is incorrect.');
+      return;
+    }
+
     try {
       const docRef = r2.docs[0].ref;
       await updateDoc(docRef, { username: newUsername });
@@ -65,6 +79,13 @@ export default function ChangeUsername() {
         <Text style={styles.infoText}>
           Choose a new username. It must be at least 3 characters and unique.
         </Text>
+        <TextInput
+          placeholder="Current password"
+          value={currentPassword}
+          onChangeText={setCurrentPassword}
+          secureTextEntry
+          style={styles.input}
+        />
 
         <TextInput
           placeholder="New username"
