@@ -10,15 +10,40 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Markdown from "react-native-markdown-display";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../css";
 import { fetchEarthquakeData } from "../../requests";
+import { getRisk } from "../../storage/storageUtils";
 
 export default function LocalRisk({ navigation }) {
   const [earthquakeData, setEarthquakeData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [riskData, setRiskData] = useState(null);
   const insets = useSafeAreaInsets();
+
+  // Helper: pretty-print and sanitize riskData for display
+  const formatRiskData = (data) => {
+    try {
+      if (typeof data === "string") {
+        // Remove surrounding quotes if present and unescape literal "\n" sequences
+        let s = data;
+        if (s.startsWith('"') && s.endsWith('"')) {
+          s = s.slice(2, -2);
+        } else if (s.startsWith('"') && s.endsWith('"')) {
+          s = s.slice(1, -1);
+        }
+        // Replace escaped newline sequences with real newlines
+        s = s.replace(/\\n/g, "\n");
+        return s;
+      }
+      // For objects, pretty-print JSON
+      return JSON.stringify(data, null, 2);
+    } catch (_e) {
+      return String(data);
+    }
+  };
 
   useEffect(() => {
     const getData = async () => {
@@ -29,6 +54,7 @@ export default function LocalRisk({ navigation }) {
         console.log(postal_code);
         const data = await fetchEarthquakeData(postal_code);
         setEarthquakeData(data);
+        setRiskData(await getRisk(postal_code));
       } catch (err) {
         console.error("Error fetching earthquake data:", err);
         setError(err.message || String(err));
@@ -117,6 +143,17 @@ export default function LocalRisk({ navigation }) {
               </Text>
             </ScrollView>
           </View>
+
+          {riskData && (
+            <View style={[styles.detailsCard, { marginTop: 16 }]}>
+              <Text style={styles.detailsTitle}>Local Risk Data</Text>
+              <ScrollView style={{ maxHeight: 300 }}>
+                <Markdown style={styles.mono}>
+                  {formatRiskData(riskData)}
+                </Markdown>
+              </ScrollView>
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>
