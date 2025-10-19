@@ -143,7 +143,7 @@ export default function Profile() {
       Alert.alert("Error", "Unable to open mail client.")
     );
   };
-  const openPrivacy = () => navigation.navigate('UserAgreement');
+  const openPrivacy = () => navigation.navigate('PrivacyPolicy');
   const openTerms = () => navigation.navigate('TermsOfService');
 
   return (
