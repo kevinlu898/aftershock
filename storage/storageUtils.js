@@ -27,6 +27,14 @@ export const getData = async (key) => {
   }
 };
 
+export const clearData = async (key) => {
+  try {
+    await AsyncStorage.removeItem(key);
+  } catch (e) {
+    console.log("Error clearing data:", e);
+  }
+};
+
 export const fillData = async (username) => {
   try {
     const queryToCheck = query(
@@ -68,6 +76,7 @@ export const getRisk = async (postal_code) => {
         const dataNew = await aiResponse(
           `What is the general earthquake risk for postal code ${postal_code}? Tell me how it is in general (either high-risk or low-risk or somewhere in the middle)`
         );
+        console.log(dataNew);
         addDoc(collection(db, "postal_data"), {
           postal_code: postal_code,
           data: dataNew,
