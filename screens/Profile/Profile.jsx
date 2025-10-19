@@ -174,17 +174,17 @@ export default function Profile() {
             <OptionRow
               title="Emergency Contacts"
               subtitle="Add or edit emergency contacts"
-              onPress={navigation.navigate.bind(this, "Contacts")}
+              onPress={navigation.navigate.bind(this, "contactInfo")}
             />
             <OptionRow
               title="Medical Information"
               subtitle="Allergies, medications, health notes"
-              onPress={navigation.navigate.bind(this, "Medical")}
+              onPress={navigation.navigate.bind(this, "medicalInfo")}
             />
             <OptionRow
               title="Important Documents"
               subtitle="Store copies of IDs and insurance policies"
-              onPress={navigation.navigate.bind(this, "Documents")}
+              onPress={navigation.navigate.bind(this, "importantDocuments")}
             />
           </View>
         </View>
