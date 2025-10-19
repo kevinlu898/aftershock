@@ -15,7 +15,7 @@ export const PREPARE_MODULES = [
                 type: 'lesson',
                 content: {
                     pages: [
-{
+                        {
                             id: '1-1-p1',
                             type: 'text',
                             title: 'What Causes Earthquakes',
@@ -29,6 +29,21 @@ export const PREPARE_MODULES = [
 <li><strong>Magnitude:</strong> Measures the energy released by the quake. A one-unit increase (e.g., 6.0 → 7.0) represents ~32 times more energy.</li>
 <li><strong>Intensity:</strong> How strong the shaking feels in a particular location.</li>
 </ul>`
+                        },
+                        {
+                            id: '1-1-p2',
+                            type: 'text',
+                            title: 'Types of Earthquakes',
+                            body: `<p>Not all earthquakes are the same. Shallow quakes (0–70 km deep) usually cause the most damage because energy reaches the surface with little dissipation. Deep quakes can be strong but often affect wider areas with less surface damage.</p>
+
+<h3>Shaking varies depending on:</h3>
+<ul>
+<li><strong>Distance from epicenter</strong></li>
+<li><strong>Local geology:</strong> Loose soils amplify shaking; bedrock reduces it.</li>
+<li><strong>Building design:</strong> Older, unreinforced structures are most at risk.</li>
+</ul>
+
+<p>Even minor quakes can be dangerous, especially in areas with poorly secured furniture, gas lines, or tall glass windows.</p>`
                         },
                         {
                             id: '1-1-p3',
@@ -97,38 +112,46 @@ export const PREPARE_MODULES = [
                             id: '1-2-p1',
                             type: 'text',
                             title: 'Regional Earthquake Risks',
-                            body: `The United States faces diverse earthquake risks across multiple regions, with over 50% of Americans living in areas prone to damaging quakes. Understanding your regional risk is the first step toward safety.
+                            body: `<p>The United States faces diverse earthquake risks across multiple regions, with over 50% of Americans living in areas prone to damaging quakes. Understanding your regional risk is the first step toward safety.</p>
 
-High-Risk Regions & Statistics:
-• California: 15,000+ known faults. The "Big One" on the San Andreas Fault could affect 25 million people and cause $200+ billion in damage
-• Pacific Northwest: Cascadia Subduction Zone capable of magnitude 9+ quakes affecting 12 million people
-• Alaska: 11% of world's earthquakes occur here, with 40,000+ quakes annually
-• Central U.S.: New Madrid Seismic Zone caused major quakes in 1811-1812
-• Utah: Wasatch Fault threatens 80% of Utah's population
-• Northeast U.S.: Ancient faults affecting dense urban populations`
+<h3>High-Risk Regions & Statistics:</h3>
+<ul>
+<li><strong>California:</strong> 15,000+ known faults. The "Big One" on the San Andreas Fault could affect 25 million people and cause $200+ billion in damage</li>
+<li><strong>Pacific Northwest:</strong> Cascadia Subduction Zone capable of magnitude 9+ quakes affecting 12 million people</li>
+<li><strong>Alaska:</strong> 11% of world's earthquakes occur here, with 40,000+ quakes annually</li>
+<li><strong>Central U.S.:</strong> New Madrid Seismic Zone caused major quakes in 1811-1812</li>
+<li><strong>Utah:</strong> Wasatch Fault threatens 80% of Utah's population</li>
+<li><strong>Northeast U.S.:</strong> Ancient faults affecting dense urban populations</li>
+</ul>`
                         },
                         {
                             id: '1-2-p2',
                             type: 'text',
                             title: 'Earthquake Dangers & Hazards',
-                            body: `Immediate Life-Threatening Dangers:
-• Falling Hazards: Unsecured furniture and fixtures
-• Structural Collapse: Older unreinforced buildings
-• Flying Glass: Broken windows
-• Gas Line Ruptures: Can lead to fires and poisoning
+                            body: `<h3>Immediate Life-Threatening Dangers:</h3>
+<ul>
+<li><strong>Falling Hazards:</strong> Unsecured furniture and fixtures</li>
+<li><strong>Structural Collapse:</strong> Older unreinforced buildings</li>
+<li><strong>Flying Glass:</strong> Broken windows</li>
+<li><strong>Gas Line Ruptures:</strong> Can lead to fires and poisoning</li>
+</ul>
 
-Secondary Hazards:
-• Urban Fires
-• Tsunamis
-• Landslides & Rockslides
-• Liquefaction
-• Infrastructure Failure
+<h3>Secondary Hazards:</h3>
+<ul>
+<li>Urban Fires</li>
+<li>Tsunamis</li>
+<li>Landslides & Rockslides</li>
+<li>Liquefaction</li>
+<li>Infrastructure Failure</li>
+</ul>
 
-Long-Term Challenges:
-• Water Contamination
-• Medical Crisis
-• Communication Breakdown
-• Economic Devastation`
+<h3>Long-Term Challenges:</h3>
+<ul>
+<li>Water Contamination</li>
+<li>Medical Crisis</li>
+<li>Communication Breakdown</li>
+<li>Economic Devastation</li>
+</ul>`
                         },
                         {
                             id: '1-2-p3',
@@ -194,15 +217,17 @@ Long-Term Challenges:
                             id: '1-3-p1',
                             type: 'text',
                             title: 'Common Misconceptions',
-                            body: `Misunderstanding earthquake safety can dramatically increase your risk. Many common myths persist that could put you in danger during and after an earthquake.
+                            body: `<p>Misunderstanding earthquake safety can dramatically increase your risk. Many common myths persist that could put you in danger during and after an earthquake.</p>
 
-Dangerous Myths Debunked:
-• "Stand in a doorway — it's the safest place." → FACT: Drop, Cover, and Hold On under sturdy furniture is safe.
-• "Earthquakes only happen along the coast." → FACT: Faults exist throughout the US.
-• "Small earthquakes prevent big ones." → FACT: Minor quakes don't prevent larger ones.
-• "We can predict earthquakes precisely." → FACT: Only probabilities can be forecasted.
-• "California will fall into the ocean during the Big One." → FACT: Geologically impossible.
-• "The ground opens up and swallows people during quakes." → FACT: Most damage comes from shaking, not chasms.`
+<h3>Dangerous Myths Debunked:</h3>
+<ul>
+<li><strong>"Stand in a doorway — it's the safest place."</strong> → FACT: Drop, Cover, and Hold On under sturdy furniture is safe.</li>
+<li><strong>"Earthquakes only happen along the coast."</strong> → FACT: Faults exist throughout the US.</li>
+<li><strong>"Small earthquakes prevent big ones."</strong> → FACT: Minor quakes don't prevent larger ones.</li>
+<li><strong>"We can predict earthquakes precisely."</strong> → FACT: Only probabilities can be forecasted.</li>
+<li><strong>"California will fall into the ocean during the Big One."</strong> → FACT: Geologically impossible.</li>
+<li><strong>"The ground opens up and swallows people during quakes."</strong> → FACT: Most damage comes from shaking, not chasms.</li>
+</ul>`
                         }
                     ]
                 }
@@ -218,14 +243,16 @@ Dangerous Myths Debunked:
                             id: '1-4-p1',
                             type: 'text',
                             title: 'Before an Earthquake – Preparation',
-                            body: `Secure your space, create emergency plans, and build emergency kits.
+                            body: `<p>Secure your space, create emergency plans, and build emergency kits.</p>
 
-Key Steps:
-• Anchor furniture and appliances
-• Identify safe spots and meeting places
-• Practice "Drop, Cover, and Hold On"
-• Plan for pets
-• Build home, go-bag, and car kits`
+<h3>Key Steps:</h3>
+<ul>
+<li>Anchor furniture and appliances</li>
+<li>Identify safe spots and meeting places</li>
+<li>Practice "Drop, Cover, and Hold On"</li>
+<li>Plan for pets</li>
+<li>Build home, go-bag, and car kits</li>
+</ul>`
                         },
                         {
                             id: '1-4-p2',
@@ -292,7 +319,7 @@ Key Steps:
                             id: '2-1-p1',
                             type: 'text',
                             title: 'Learn the Basics',
-                            body: `Every family needs an earthquake plan. This lesson covers the essential elements everyone should include in their emergency plan.`
+                            body: `<p>Every family needs an earthquake plan. This lesson covers the essential elements everyone should include in their emergency plan.</p>`
                         },
                         {
                             id: '2-1-p2',
@@ -318,7 +345,7 @@ Key Steps:
                             id: '2-2-p1',
                             type: 'text',
                             title: 'Define Contacts',
-                            body: `Set up your emergency communication plan. Text messages often work when phone calls don't during emergencies.`
+                            body: `<p>Set up your emergency communication plan. Text messages often work when phone calls don't during emergencies.</p>`
                         },
                         {
                             id: '2-2-p2',
@@ -345,7 +372,7 @@ Key Steps:
                             id: '2-3-p1',
                             type: 'text',
                             title: 'Practice Your Plan',
-                            body: `Run through your earthquake drill with family members. Practice makes perfect!`
+                            body: `<p>Run through your earthquake drill with family members. Practice makes perfect!</p>`
                         },
                         {
                             id: '2-3-p2',
@@ -379,14 +406,16 @@ Key Steps:
                             id: '3-1-p1',
                             type: 'text',
                             title: 'Your Grab-and-Go Survival Kit',
-                            body: `A Go-Bag is your immediate survival kit designed to sustain you for the first 72 hours after a disaster. Keep it lightweight, portable, and easily accessible near your primary exit.
+                            body: `<p>A Go-Bag is your immediate survival kit designed to sustain you for the first 72 hours after a disaster. Keep it lightweight, portable, and easily accessible near your primary exit.</p>
 
-Key Principles:
-• Store in a durable, waterproof backpack
-• Keep it accessible (not buried in storage)
-• Weight under 25 pounds for easy carrying
-• Personalize for your family's specific needs
-• Check and refresh contents every 6 months`
+<h3>Key Principles:</h3>
+<ul>
+<li>Store in a durable, waterproof backpack</li>
+<li>Keep it accessible (not buried in storage)</li>
+<li>Weight under 25 pounds for easy carrying</li>
+<li>Personalize for your family's specific needs</li>
+<li>Check and refresh contents every 6 months</li>
+</ul>`
                         },
                         {
                             id: '3-1-p2',
@@ -399,53 +428,67 @@ Key Principles:
                             id: '3-1-p3',
                             type: 'text',
                             title: 'Essential Go-Bag Contents',
-                            body: `Water & Food:
-• 3 liters of water per person (or purification tablets)
-• 3-day supply of non-perishable food
-• Manual can opener
-• High-energy snacks
+                            body: `<h3>Water & Food:</h3>
+<ul>
+<li>3 liters of water per person (or purification tablets)</li>
+<li>3-day supply of non-perishable food</li>
+<li>Manual can opener</li>
+<li>High-energy snacks</li>
+</ul>
 
-Shelter & Warmth:
-• Emergency blanket or sleeping bag
-• Poncho or rain gear
-• Warm hat and gloves
-• Change of clothes
+<h3>Shelter & Warmth:</h3>
+<ul>
+<li>Emergency blanket or sleeping bag</li>
+<li>Poncho or rain gear</li>
+<li>Warm hat and gloves</li>
+<li>Change of clothes</li>
+</ul>
 
-Light & Communication:
-• LED flashlight and extra batteries
-• Headlamp
-• Battery-powered or hand-crank radio
-• Whistle
+<h3>Light & Communication:</h3>
+<ul>
+<li>LED flashlight and extra batteries</li>
+<li>Headlamp</li>
+<li>Battery-powered or hand-crank radio</li>
+<li>Whistle</li>
+</ul>
 
-First Aid & Health:
-• Comprehensive first aid kit
-• Personal medications (7-day supply)
-• Prescription copies
-• Hygiene items and N95 masks
+<h3>First Aid & Health:</h3>
+<ul>
+<li>Comprehensive first aid kit</li>
+<li>Personal medications (7-day supply)</li>
+<li>Prescription copies</li>
+<li>Hygiene items and N95 masks</li>
+</ul>
 
-Tools & Safety:
-• Multi-tool or pocket knife
-• Work gloves
-• Duct tape
-• Local maps
-• Emergency cash in small bills`
+<h3>Tools & Safety:</h3>
+<ul>
+<li>Multi-tool or pocket knife</li>
+<li>Work gloves</li>
+<li>Duct tape</li>
+<li>Local maps</li>
+<li>Emergency cash in small bills</li>
+</ul>`
                         },
                         {
                             id: '3-1-p4',
                             type: 'text',
                             title: 'Personalize Your Go-Bag',
-                            body: `Special Considerations:
-• Infants: Formula, diapers, wipes, baby food
-• Children: Comfort items, activities, favorite snacks
-• Elderly: Medications, mobility aids
-• Pets: Food, leash, carrier, vaccination records
-• Medical needs: Insulin, epinephrine, oxygen
+                            body: `<h3>Special Considerations:</h3>
+<ul>
+<li><strong>Infants:</strong> Formula, diapers, wipes, baby food</li>
+<li><strong>Children:</strong> Comfort items, activities, favorite snacks</li>
+<li><strong>Elderly:</strong> Medications, mobility aids</li>
+<li><strong>Pets:</strong> Food, leash, carrier, vaccination records</li>
+<li><strong>Medical needs:</strong> Insulin, epinephrine, oxygen</li>
+</ul>
 
-Important Documents:
-• Copies of ID, insurance, prescriptions
-• Emergency contact list
-• Photos of family members
-• Cash and coins`
+<h3>Important Documents:</h3>
+<ul>
+<li>Copies of ID, insurance, prescriptions</li>
+<li>Emergency contact list</li>
+<li>Photos of family members</li>
+<li>Cash and coins</li>
+</ul>`
                         },
                         {
                             id: '3-1-p5',
@@ -505,13 +548,15 @@ Important Documents:
                             id: '3-2-p1',
                             type: 'text',
                             title: 'Comprehensive Home Preparedness',
-                            body: `Your home emergency kit should sustain your household for 7–14 days without outside assistance. This is your main supply for sheltering in place after a major earthquake.
+                            body: `<p>Your home emergency kit should sustain your household for 7–14 days without outside assistance. This is your main supply for sheltering in place after a major earthquake.</p>
 
-Storage Tips:
-• Use clear, stackable containers
-• Store in accessible, dry locations
-• Organize by category (food, medical, tools)
-• Rotate supplies every 6–12 months`
+<h3>Storage Tips:</h3>
+<ul>
+<li>Use clear, stackable containers</li>
+<li>Store in accessible, dry locations</li>
+<li>Organize by category (food, medical, tools)</li>
+<li>Rotate supplies every 6–12 months</li>
+</ul>`
                         },
                         {
                             id: '3-2-p2',
@@ -524,40 +569,50 @@ Storage Tips:
                             id: '3-2-p3',
                             type: 'text',
                             title: 'Home Kit Essentials',
-                            body: `Water Supply:
-• 1 gallon per person per day for 14 days
-• Purification tablets, filters, or bleach
-• Water storage containers
+                            body: `<h3>Water Supply:</h3>
+<ul>
+<li>1 gallon per person per day for 14 days</li>
+<li>Purification tablets, filters, or bleach</li>
+<li>Water storage containers</li>
+</ul>
 
-Food Supplies:
-• 2-week supply of non-perishable food
-• Manual can opener
-• Camp stove with fuel
-• Eating utensils and plates
-• High-nutrition ready-to-eat meals
+<h3>Food Supplies:</h3>
+<ul>
+<li>2-week supply of non-perishable food</li>
+<li>Manual can opener</li>
+<li>Camp stove with fuel</li>
+<li>Eating utensils and plates</li>
+<li>High-nutrition ready-to-eat meals</li>
+</ul>
 
-Medical & Sanitation:
-• Comprehensive first aid kit
-• 30-day medication supply
-• Toilet paper, garbage bags, and hygiene items
-• Bleach for disinfection`
+<h3>Medical & Sanitation:</h3>
+<ul>
+<li>Comprehensive first aid kit</li>
+<li>30-day medication supply</li>
+<li>Toilet paper, garbage bags, and hygiene items</li>
+<li>Bleach for disinfection</li>
+</ul>`
                         },
                         {
                             id: '3-2-p4',
                             type: 'text',
                             title: 'Comfort & Tools',
-                            body: `Shelter & Comfort:
-• Sleeping bags or blankets
-• Extra clothes and sturdy shoes
-• Tent or tarp for outdoor shelter
-• Emergency heating source
+                            body: `<h3>Shelter & Comfort:</h3>
+<ul>
+<li>Sleeping bags or blankets</li>
+<li>Extra clothes and sturdy shoes</li>
+<li>Tent or tarp for outdoor shelter</li>
+<li>Emergency heating source</li>
+</ul>
 
-Tools & Equipment:
-• Fire extinguisher, crowbar, shovel, rope
-• Work gloves and dust masks
-• Flashlights and batteries
-• Solar charger or power bank
-• Battery-powered radio`
+<h3>Tools & Equipment:</h3>
+<ul>
+<li>Fire extinguisher, crowbar, shovel, rope</li>
+<li>Work gloves and dust masks</li>
+<li>Flashlights and batteries</li>
+<li>Solar charger or power bank</li>
+<li>Battery-powered radio</li>
+</ul>`
                         },
                         {
                             id: '3-2-p5',
@@ -615,13 +670,15 @@ Tools & Equipment:
                             id: '3-3-p1',
                             type: 'text',
                             title: 'Vehicle Emergency Preparedness',
-                            body: `A car kit ensures safety during earthquakes while traveling or evacuating. Keep it compact but complete.
+                            body: `<p>A car kit ensures safety during earthquakes while traveling or evacuating. Keep it compact but complete.</p>
 
-Storage Strategy:
-• Use a container that fits in your trunk
-• Secure items to prevent shifting
-• Adjust contents for the season
-• Keep your fuel tank at least half full`
+<h3>Storage Strategy:</h3>
+<ul>
+<li>Use a container that fits in your trunk</li>
+<li>Secure items to prevent shifting</li>
+<li>Adjust contents for the season</li>
+<li>Keep your fuel tank at least half full</li>
+</ul>`
                         },
                         {
                             id: '3-3-p2',
@@ -634,43 +691,55 @@ Storage Strategy:
                             id: '3-3-p3',
                             type: 'text',
                             title: 'Car Kit Essentials',
-                            body: `Basic Survival:
-• Bottled water and snacks
-• Warm blanket or sleeping bag
-• Extra warm clothing and sturdy shoes
+                            body: `<h3>Basic Survival:</h3>
+<ul>
+<li>Bottled water and snacks</li>
+<li>Warm blanket or sleeping bag</li>
+<li>Extra warm clothing and sturdy shoes</li>
+</ul>
 
-Safety & Tools:
-• Jumper cables
-• Tire repair kit and air compressor
-• Basic tool kit
-• Flashlight with batteries
-• Reflective triangles or flares
+<h3>Safety & Tools:</h3>
+<ul>
+<li>Jumper cables</li>
+<li>Tire repair kit and air compressor</li>
+<li>Basic tool kit</li>
+<li>Flashlight with batteries</li>
+<li>Reflective triangles or flares</li>
+</ul>
 
-Emergency Items:
-• First aid kit
-• Whistle
-• Local maps
-• Cash and coins
-• Phone charger and power bank`
+<h3>Emergency Items:</h3>
+<ul>
+<li>First aid kit</li>
+<li>Whistle</li>
+<li>Local maps</li>
+<li>Cash and coins</li>
+<li>Phone charger and power bank</li>
+</ul>`
                         },
                         {
                             id: '3-3-p4',
                             type: 'text',
                             title: 'Seasonal Considerations',
-                            body: `Winter Additions:
-• Ice scraper and snow brush
-• Cat litter or sand for traction
-• Warm gloves and hat
-• Windshield washer fluid
+                            body: `<h3>Winter Additions:</h3>
+<ul>
+<li>Ice scraper and snow brush</li>
+<li>Cat litter or sand for traction</li>
+<li>Warm gloves and hat</li>
+<li>Windshield washer fluid</li>
+</ul>
 
-Summer Additions:
-• Extra water
-• Sun protection and cooling towels
-• Battery-operated fan
+<h3>Summer Additions:</h3>
+<ul>
+<li>Extra water</li>
+<li>Sun protection and cooling towels</li>
+<li>Battery-operated fan</li>
+</ul>
 
-Universal Additions:
-• Work gloves, multi-tool, duct tape
-• Emergency contact list`
+<h3>Universal Additions:</h3>
+<ul>
+<li>Work gloves, multi-tool, duct tape</li>
+<li>Emergency contact list</li>
+</ul>`
                         },
                         {
                             id: '3-3-p5',
@@ -736,19 +805,21 @@ Universal Additions:
                             id: '4-1-p1',
                             type: 'text',
                             title: 'Room-by-Room Safety Inspection',
-                            body: `Conducting a thorough home hazard assessment is your first step toward earthquake safety. This process helps identify potential dangers before an earthquake strikes.
+                            body: `<p>Conducting a thorough home hazard assessment is your first step toward earthquake safety. This process helps identify potential dangers before an earthquake strikes.</p>
 
-Assessment Principles:
-• Involve all household members in the inspection  
-• Look at each room from an earthquake perspective  
-• Consider both structural and non-structural hazards  
-• Document findings with photos or notes  
-• Prioritize fixes based on risk level`
+<h3>Assessment Principles:</h3>
+<ul>
+<li>Involve all household members in the inspection</li>
+<li>Look at each room from an earthquake perspective</li>
+<li>Consider both structural and non-structural hazards</li>
+<li>Document findings with photos or notes</li>
+<li>Prioritize fixes based on risk level</li>
+</ul>`
                         },
                         {
                             id: '4-1-p2',
                             type: 'video',
-                            title: 'Protect Your Home Agaisnt Earthquake',
+                            title: 'Protect Your Home Against Earthquake',
                             videoUrl: 'https://www.youtube.com/watch?v=jWwCoWS3rVo',
                             description: 'A 3-minute video showing how to inspect each room of your home for earthquake hazards and prioritize fixes.'
                         },
@@ -756,39 +827,49 @@ Assessment Principles:
                             id: '4-1-p3',
                             type: 'text',
                             title: 'Common Hazard Identification',
-                            body: `Living Areas:
-• Unsecured bookshelves and cabinets  
-• Heavy wall hangings and mirrors  
-• Tall furniture that could tip over  
-• Glass tables and overhead light fixtures  
+                            body: `<h3>Living Areas:</h3>
+<ul>
+<li>Unsecured bookshelves and cabinets</li>
+<li>Heavy wall hangings and mirrors</li>
+<li>Tall furniture that could tip over</li>
+<li>Glass tables and overhead light fixtures</li>
+</ul>
 
-Kitchen & Bathroom:
-• Unsecured refrigerator and appliances  
-• Overhead cabinet contents  
-• Glass shower doors and mirrors  
-• Water heater and gas connections  
+<h3>Kitchen & Bathroom:</h3>
+<ul>
+<li>Unsecured refrigerator and appliances</li>
+<li>Overhead cabinet contents</li>
+<li>Glass shower doors and mirrors</li>
+<li>Water heater and gas connections</li>
+</ul>
 
-Bedrooms:
-• Heavy objects above beds  
-• Unsecured dressers and wardrobes  
-• Mirrors and wall decor near beds  
-• Electronics on unstable surfaces`
+<h3>Bedrooms:</h3>
+<ul>
+<li>Heavy objects above beds</li>
+<li>Unsecured dressers and wardrobes</li>
+<li>Mirrors and wall decor near beds</li>
+<li>Electronics on unstable surfaces</li>
+</ul>`
                         },
                         {
                             id: '4-1-p4',
                             type: 'text',
                             title: 'Creating Your Home Safety Map',
-                            body: `Mapping Process:
-• Draw a simple floor plan of your home  
-• Mark hazardous items with red stickers  
-• Identify safe zones in each room  
-• Note emergency exits and alternatives  
-• Locate utility shut-off points  
+                            body: `<h3>Mapping Process:</h3>
+<ul>
+<li>Draw a simple floor plan of your home</li>
+<li>Mark hazardous items with red stickers</li>
+<li>Identify safe zones in each room</li>
+<li>Note emergency exits and alternatives</li>
+<li>Locate utility shut-off points</li>
+</ul>
 
-Priority Categories:
-• Immediate Hazards: Items that could cause injury or block exits  
-• Secondary Hazards: Items that could cause property damage  
-• Long-term Improvements: Structural upgrades needed`
+<h3>Priority Categories:</h3>
+<ul>
+<li><strong>Immediate Hazards:</strong> Items that could cause injury or block exits</li>
+<li><strong>Secondary Hazards:</strong> Items that could cause property damage</li>
+<li><strong>Long-term Improvements:</strong> Structural upgrades needed</li>
+</ul>`
                         },
                         {
                             id: '4-1-p5',
@@ -849,14 +930,16 @@ Priority Categories:
                             id: '4-2-p1',
                             type: 'text',
                             title: 'Anchoring Tall Furniture',
-                            body: `Properly securing furniture prevents tip-overs that cause most earthquake injuries. Focus on items that could fall, block exits, or cause harm.
+                            body: `<p>Properly securing furniture prevents tip-overs that cause most earthquake injuries. Focus on items that could fall, block exits, or cause harm.</p>
 
-Basic Securing Principles:
-• Anchor to wall studs, not just drywall  
-• Use appropriate brackets for furniture type  
-• Consider both earthquakes and child safety  
-• Test stability after installation  
-• Follow manufacturer recommendations`
+<h3>Basic Securing Principles:</h3>
+<ul>
+<li>Anchor to wall studs, not just drywall</li>
+<li>Use appropriate brackets for furniture type</li>
+<li>Consider both earthquakes and child safety</li>
+<li>Test stability after installation</li>
+<li>Follow manufacturer recommendations</li>
+</ul>`
                         },
                         {
                             id: '4-2-p2',
@@ -869,32 +952,40 @@ Basic Securing Principles:
                             id: '4-2-p3',
                             type: 'text',
                             title: 'Furniture Securing Techniques',
-                            body: `Bookshelves & Cabinets:
-• Use L-brackets or straps for top anchoring  
-• Secure glass doors with safety film  
-• Use museum putty for small items  
-• Install lip guards on open shelves  
+                            body: `<h3>Bookshelves & Cabinets:</h3>
+<ul>
+<li>Use L-brackets or straps for top anchoring</li>
+<li>Secure glass doors with safety film</li>
+<li>Use museum putty for small items</li>
+<li>Install lip guards on open shelves</li>
+</ul>
 
-Electronics & Appliances:
-• Secure televisions with anti-tip straps  
-• Use Velcro or mounts for computers  
-• Install latches on cabinet doors  
-• Anchor refrigerators and heavy equipment`
+<h3>Electronics & Appliances:</h3>
+<ul>
+<li>Secure televisions with anti-tip straps</li>
+<li>Use Velcro or mounts for computers</li>
+<li>Install latches on cabinet doors</li>
+<li>Anchor refrigerators and heavy equipment</li>
+</ul>`
                         },
                         {
                             id: '4-2-p4',
                             type: 'text',
                             title: 'Advanced Securing Methods',
-                            body: `Heavy Furniture:
-• Piano and china cabinet bracing  
-• File cabinet interlocks  
-• Art and mirror safety hanging systems  
+                            body: `<h3>Heavy Furniture:</h3>
+<ul>
+<li>Piano and china cabinet bracing</li>
+<li>File cabinet interlocks</li>
+<li>Art and mirror safety hanging systems</li>
+</ul>
 
-Special Considerations:
-• Historic homes and rental properties  
-• Temporary securing options  
-• Child-proofing combined with quake safety  
-• Furniture placement to avoid exit blockage`
+<h3>Special Considerations:</h3>
+<ul>
+<li>Historic homes and rental properties</li>
+<li>Temporary securing options</li>
+<li>Child-proofing combined with quake safety</li>
+<li>Furniture placement to avoid exit blockage</li>
+</ul>`
                         },
                         {
                             id: '4-2-p5',
@@ -955,48 +1046,60 @@ Special Considerations:
                             id: '4-3-p1',
                             type: 'text',
                             title: 'Water Heater Securing',
-                            body: `Water heaters are particularly dangerous during earthquakes. If they fall or rupture, they can cause fires, gas leaks, and flooding.
+                            body: `<p>Water heaters are particularly dangerous during earthquakes. If they fall or rupture, they can cause fires, gas leaks, and flooding.</p>
 
-Critical Safety Steps:
-• Use two metal straps around the tank  
-• Anchor to wall studs, not drywall  
-• Install flexible gas and water connections  
-• Maintain clearance from walls  
-• Know how to shut off gas and water`
+<h3>Critical Safety Steps:</h3>
+<ul>
+<li>Use two metal straps around the tank</li>
+<li>Anchor to wall studs, not drywall</li>
+<li>Install flexible gas and water connections</li>
+<li>Maintain clearance from walls</li>
+<li>Know how to shut off gas and water</li>
+</ul>`
                         },
                         {
                             id: '4-3-p3',
                             type: 'text',
                             title: 'Utility Safety Measures',
-                            body: `Gas Line Safety:
-• Install automatic gas shut-off valves  
-• Use flexible gas connectors  
-• Know where to turn off the gas manually  
+                            body: `<h3>Gas Line Safety:</h3>
+<ul>
+<li>Install automatic gas shut-off valves</li>
+<li>Use flexible gas connectors</li>
+<li>Know where to turn off the gas manually</li>
+</ul>
 
-Electrical Safety:
-• Secure panels and large appliances  
-• Know circuit breaker location  
-• Consider surge protection  
+<h3>Electrical Safety:</h3>
+<ul>
+<li>Secure panels and large appliances</li>
+<li>Know circuit breaker location</li>
+<li>Consider surge protection</li>
+</ul>
 
-Water Safety:
-• Know main shut-off location  
-• Secure water filtration and pumps  
-• Anchor plumbing in crawl spaces`
+<h3>Water Safety:</h3>
+<ul>
+<li>Know main shut-off location</li>
+<li>Secure water filtration and pumps</li>
+<li>Anchor plumbing in crawl spaces</li>
+</ul>`
                         },
                         {
                             id: '4-3-p4',
                             type: 'text',
                             title: 'Window and Glass Safety',
-                            body: `Glass Hazard Reduction:
-• Apply safety film or use tempered glass  
-• Secure mirrors and glass tables  
-• Keep sleeping areas away from windows  
+                            body: `<h3>Glass Hazard Reduction:</h3>
+<ul>
+<li>Apply safety film or use tempered glass</li>
+<li>Secure mirrors and glass tables</li>
+<li>Keep sleeping areas away from windows</li>
+</ul>
 
-Structural Reinforcement:
-• Brace cripple walls  
-• Secure chimneys and masonry  
-• Anchor house to foundation  
-• Consult a professional for major work`
+<h3>Structural Reinforcement:</h3>
+<ul>
+<li>Brace cripple walls</li>
+<li>Secure chimneys and masonry</li>
+<li>Anchor house to foundation</li>
+<li>Consult a professional for major work</li>
+</ul>`
                         },
                         {
                             id: '4-3-p5',
@@ -1052,38 +1155,46 @@ Structural Reinforcement:
                             id: '4-4-p1',
                             type: 'text',
                             title: 'Securing Exterior Hazards',
-                            body: `Outdoor areas contain significant earthquake hazards that can block exits or injure people. A quick inspection can greatly reduce these risks.
+                            body: `<p>Outdoor areas contain significant earthquake hazards that can block exits or injure people. A quick inspection can greatly reduce these risks.</p>
 
-Exterior Hazard Assessment:
-• Walk around your property systematically  
-• Look for potential falling hazards  
-• Identify exit path obstructions  
-• Involve neighbors for community safety`
+<h3>Exterior Hazard Assessment:</h3>
+<ul>
+<li>Walk around your property systematically</li>
+<li>Look for potential falling hazards</li>
+<li>Identify exit path obstructions</li>
+<li>Involve neighbors for community safety</li>
+</ul>`
                         },
                         {
                             id: '4-4-p3',
                             type: 'text',
                             title: 'Garage and Storage Safety',
-                            body: `Garage Hazards:
-• Anchor shelving and storage units  
-• Secure hazardous materials and fuel  
-• Ensure manual garage door release  
-• Keep vehicles ready for evacuation  
+                            body: `<h3>Garage Hazards:</h3>
+<ul>
+<li>Anchor shelving and storage units</li>
+<li>Secure hazardous materials and fuel</li>
+<li>Ensure manual garage door release</li>
+<li>Keep vehicles ready for evacuation</li>
+</ul>
 
-Storage Tips:
-• Organize supplies  
-• Label hazardous materials  
-• Maintain clear access to emergency gear`
+<h3>Storage Tips:</h3>
+<ul>
+<li>Organize supplies</li>
+<li>Label hazardous materials</li>
+<li>Maintain clear access to emergency gear</li>
+</ul>`
                         },
                         {
                             id: '4-4-p4',
                             type: 'text',
                             title: 'Landscape and Tree Safety',
-                            body: `Tree and Plant Management:
-• Trim overhanging branches  
-• Anchor outdoor furniture and structures  
-• Maintain clear evacuation paths  
-• Avoid planting trees too close to foundations`
+                            body: `<h3>Tree and Plant Management:</h3>
+<ul>
+<li>Trim overhanging branches</li>
+<li>Anchor outdoor furniture and structures</li>
+<li>Maintain clear evacuation paths</li>
+<li>Avoid planting trees too close to foundations</li>
+</ul>`
                         },
                         {
                             id: '4-4-p5',
@@ -1147,13 +1258,15 @@ Storage Tips:
                             id: '5-1-p1',
                             type: 'text',
                             title: 'Why Review Your Plan',
-                            body: `Even with a completed plan, reviewing it ensures it stays relevant, practical, and actionable. Practicing and revisiting your plan strengthens confidence and preparedness.
+                            body: `<p>Even with a completed plan, reviewing it ensures it stays relevant, practical, and actionable. Practicing and revisiting your plan strengthens confidence and preparedness.</p>
 
-Key Points:
-• Review safe spots, meeting points, and contact info  
-• Reassess special needs for household members, pets, and medical conditions  
-• Update after major life changes (moving, adding new family members)  
-• Identify gaps or risks not considered previously`
+<h3>Key Points:</h3>
+<ul>
+<li>Review safe spots, meeting points, and contact info</li>
+<li>Reassess special needs for household members, pets, and medical conditions</li>
+<li>Update after major life changes (moving, adding new family members)</li>
+<li>Identify gaps or risks not considered previously</li>
+</ul>`
                         },
                         {
                             id: '5-1-p2',
@@ -1206,13 +1319,15 @@ Key Points:
                             id: '5-2-p1',
                             type: 'text',
                             title: 'Why Document Your Belongings',
-                            body: `Documenting your belongings ensures you can recover quickly and accurately after an earthquake. Insurance claims, replacement of lost items, and proof of ownership all become easier when you have organized records.
+                            body: `<p>Documenting your belongings ensures you can recover quickly and accurately after an earthquake. Insurance claims, replacement of lost items, and proof of ownership all become easier when you have organized records.</p>
 
-Key Points:
-• Create a detailed inventory of all valuable items: electronics, appliances, jewelry, furniture, artwork, sentimental items  
-• Include purchase dates, prices, serial numbers, and photos/videos  
-• Store digital records securely on your device, cloud, or encrypted USB drive  
-• Update regularly`
+<h3>Key Points:</h3>
+<ul>
+<li>Create a detailed inventory of all valuable items: electronics, appliances, jewelry, furniture, artwork, sentimental items</li>
+<li>Include purchase dates, prices, serial numbers, and photos/videos</li>
+<li>Store digital records securely on your device, cloud, or encrypted USB drive</li>
+<li>Update regularly</li>
+</ul>`
                         },
                         {
                             id: '5-2-p2',
@@ -1225,13 +1340,15 @@ Key Points:
                             id: '5-2-p3',
                             type: 'text',
                             title: 'Using Your Inventory for Recovery',
-                            body: `Inventory is only helpful if you can use it effectively.
+                            body: `<p>Inventory is only helpful if you can use it effectively.</p>
 
-Steps for Recovery:
-• Insurance Claims: Submit inventory with photos, receipts, and serial numbers  
-• Replacement Planning: Prioritize essential items first  
-• Sharing with Contacts: Give a copy to an out-of-area contact  
-• Regular Review: Update at least annually or after major changes`
+<h3>Steps for Recovery:</h3>
+<ul>
+<li><strong>Insurance Claims:</strong> Submit inventory with photos, receipts, and serial numbers</li>
+<li><strong>Replacement Planning:</strong> Prioritize essential items first</li>
+<li><strong>Sharing with Contacts:</strong> Give a copy to an out-of-area contact</li>
+<li><strong>Regular Review:</strong> Update at least annually or after major changes</li>
+</ul>`
                         },
                         {
                             id: '5-2-p4',
@@ -1284,13 +1401,15 @@ Steps for Recovery:
                             id: '5-3-p1',
                             type: 'text',
                             title: 'Financial Preparedness',
-                            body: `Financial readiness gives you flexibility to respond to emergencies.
+                            body: `<p>Financial readiness gives you flexibility to respond to emergencies.</p>
 
-Key Points:
-• Keep an emergency cash reserve (small bills in waterproof container)  
-• Maintain accessible bank accounts with online access  
-• Track important accounts, investments, and credit card info  
-• Pre-arrange access to emergency funds for household members`
+<h3>Key Points:</h3>
+<ul>
+<li>Keep an emergency cash reserve (small bills in waterproof container)</li>
+<li>Maintain accessible bank accounts with online access</li>
+<li>Track important accounts, investments, and credit card info</li>
+<li>Pre-arrange access to emergency funds for household members</li>
+</ul>`
                         },
                         {
                             id: '5-3-p2',
@@ -1332,15 +1451,17 @@ Key Points:
                             id: '5-3-p4',
                             type: 'text',
                             title: 'Insurance Recommendations',
-                            body: `Insurance helps you recover financially after damage.
+                            body: `<p>Insurance helps you recover financially after damage.</p>
 
-Key Points:
-• Homeowner/Renter Insurance: Covers building damage and personal property  
-• Earthquake Insurance: Consider separate coverage if earthquakes are common in your area  
-• Auto Insurance: Covers damage to vehicles during quakes  
-• Health Insurance: Ensures access to medical care after disasters  
-• Maintain copies of all policies, digitally and physically  
-• Update policies annually or after major purchases`
+<h3>Key Points:</h3>
+<ul>
+<li><strong>Homeowner/Renter Insurance:</strong> Covers building damage and personal property</li>
+<li><strong>Earthquake Insurance:</strong> Consider separate coverage if earthquakes are common in your area</li>
+<li><strong>Auto Insurance:</strong> Covers damage to vehicles during quakes</li>
+<li><strong>Health Insurance:</strong> Ensures access to medical care after disasters</li>
+<li>Maintain copies of all policies, digitally and physically</li>
+<li>Update policies annually or after major purchases</li>
+</ul>`
                         },
                         {
                             id: '5-3-p5',
@@ -1393,23 +1514,27 @@ Key Points:
                             id: '5-4-p1',
                             type: 'text',
                             title: 'Coping with Stress',
-                            body: `Being prepared reduces fear and panic. Practicing your plan builds confidence.
+                            body: `<p>Being prepared reduces fear and panic. Practicing your plan builds confidence.</p>
 
-Key Points:
-• Understand that fear is normal, but knowledge reduces anxiety  
-• Breathing exercises help during shaking  
-• Encourage household members to talk openly about feelings  
-• Focus on what you can control: safe spots, Go-Bag, communication`
+<h3>Key Points:</h3>
+<ul>
+<li>Understand that fear is normal, but knowledge reduces anxiety</li>
+<li>Breathing exercises help during shaking</li>
+<li>Encourage household members to talk openly about feelings</li>
+<li>Focus on what you can control: safe spots, Go-Bag, communication</li>
+</ul>`
                         },
                         {
                             id: '5-4-p3',
                             type: 'text',
                             title: 'Mental Strength Practices',
-                            body: `Exercises:
-• Simulate drills calmly; notice how you react  
-• Visualize completing each step successfully  
-• Practice positive reinforcement with household members  
-• Encourage community participation — mental resilience spreads`
+                            body: `<h3>Exercises:</h3>
+<ul>
+<li>Simulate drills calmly; notice how you react</li>
+<li>Visualize completing each step successfully</li>
+<li>Practice positive reinforcement with household members</li>
+<li>Encourage community participation — mental resilience spreads</li>
+</ul>`
                         },
                         {
                             id: '5-4-p4',
@@ -1461,13 +1586,15 @@ Key Points:
                             id: '5-5-p1',
                             type: 'text',
                             title: 'Neighborhood Support',
-                            body: `A strong community helps everyone respond more effectively.
+                            body: `<p>A strong community helps everyone respond more effectively.</p>
 
-Key Points:
-• Know your neighbors and their special needs  
-• Share resources and skills (first aid, tools, evacuation info)  
-• Establish local support networks for aftershocks  
-• Volunteer with community preparedness programs`
+<h3>Key Points:</h3>
+<ul>
+<li>Know your neighbors and their special needs</li>
+<li>Share resources and skills (first aid, tools, evacuation info)</li>
+<li>Establish local support networks for aftershocks</li>
+<li>Volunteer with community preparedness programs</li>
+</ul>`
                         },
                         {
                             id: '5-5-p2',
@@ -1519,21 +1646,22 @@ Key Points:
                             id: '5-6-p1',
                             type: 'text',
                             title: 'Using Aftershock for Continuous Improvement',
-                            body: `The Aftershock app helps you keep your emergency preparedness up to date and connected with your household and community. Preparedness is ongoing, and Aftershock makes it easier to review, update, and share plans.
+                            body: `<p>The Aftershock app helps you keep your emergency preparedness up to date and connected with your household and community. Preparedness is ongoing, and Aftershock makes it easier to review, update, and share plans.</p>
 
-Key Points:
-• Use Aftershock to store, access, and update your emergency plan anytime  
-• Invite friends, family, and neighbors to join Aftershock and create their plans  
-• Check Aftershock regularly for updates, safety tips, and new guidelines  
-• Revisit and refine your plans based on drills, new hazards, or community feedback  
-• Celebrate milestones and improvements in your preparedness through the app's tracking features`
+<h3>Key Points:</h3>
+<ul>
+<li>Use Aftershock to store, access, and update your emergency plan anytime</li>
+<li>Invite friends, family, and neighbors to join Aftershock and create their plans</li>
+<li>Check Aftershock regularly for updates, safety tips, and new guidelines</li>
+<li>Revisit and refine your plans based on drills, new hazards, or community feedback</li>
+<li>Celebrate milestones and improvements in your preparedness through the app's tracking features</li>
+</ul>`
                         }
                     ]
                 }
             }
         ]
     }
-
 ];
 
 // Helper function to convert plain text to HTML
@@ -1620,6 +1748,21 @@ PREPARE_MODULES.forEach(module => {
                 }
             });
         }
+    });
+});
+
+// Final pass: convert any plain-text page bodies into HTML (if not already HTML)
+PREPARE_MODULES.forEach(module => {
+    module.lessons.forEach(lesson => {
+        if (!lesson.content || !Array.isArray(lesson.content.pages)) return;
+        lesson.content.pages.forEach(page => {
+            if (page.type !== 'text' || !page.body) return;
+            const hasHtml = /<[^>]+>/i.test(page.body);
+            if (!hasHtml) {
+                page.html = convertTextToHTML(page.body);
+                page.body = page.html;
+            }
+        });
     });
 });
 
