@@ -77,6 +77,9 @@ export default function News({ navigation }) {
           {news.length === 0 && (
             <Text style={styles.empty}>No news available.</Text>
           )}
+          <Text style={styles.textDescription}>
+            Your feed of relevant earthquake news worldwide.
+          </Text>
           {news.map((story, idx) => (
             <View key={story.id ?? story.title ?? idx} style={styles.card}>
               <Text style={styles.cardTitle}>{story.title}</Text>
@@ -100,8 +103,9 @@ export default function News({ navigation }) {
                       console.warn("Failed to open URL:", e);
                     }
                   }}
+                  style={styles.readMoreButton}
                 >
-                  <Text style={styles.link}>{story.url}</Text>
+                  <Text style={styles.readMoreText}>Read more</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -114,7 +118,7 @@ export default function News({ navigation }) {
 
 const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1 },
-  container: { flex: 1, padding: 16, paddingTop: 24 },
+  container: { flex: 1, padding: 18, paddingTop: 28 },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "700",
@@ -122,34 +126,44 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   dateText: { color: colors.muted, marginBottom: 12 },
+  textDescription: { color: colors.secondary, marginBottom: 12 },
   empty: { color: colors.muted, fontStyle: "italic" },
   card: {
     backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 12,
+    padding: 18,
+    borderRadius: 14,
+    marginBottom: 14,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    elevation: 4,
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.secondary,
-    marginBottom: 6,
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.primary,
+    marginBottom: 8,
   },
   cardBody: { fontSize: 14, color: colors.muted, lineHeight: 20 },
-  link: { marginTop: 8, color: colors.primary, fontSize: 13 },
+  readMoreButton: {
+    marginTop: 12,
+    backgroundColor: colors.primary,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  readMoreText: { color: "#fff", fontWeight: "700" },
   backButton: {
-    marginBottom: 8,
+    marginBottom: 12,
     alignSelf: "flex-start",
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: "#fff",
   },
   backButtonText: {
-    color: "#519872",
-    fontWeight: "600",
+    color: colors.primary,
+    fontWeight: "700",
   },
 });

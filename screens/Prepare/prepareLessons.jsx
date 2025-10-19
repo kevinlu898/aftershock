@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Dimensions, ScrollView as HScrollView, Linking, SafeAreaView, ScrollView, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -147,11 +148,10 @@ const PrepareLessons = ({ route, navigation }) => {
         console.log('prepareLessons: loaded lesson', lesson.id, 'pages:', pages.map(p => p.id));
         setScreens(pages.map(p => {
                     return {
+                        id: p.id,
                         type: p.type === 'text' ? 'lesson' : p.type,
                         title: p.title || 'Page',
-                        icon: p.type === 'text' ? 'book-open-variant' : (p.type === 'video' ? 'play-circle' : (p.type === 'checklist' ? 'checklist' : 'puzzle')),
-                        // For video pages pass an object with url + optional caption so VideoScreen can show a description
-                        // For text pages use the HTML content via helper (prefers page.html)
+                        icon: p.type === 'text' ? 'book-open-variant' : (p.type === 'video' ? 'play-circle' : (p.type === 'checklist' ? 'checkbox-multiple-marked-circle-outline' : 'checkbox-marked-circle-outline')),
                         content: p.type === 'text' ? getPageContent(p) : (p.type === 'video' ? { url: p.videoUrl, caption: p.description || p.caption || p.title || '' } : (p.type === 'checklist' ? p.items : p.questions)),
                     };
                 }));
@@ -379,9 +379,48 @@ const PrepareLessons = ({ route, navigation }) => {
   };
 
   // Interactive checklist where users mark off completed items
-  const ChecklistScreen = ({ content }) => {
-    const [checklist, setChecklist] = useState(content); // Local state for checklist items
-    const allCompleted = checklist.every(item => item.completed); // Check if all items completed
+  const ChecklistScreen = ({ content, pageId }) => {
+    const initial = Array.isArray(content) ? content : [];
+    const [checklist, setChecklist] = useState(initial); // Local state for checklist items
+    const allCompleted = checklist.length ? checklist.every(item => item.completed) : false; // Check if all items completed
+
+    // Persistence key per module/lesson/page
+    const storageKey = currentModule && currentLesson && pageId ? `prepare_checklist:${currentModule.id}:${currentLesson.id}:${pageId}` : null;
+
+    // Load saved checklist state for this page on mount / when page changes
+    useEffect(() => {
+      let mounted = true;
+      const load = async () => {
+        if (!storageKey) return;
+        try {
+          const raw = await AsyncStorage.getItem(storageKey);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (mounted && Array.isArray(parsed)) {
+              // Merge with initial to preserve any new items
+              const merged = initial.map(it => {
+                const found = parsed.find(p => p.id === it.id);
+                return found ? { ...it, completed: !!found.completed } : { ...it };
+              });
+              setChecklist(merged);
+              return;
+            }
+          }
+          // no saved data: ensure initial structure
+          setChecklist(initial);
+        } catch (e) {
+          // ignore
+        }
+      };
+      load();
+      return () => { mounted = false; };
+    }, [storageKey, pageId]);
+
+    // Save checklist whenever it changes
+    useEffect(() => {
+      if (!storageKey) return;
+      AsyncStorage.setItem(storageKey, JSON.stringify(checklist)).catch(() => {});
+    }, [checklist, storageKey]);
 
     // Toggles completion state of a checklist item
     const toggleItem = (itemId) => {
@@ -669,7 +708,7 @@ const PrepareLessons = ({ route, navigation }) => {
       case 'video':
         return <VideoScreen content={currentScreen.content} />;
       case 'checklist':
-        return <ChecklistScreen content={currentScreen.content} />;
+        return <ChecklistScreen content={currentScreen.content} pageId={currentScreen.id} />;
       case 'quiz':
         return <QuizScreen content={currentScreen.content} />;
       default:
