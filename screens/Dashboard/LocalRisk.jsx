@@ -53,7 +53,9 @@ export default function LocalRisk({ navigation }) {
         const postal_code = Number(rawPostal) || 95425;
         console.log(postal_code);
         const data = await fetchEarthquakeData(postal_code);
-        setEarthquakeData(data);
+        console.log("syzygy");
+        console.log(data.results?.[0]);
+        setEarthquakeData(data.results?.[0] || null);
         setRiskData(await getRisk(postal_code));
       } catch (err) {
         console.error("Error fetching earthquake data:", err);
@@ -84,14 +86,10 @@ export default function LocalRisk({ navigation }) {
   }
 
   // Attempt to extract some common fields depending on API shape
-  const place = earthquakeData?.place || earthquakeData?.properties?.place;
-  const mag =
-    earthquakeData?.mag ||
-    earthquakeData?.properties?.mag ||
-    earthquakeData?.properties?.mag?.value;
-  const time = earthquakeData?.time || earthquakeData?.properties?.time;
-  const depth =
-    earthquakeData?.depth || earthquakeData?.geometry?.coordinates?.[2];
+  const place = earthquakeData?.place;
+  const mag = earthquakeData?.mag;
+  const time = earthquakeData?.timeISO;
+  const depth = earthquakeData?.depth;
 
   const topPadding =
     Platform.OS === "android" ? StatusBar.currentHeight || 0 : insets.top || 20;
@@ -133,15 +131,6 @@ export default function LocalRisk({ navigation }) {
                 {time ? new Date(time).toLocaleString() : "—"}
               </Text>
             </View>
-          </View>
-
-          <View style={styles.detailsCard}>
-            <Text style={styles.detailsTitle}>Raw data</Text>
-            <ScrollView style={{ maxHeight: 300 }}>
-              <Text style={styles.mono}>
-                {JSON.stringify(earthquakeData, null, 2)}
-              </Text>
-            </ScrollView>
           </View>
 
           {riskData && (
