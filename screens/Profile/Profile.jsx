@@ -313,17 +313,17 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "800",
     color: colors.dark,
-    marginBottom: 4,
+    marginBottom: 10,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: colors.muted,
+    color: colors.primary,
     fontWeight: "500",
     textAlign: 'center',
   },
   section: {
-    marginTop: 24,
+    marginTop: 4,
     marginBottom: 8,
     backgroundColor: "#ffffff",
     borderRadius: 16,
@@ -352,10 +352,10 @@ const styles = StyleSheet.create({
   },
   sectionNote: {
     fontSize: 14,
-    color: colors.muted,
+    color: colors.primary,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    lineHeight: 20,
+    lineHeight: 16,
   },
   sectionContent: {
     paddingHorizontal: 8,

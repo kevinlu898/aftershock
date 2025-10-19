@@ -260,7 +260,7 @@ export default function Guide() {
     if (currentCount >= 10) {
       Alert.alert(
         "Daily limit reached",
-        "You have reached your daily limit of 10 AI requests. Please try again tomorrow."
+        "You have reached your daily limit of 10 AI prompts. Please try again tomorrow."
       );
       return;
     }
@@ -519,7 +519,7 @@ export default function Guide() {
               marginTop: 6,
             }}
           >
-            {`${requestCount}/10 requests today`}
+            {`${requestCount}/10 prompts today`}
           </Text>
           {/* Chat menu */}
           <ScrollView
@@ -710,4 +710,3 @@ export default function Guide() {
   );
 }
 
-// ...existing code...
