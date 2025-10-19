@@ -18,6 +18,8 @@ import Home from "./screens/Home";
 import Prepare from "./screens/Prepare/Prepare";
 import prepareLessons from "./screens/Prepare/prepareLessons";
 import AccountCreation from "./screens/Profile/AccountCreation";
+import ChangePassword from "./screens/Profile/ChangePassword";
+import ChangeUsername from "./screens/Profile/ChangeUsername";
 import Login from "./screens/Profile/Login";
 import Profile from "./screens/Profile/Profile";
 
@@ -98,6 +100,8 @@ export default function App() {
           <Stack.Screen name="Home" component={Home} />
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="AccountCreation" component={AccountCreation} />
+          <Stack.Screen name="ChangeUsername" component={ChangeUsername} options={{ headerShown: true, title: 'Change Username' }} />
+          <Stack.Screen name="ChangePassword" component={ChangePassword} options={{ headerShown: true, title: 'Change Password' }} />
           <Stack.Screen name="MainApp" component={MainTabs} />
           <Stack.Screen name="prepareLessons" component={prepareLessons} />
           <Stack.Screen name="LocalRisk" component={LocalRisk} />

@@ -68,7 +68,6 @@ export default function Profile() {
 
   // Preferences state
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   const [locationEnabled, setLocationEnabled] = useState(true);
 
   const handleLogout = () => {
@@ -116,10 +115,8 @@ export default function Profile() {
   const openDocuments = () => navigation.navigate("Documents");
 
   // Account actions
-  const changeUsername = () =>
-    Alert.alert("Change Username", "Not implemented yet.");
-  const changePassword = () =>
-    Alert.alert("Change Password", "Not implemented yet.");
+  const changeUsername = () => navigation.navigate('ChangeUsername');
+  const changePassword = () => navigation.navigate('ChangePassword');
   const exportData = () => Alert.alert("Export Data", "Preparing export...");
   const deleteAccount = () => {
     Alert.alert(
@@ -213,12 +210,6 @@ export default function Profile() {
               subtitle="Receive alerts and emergency updates"
               value={notificationsEnabled}
               onValueChange={setNotificationsEnabled}
-            />
-            <SwitchRow
-              title="Dark Mode"
-              subtitle="Use dark theme for better visibility"
-              value={darkModeEnabled}
-              onValueChange={setDarkModeEnabled}
             />
             <SwitchRow
               title="Location Services"
