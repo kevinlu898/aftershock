@@ -1,9 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useRef, useState } from "react";
-import { Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
+import { InputAccessoryView, Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
 import Markdown from "react-native-markdown-display";
+import { RichEditor, RichToolbar, actions } from 'react-native-pell-rich-editor';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { WebView } from 'react-native-webview';
 import { colors } from "../../css";
 
 const STORAGE_KEY = "my_plan";
@@ -26,7 +28,11 @@ export default function MyPlan({ navigation }) {
     other: useRef(null),
   };
 
-   const focusNext = (key) => {
+  // editor handlers registry so header button can trigger save+close
+  const editorsApi = useRef({});
+  const [currentFocusedKey, setCurrentFocusedKey] = useState(null);
+
+  const focusNext = (key) => {
     const order = ['evacuateRoute', 'meetUpPoints', 'aftermathProcedures', 'other'];
     const idx = order.indexOf(key);
     if (idx >= 0 && idx < order.length - 1) {
@@ -64,8 +70,16 @@ export default function MyPlan({ navigation }) {
   };
 
   const toggleEdit = (key) => {
+    // if currently editing, ask the section editor to save and close
+    if (editing[key]) {
+      const api = editorsApi.current[key];
+      if (api && typeof api.saveAndClose === 'function') {
+        api.saveAndClose();
+        return;
+      }
+    }
     setEditing((prev) => ({ ...prev, [key]: !prev[key] }));
-    // focus after a short delay
+    // focus after a short delay when opening
     setTimeout(() => refs[key]?.current?.focus?.(), 250);
   };
 
@@ -123,8 +137,8 @@ export default function MyPlan({ navigation }) {
     <View style={styles.sectionCard}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Text style={styles.sectionTitle}>{title}</Text>
-        <TouchableOpacity onPress={() => toggleEdit(keyName)} style={styles.smallButton}>
-          <Text style={styles.smallButtonText}>{editing[keyName] ? "Close" : "Edit"}</Text>
+        <TouchableOpacity onPress={() => toggleEdit(keyName)} style={styles.smallButton} accessibilityLabel={editing[keyName] ? 'Close editor' : 'Edit section'}>
+          <MaterialCommunityIcons name={editing[keyName] ? 'content-save' : 'pencil'} size={18} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -133,8 +147,17 @@ export default function MyPlan({ navigation }) {
       ) : (
         <View>
           <View style={styles.previewBox}>
-            <Markdown style={markdownStyles}>{plan[keyName] || "_No content_"}</Markdown>
+            {typeof plan[keyName] === 'string' && /<[^>]+>/.test(plan[keyName]) ? (
+              <View style={{ height: 140, overflow: 'hidden' }}>
+                <WebView originWhitelist={["*"]} source={{ html: `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1" /><style>body{font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial; color:#111; padding:8px; margin:0;} img{max-width:100%;height:auto;} p{line-height:1.45;}</style></head><body>${plan[keyName] || ''}</body></html>` }} />
+              </View>
+            ) : (
+              <Markdown style={markdownStyles}>{plan[keyName] || "_No content_"}</Markdown>
+            )}
           </View>
+          {plan._meta?.[keyName] ? (
+            <Text style={styles.metaText}>Last edited: {formatEdited(plan._meta[keyName])}</Text>
+          ) : null}
         </View>
       )}
     </View>
@@ -145,13 +168,31 @@ export default function MyPlan({ navigation }) {
     const [localText, setLocalText] = useState(plan[keyName] || "");
     const [sel, setSel] = useState({ start: 0, end: 0 });
     const ref = refs[keyName];
+    const richRef = useRef(null);
 
     useEffect(() => {
       setLocalText(plan[keyName] || "");
     }, [editing[keyName]]); // reset when toggling editor
 
+    // register saveAndClose for header control
+    useEffect(() => {
+      editorsApi.current[keyName] = {
+        saveAndClose: async () => {
+          // blur editor first to ensure content updated
+          try { await richRef.current?.blur(); } catch (e) {}
+          await saveAndSync();
+          setEditing(prev => ({ ...prev, [keyName]: false }));
+        }
+      };
+      return () => { delete editorsApi.current[keyName]; };
+    }, [localText]);
+
     const saveAndSync = async () => {
       const next = { ...plan, [keyName]: localText };
+      // add last-edited timestamp
+      const meta = { ...(plan._meta || {}) };
+      meta[keyName] = new Date().toISOString();
+      next._meta = meta;
       await savePlan(next);
     };
 
@@ -181,34 +222,26 @@ export default function MyPlan({ navigation }) {
       <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'position'} keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 20}>
           <View>
-            <View style={styles.toolbar}>
-              <TouchableOpacity onPress={() => wrap('**')} style={styles.toolButton}><MaterialCommunityIcons name="format-bold" size={16} color={colors.primary} /></TouchableOpacity>
-              <TouchableOpacity onPress={() => wrap('*')} style={styles.toolButton}><MaterialCommunityIcons name="format-italic" size={16} color={colors.primary} /></TouchableOpacity>
-              <TouchableOpacity onPress={() => linePrefix('### ')} style={styles.toolButton}><MaterialCommunityIcons name="format-header-3" size={16} color={colors.primary} /></TouchableOpacity>
-              <TouchableOpacity onPress={() => linePrefix('- ')} style={styles.toolButton}><MaterialCommunityIcons name="format-list-bulleted" size={16} color={colors.primary} /></TouchableOpacity>
-              <TouchableOpacity onPress={() => linePrefix('1. ')} style={styles.toolButton}><MaterialCommunityIcons name="format-list-numbered" size={16} color={colors.primary} /></TouchableOpacity>
-              <TouchableOpacity onPress={() => wrap('<u>', '</u>')} style={styles.toolButton}><MaterialCommunityIcons name="format-underline" size={16} color={colors.primary} /></TouchableOpacity>
-              <TouchableOpacity onPress={() => linePrefix('> ')} style={styles.toolButton}><MaterialCommunityIcons name="format-quote-close" size={16} color={colors.primary} /></TouchableOpacity>
-            </View>
-
-            <TextInput
-              ref={ref}
-              multiline
-              style={styles.editor}
-              value={localText}
-              onChangeText={(t) => setLocalText(t)}
-              onSelectionChange={({ nativeEvent: { selection } }) => setSel(selection)}
-              onBlur={async () => { await saveAndSync(); }}
+            <RichEditor
+              ref={richRef}
+              initialContentHTML={localText}
+              style={[styles.editor, { minHeight: 160 }]}
+              editorStyle={{ backgroundColor: '#fff', color: '#111' }}
               placeholder={`Write your ${title.toLowerCase()}...`}
-              textAlignVertical="top"
-              blurOnSubmit={false}
-              returnKeyType="next"
-              onSubmitEditing={() => focusNext(keyName)}
+              onChange={(html) => setLocalText(html)}
+              onBlur={async () => { await saveAndSync(); setCurrentFocusedKey(null); }}
+              onFocus={() => setCurrentFocusedKey(keyName)}
             />
 
-            <Text style={styles.previewLabel}>Preview</Text>
+            <RichToolbar
+              editor={richRef}
+              actions={[actions.setBold, actions.setItalic, actions.setUnderline, actions.insertBulletsList, actions.insertOrderedList, actions.heading1, actions.insertLink]}
+              style={{ backgroundColor: 'transparent', marginTop: 8 }}
+            />
+
+            <Text style={styles.previewLabel}>Preview (plain text)</Text>
             <View style={styles.previewBox}>
-              <Markdown style={markdownStyles}>{localText || "_No content_"}</Markdown>
+              <Text>{(localText || '').replace(/<[^>]*>/g, '').trim() || '_No content_'}</Text>
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -216,35 +249,64 @@ export default function MyPlan({ navigation }) {
     );
   };
 
+  // helper to format last edited
+  const formatEdited = (iso) => {
+    try { if (!iso) return null; const d = new Date(iso); return d.toLocaleString(); } catch (e) { return null; }
+  };
+
+  // overall last saved (latest per-section timestamp)
+  const getLastSaved = () => {
+    try {
+      const meta = plan._meta || {};
+      const times = Object.values(meta).filter(Boolean);
+      if (times.length === 0) return null;
+      const latest = times.map(t => new Date(t)).sort((a,b) => b - a)[0];
+      return latest.toLocaleString();
+    } catch (e) { return null; }
+  };
+
   const [showFull, setShowFull] = useState(false);
 
-  const FullModal = () => (
-    <Modal visible={showFull} animationType="slide">
-      <View style={{ flex: 1, backgroundColor: colors.light, paddingTop: topPadding }}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.light} translucent={false} />
-        <ScrollView contentContainerStyle={{ padding: 18 }}>
-          <Text style={styles.title}>Full Emergency Plan</Text>
-          <View style={{ marginTop: 12 }}>
-            <Text style={{ fontWeight: "800", marginBottom: 6 }}>Evacuation Route</Text>
-            <Markdown style={markdownStyles}>{plan.evacuateRoute || "_No content_"}</Markdown>
+  const FullModal = () => {
+    const lastSaved = getLastSaved();
+    const wrapHtml = (content) => {
+      const safe = content || '<p><em>No content</em></p>';
+      return `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1" /><style>body{font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial; color:#111; padding:12px; background:transparent;} img{max-width:100%;height:auto;} p{line-height:1.5;}</style></head><body>${safe}</body></html>`;
+    };
 
-            <Text style={{ fontWeight: "800", marginTop: 12, marginBottom: 6 }}>Meet-up Points</Text>
-            <Markdown style={markdownStyles}>{plan.meetUpPoints || "_No content_"}</Markdown>
+    const combined = `
+      <h1 style="font-size:20px">My Emergency Plan</h1>
+      ${plan.evacuateRoute || ''}
+      <hr/>
+      <h2>Meet-up Points</h2>
+      ${plan.meetUpPoints || ''}
+      <hr/>
+      <h2>Aftermath Procedures</h2>
+      ${plan.aftermathProcedures || ''}
+      <hr/>
+      <h2>Other</h2>
+      ${plan.other || ''}
+    `;
 
-            <Text style={{ fontWeight: "800", marginTop: 12, marginBottom: 6 }}>Aftermath Procedures</Text>
-            <Markdown style={markdownStyles}>{plan.aftermathProcedures || "_No content_"}</Markdown>
+    return (
+      <Modal visible={showFull} animationType="slide">
+        <View style={{ flex: 1, backgroundColor: colors.light, paddingTop: topPadding }}>
+          <StatusBar barStyle="dark-content" backgroundColor={colors.light} translucent={false} />
+          <View style={{ flex: 1, padding: 18 }}>
+            <Text style={styles.title}>Full Emergency Plan</Text>
+            {lastSaved ? <Text style={styles.metaText}>Last saved: {lastSaved}</Text> : null}
+            <View style={{ flex: 1, marginTop: 12, borderRadius: 8, overflow: 'hidden', backgroundColor: '#fff' }}>
+              <WebView originWhitelist={["*"]} source={{ html: wrapHtml(combined) }} style={{ flex: 1 }} />
+            </View>
 
-            <Text style={{ fontWeight: "800", marginTop: 12, marginBottom: 6 }}>Other</Text>
-            <Markdown style={markdownStyles}>{plan.other || "_No content_"}</Markdown>
+            <TouchableOpacity onPress={() => setShowFull(false)} style={[styles.saveButton, { marginTop: 18 }]}>
+              <Text style={styles.saveButtonText}>Close</Text>
+            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity onPress={() => setShowFull(false)} style={[styles.saveButton, { marginTop: 18 }]}>
-            <Text style={styles.saveButtonText}>Close</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
-    </Modal>
-  );
+        </View>
+      </Modal>
+    );
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.light, paddingTop: topPadding }}>
@@ -265,12 +327,25 @@ export default function MyPlan({ navigation }) {
         <Section title="Aftermath Procedures" keyName="aftermathProcedures" />
         <Section title="Other" keyName="other" />
 
-        <TouchableOpacity onPress={() => savePlan(plan)} style={[styles.saveButton, { marginTop: 18 }]}>
-          <Text style={styles.saveButtonText}>Save Plan</Text>
-        </TouchableOpacity>
-
         {showFull && <FullModal />}
       </ScrollView>
+      {Platform.OS === 'ios' && (
+        <InputAccessoryView nativeID={'planAccessory'}>
+          <View style={styles.accessory}>
+            <TouchableOpacity onPress={async () => {
+                const k = currentFocusedKey;
+                if (k && editorsApi.current[k] && typeof editorsApi.current[k].saveAndClose === 'function') {
+                  await editorsApi.current[k].saveAndClose();
+                  setCurrentFocusedKey(null);
+                } else {
+                  Keyboard.dismiss();
+                }
+              }} style={styles.accessoryButton}>
+              <Text style={styles.accessoryText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </InputAccessoryView>
+      )}
     </View>
   );
 }
@@ -291,6 +366,10 @@ const styles = StyleSheet.create({
   previewBox: { backgroundColor: "#F8FAFC", borderRadius: 8, padding: 10, minHeight: 60 },
   saveButton: { backgroundColor: colors.primary, paddingVertical: 12, borderRadius: 10, alignItems: "center" },
   saveButtonText: { color: "#fff", fontWeight: "800" },
+  accessory: { backgroundColor: "#fff", padding: 10, borderTopWidth: 1, borderColor: "#E5E7EB", flexDirection: "row", justifyContent: "flex-end" },
+  accessoryButton: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: colors.primary },
+  accessoryText: { color: "#fff", fontWeight: "700" },
+  metaText: { fontSize: 12, color: colors.muted, marginTop: 4 },
 });
 
 const markdownStyles = {
