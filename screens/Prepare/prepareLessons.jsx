@@ -310,8 +310,10 @@ const PrepareLessons = ({ route, navigation }) => {
           style={prepareLessonStyles.lessonContinueButton}
           onPress={markScreenComplete}
         >
-          <Text style={prepareLessonStyles.lessonContinueButtonText}>Continue</Text>
-          <MaterialCommunityIcons name="chevron-right" size={20} color="#fff" />
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={prepareLessonStyles.lessonContinueButtonText}>Continue</Text>
+            <MaterialCommunityIcons name="chevron-right" size={20} color="#fff" style={{ marginLeft: 8 }} />
+          </View>
         </TouchableOpacity>
       </View>
     );
@@ -371,8 +373,10 @@ const PrepareLessons = ({ route, navigation }) => {
           style={prepareLessonStyles.lessonContinueButton}
           onPress={markScreenComplete}
         >
-          <Text style={prepareLessonStyles.lessonContinueButtonText}>Continue</Text>
-          <MaterialCommunityIcons name="chevron-right" size={20} color="#fff" />
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={prepareLessonStyles.lessonContinueButtonText}>Continue</Text>
+            <MaterialCommunityIcons name="chevron-right" size={20} color="#fff" style={{ marginLeft: 8 }} />
+          </View>
         </TouchableOpacity>
       </View>
     );
@@ -654,10 +658,12 @@ const PrepareLessons = ({ route, navigation }) => {
           onPress={handleNextQuestion}
           disabled={userAnswers[currentQ.id] === undefined}
         >
-          <Text style={prepareLessonStyles.lessonContinueButtonText}>
-            {currentQuestion < questions.length - 1 ? 'Next Question' : 'See Results'}
-          </Text>
-          <MaterialCommunityIcons name="chevron-right" size={20} color="#fff" />
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={prepareLessonStyles.lessonContinueButtonText}>
+              {currentQuestion < questions.length - 1 ? 'Next Question' : 'See Results'}
+            </Text>
+            <MaterialCommunityIcons name="chevron-right" size={20} color="#fff" style={{ marginLeft: 8 }} />
+          </View>
         </TouchableOpacity>
       </View>
     );
@@ -682,14 +688,20 @@ const PrepareLessons = ({ route, navigation }) => {
             }}
             style={[prepareLessonStyles.lessonContinueButton, { marginRight: 8, paddingHorizontal: 20 }]}
           >
-            <Text style={prepareLessonStyles.lessonContinueButtonText}>Review</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <MaterialCommunityIcons name="replay" size={18} color="#fff" />
+              <Text style={[prepareLessonStyles.lessonContinueButtonText, { marginLeft: 8 }]}>Review</Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={[prepareLessonStyles.lessonContinueButton, { backgroundColor: '#6B7280', paddingHorizontal: 20 }]}
           >
-            <Text style={prepareLessonStyles.lessonContinueButtonText}>Close</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <MaterialCommunityIcons name="close" size={18} color="#fff" />
+              <Text style={[prepareLessonStyles.lessonContinueButtonText, { marginLeft: 8 }]}>Close</Text>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -761,16 +773,16 @@ const PrepareLessons = ({ route, navigation }) => {
                   <MaterialCommunityIcons name={screen.icon} size={18} color={index === currentScreenIndex ? '#fff' : colors.muted} />
                   {/* show label only for active tab */}
                   {index === currentScreenIndex && (
-                    <Text style={[
+                    <Text numberOfLines={1} ellipsizeMode="tail" style={[
                       prepareLessonStyles.lessonMenuItemText,
                       prepareLessonStyles.lessonMenuItemTextActive,
-                      { marginLeft: 8 }
+                      { marginLeft: 8, maxWidth: screenWidth * 0.55 }
                     ]}>
                       {index + 1}. {screen.title}
                     </Text>
                   )}
                 </TouchableOpacity>
-              ))}
+             ))}
             </HScrollView>
           </View>
 
