@@ -13,10 +13,22 @@ export default function ChangePassword() {
   const navigation = useNavigation();
 
   const handleSave = async () => {
-    if (!newPassword || newPassword.length < 8) {
-      Alert.alert('Error', 'New password must be at least 8 characters.');
+    // Verify current password before allowing change
+    if (!currentPassword || currentPassword.length === 0) {
+      Alert.alert('Error', 'Enter your current password to confirm.');
       return;
     }
+    if (newPassword.length < 8) {
+        Alert.alert("Error", "Password must be at least 8 characters long");
+        return;
+      }
+      if (!/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword)) {
+        Alert.alert(
+          "Error",
+          "Password must contain a mix of uppercase and lowercase letters"
+        );
+        return;
+      }
 
     const username = await getData('username');
     if (!username) {
@@ -29,6 +41,17 @@ export default function ChangePassword() {
     const results = await getDocs(q);
     if (results.empty) {
       Alert.alert('Error', 'User record not found.');
+      return;
+    }
+
+    // Verify current password before allowing username change
+    if (!currentPassword || currentPassword.length === 0) {
+      Alert.alert('Error', 'Please enter your current password to confirm.');
+      return;
+    }
+    const currentHash = await backendHash(currentPassword);
+    if (!currentHash || userData.password_hash !== currentHash) {
+      Alert.alert('Error', 'Current password is incorrect.');
       return;
     }
 
@@ -56,6 +79,9 @@ export default function ChangePassword() {
           onChangeText={setCurrentPassword}
           secureTextEntry
           style={styles.input}
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType="password"
         />
         <TextInput
           placeholder="New password"
@@ -63,6 +89,9 @@ export default function ChangePassword() {
           onChangeText={setNewPassword}
           secureTextEntry
           style={styles.input}
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType="newPassword"
         />
         <TouchableOpacity onPress={handleSave} style={[styles.button, false && styles.buttonDisabled]}>
           <Text style={styles.buttonText}>Save</Text>

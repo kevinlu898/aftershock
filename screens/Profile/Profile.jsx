@@ -13,7 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { colors } from "../../css";
+import { colors, globalStyles } from "../../css";
 import { auth } from "../../db/firebaseConfig";
 import { clearData } from "../../storage/storageUtils";
 
@@ -152,10 +152,9 @@ export default function Profile() {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Text style={styles.heading}>Profile</Text>
+        
+          <Text style={globalStyles.heading}>Profile</Text>
           <Text style={styles.subtitle}>Manage your account and preferences</Text>
-        </View>
 
         {/* Emergency Hub */}
         <View style={styles.section}>
@@ -170,22 +169,22 @@ export default function Profile() {
             <OptionRow
               title="Manage My Plan"
               subtitle="Review and update your emergency plan"
-              onPress={openManagePlan}
+              onPress={navigation.navigate.bind(this, "myPlan")}
             />
             <OptionRow
               title="Emergency Contacts"
               subtitle="Add or edit emergency contacts"
-              onPress={openContacts}
+              onPress={navigation.navigate.bind(this, "contactInfo")}
             />
             <OptionRow
               title="Medical Information"
               subtitle="Allergies, medications, health notes"
-              onPress={openMedicalInfo}
+              onPress={navigation.navigate.bind(this, "medicalInfo")}
             />
             <OptionRow
               title="Important Documents"
               subtitle="Store copies of IDs and insurance policies"
-              onPress={openDocuments}
+              onPress={navigation.navigate.bind(this, "importantDocuments")}
             />
           </View>
         </View>
@@ -229,6 +228,11 @@ export default function Profile() {
             <OptionRow 
               title="Change Password" 
               onPress={changePassword} 
+            />
+            <OptionRow 
+              title="Change Details"
+              subtitle="Update name, zip, phone, email"
+              onPress={() => navigation.navigate('ChangeDetails')}
             />
             <OptionRow
               title="Export Data"

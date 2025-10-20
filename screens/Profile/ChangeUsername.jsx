@@ -4,15 +4,25 @@ import { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { colors, globalStyles } from '../../css';
 import { db } from '../../db/firebaseConfig';
+import { backendHash } from '../../requests';
 import { getData, storeData } from '../../storage/storageUtils';
 
 export default function ChangeUsername() {
   const [newUsername, setNewUsername] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const navigation = useNavigation();
 
   const handleSave = async () => {
-    if (!newUsername || newUsername.length < 3) {
+    if (!newUsername || newUsername.length < 3|| newUsername.length > 20) {
       Alert.alert('Error', 'Please enter a username at least 3 characters long.');
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(newUsername)) {
+      Alert.alert(
+        "Error",
+        "Username must only contain letters, numbers, or underscores."
+      );
       return;
     }
 
@@ -38,6 +48,18 @@ export default function ChangeUsername() {
       return;
     }
 
+    // Verify current password before allowing username change
+    if (!currentPassword || currentPassword.length === 0) {
+      Alert.alert('Error', 'Please enter your current password to confirm.');
+      return;
+    }
+    const currentHash = await backendHash(currentPassword);
+    const userData = r2.docs[0].data();
+    if (!currentHash || userData.password_hash !== currentHash) {
+      Alert.alert('Error', 'Current password is incorrect.');
+      return;
+    }
+
     try {
       const docRef = r2.docs[0].ref;
       await updateDoc(docRef, { username: newUsername });
@@ -57,12 +79,25 @@ export default function ChangeUsername() {
         <Text style={styles.infoText}>
           Choose a new username. It must be at least 3 characters and unique.
         </Text>
+        <TextInput
+          placeholder="Current password"
+          value={currentPassword}
+          onChangeText={setCurrentPassword}
+          secureTextEntry
+          style={styles.input}
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType="password"
+        />
 
         <TextInput
           placeholder="New username"
           value={newUsername}
           onChangeText={setNewUsername}
           style={styles.input}
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType="username"
         />
         <TouchableOpacity onPress={handleSave} style={[styles.button, false && styles.buttonDisabled]}>
           <Text style={styles.buttonText}>Save</Text>

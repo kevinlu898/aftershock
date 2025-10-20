@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import { colors, fontSizes } from "../css";
+import { colors, fontSizes, globalStyles } from "../css";
 import { getData } from "../storage/storageUtils";
 import { getPrepareModules } from "./Prepare/prepareModules";
 import prepareStyles from "./Prepare/prepareStyles";
@@ -176,7 +176,7 @@ export default function Dashboard() {
         <View style={styles.container}>
           {/* Header Section */}
           <View style={styles.headerSection}>
-            <Text style={styles.welcomeHeading}>
+            <Text style={globalStyles.heading}>
               {firstVisit && username
                 ? `Welcome to Aftershock, ${username}!`
                 : username

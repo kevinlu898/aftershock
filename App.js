@@ -15,9 +15,14 @@ import News from "./screens/Dashboard/News";
 import Emergency from "./screens/Emergency/Emergency";
 import Guide from "./screens/Guide/Guide";
 import Home from "./screens/Home";
+import contactInfo from "./screens/Prepare/contactInfo";
+import importantDocuments from "./screens/Prepare/importantDocuments";
+import medicalInfo from "./screens/Prepare/medicalInfo";
+import myPlan from "./screens/Prepare/myPlan";
 import Prepare from "./screens/Prepare/Prepare";
 import prepareLessons from "./screens/Prepare/prepareLessons";
 import AccountCreation from "./screens/Profile/AccountCreation";
+import ChangeDetails from "./screens/Profile/ChangeDetails";
 import ChangePassword from "./screens/Profile/ChangePassword";
 import ChangeUsername from "./screens/Profile/ChangeUsername";
 import DeleteAccount from "./screens/Profile/DeleteAccount";
@@ -117,10 +122,15 @@ export default function App() {
           <Stack.Screen name="DeleteAccount" component={DeleteAccount} options={{ headerShown: true, title: 'Delete Account' }} />
           <Stack.Screen name="TermsOfService" component={TermsOfService} options={{ headerShown: true, title: 'Terms of Service' }} />
           <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} options={{ headerShown: true, title: 'Privacy Policy' }} />
+          <Stack.Screen name="ChangeDetails" component={ChangeDetails} options={{ headerShown: true, title: 'Change Details' }} />
           <Stack.Screen name="MainApp" component={MainTabs} />
           <Stack.Screen name="prepareLessons" component={prepareLessons} />
           <Stack.Screen name="LocalRisk" component={LocalRisk} />
           <Stack.Screen name="News" component={News} />
+          <Stack.Screen name="myPlan" component={myPlan} />
+          <Stack.Screen name="medicalInfo" component={medicalInfo} />
+          <Stack.Screen name="contactInfo" component={contactInfo} />
+          <Stack.Screen name="importantDocuments" component={importantDocuments} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

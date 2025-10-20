@@ -318,17 +318,104 @@ export const PREPARE_MODULES = [
                         {
                             id: '2-1-p1',
                             type: 'text',
-                            title: 'Learn the Basics',
-                            body: `<p>Every family needs an earthquake plan. This lesson covers the essential elements everyone should include in their emergency plan.</p>`
+                            title: 'Introduction',
+                            body: `<p>When disaster strikes, confusion and panic can be just as dangerous as the earthquake itself. A clear, practiced emergency plan gives you direction, control, and confidence when seconds matter. Every household, no matter how small, should have a written and practiced plan.</p>
+
+<p>A strong plan includes:</p>
+<ul>
+<li>Knowing where to go: Safe spots in every room</li>
+<li>Knowing who to contact: Both local and out-of-area contacts</li>
+<li>Knowing what to do after shaking stops: Evacuate or stay, check for hazards, and communicate</li>
+</ul>
+
+<p>Remember: Emergency services may be delayed for hours or days. Your plan is your first line of defense.</p>`
                         },
                         {
                             id: '2-1-p2',
+                            type: 'video',
+                            title: 'How to Create an Emergency Plan',
+                            videoUrl: 'https://www.youtube.com/watch?v=W4lZrwyudgc',
+                            description: '2-minute explanation on how to create a family emergency plan'
+                        },
+                        {
+                            id: '2-1-p3',
+                            type: 'text',
+                            title: 'Core Elements of an Earthquake Plan',
+                            body: `<h3>Safe Spots in Every Room</h3>
+<ul>
+<li>Identify sturdy furniture (tables, desks) you can shelter under</li>
+<li>Avoid windows, glass doors, tall furniture, and hanging items</li>
+</ul>
+
+<h3>Meeting Places</h3>
+<ul>
+<li>Inside meeting spot: Somewhere safe in your home for minor shaking</li>
+<li>Outside meeting spot: A clear area away from structures, in case evacuation is necessary</li>
+<li>Neighborhood meeting spot: A designated area (school, park, community center) in case you can't reach home</li>
+</ul>
+
+<h3>Communication Plan</h3>
+<ul>
+<li>Assign one out-of-area contact person for everyone to check in with</li>
+<li>Store key numbers both in your phone and written down</li>
+</ul>
+
+<h3>Emergency Kits</h3>
+<ul>
+<li>Keep a Go-Bag (grab-and-go) kit near your exit</li>
+<li>Have a larger Home Kit with supplies for 7-14 days</li>
+</ul>`
+                        },
+                        {
+                            id: '2-1-p4',
                             type: 'checklist',
                             title: 'Basics Checklist',
                             items: [
-                                { id: 1, text: 'Identify safe spots in each room', completed: true },
-                                { id: 2, text: 'Choose two meeting places', completed: true },
-                                { id: 3, text: 'Learn emergency contact numbers', completed: true }
+                                { id: 1, text: 'Identify and mark safe spots in each room', completed: false },
+                                { id: 2, text: 'Choose two or more family meeting places', completed: false },
+                                { id: 3, text: 'Learn and store emergency contact numbers', completed: false },
+                                { id: 4, text: 'Note where you\'ll keep your Go-Bag', completed: false },
+                                { id: 5, text: 'Review plan yearly or after major changes', completed: false }
+                            ]
+                        },
+                        {
+                            id: '2-1-p5',
+                            type: 'quiz',
+                            title: 'Plan Basics Quiz',
+                            questions: [
+                                {
+                                    id: 1,
+                                    question: 'What should you avoid when choosing safe spots in rooms?',
+                                    options: [
+                                        'Sturdy tables',
+                                        'Interior walls',
+                                        'Windows and tall furniture',
+                                        'Under desks'
+                                    ],
+                                    correctAnswer: 2
+                                },
+                                {
+                                    id: 2,
+                                    question: 'How many meeting places should you identify?',
+                                    options: [
+                                        'One inside spot only',
+                                        'At least two different locations',
+                                        'Only outside your home',
+                                        'As many as possible'
+                                    ],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 3,
+                                    question: 'Why is an out-of-area contact important?',
+                                    options: [
+                                        'They can send money quickly',
+                                        'Local networks may be overloaded',
+                                        'They know your home layout',
+                                        'They can predict earthquakes'
+                                    ],
+                                    correctAnswer: 1
+                                }
                             ]
                         }
                     ]
@@ -336,26 +423,115 @@ export const PREPARE_MODULES = [
             },
             {
                 id: '2-2',
-                title: 'Define Contacts',
-                duration: '15 min',
-                type: 'checklist',
+                title: 'Make Your Plan',
+                duration: '30 min',
+                type: 'lesson',
                 content: {
                     pages: [
                         {
                             id: '2-2-p1',
                             type: 'text',
-                            title: 'Define Contacts',
-                            body: `<p>Set up your emergency communication plan. Text messages often work when phone calls don't during emergencies.</p>`
+                            title: 'Build Your Custom Plan',
+                            body: `<p>Now let's create your personalized earthquake plan. Fill in the details that matter most for your household.</p>
+
+<h3>Interactive Form Includes:</h3>
+<ul>
+<li><strong>Household Members:</strong> Names, ages, special needs</li>
+<li><strong>Home Layout:</strong> Number of rooms, floors, exits</li>
+<li><strong>Special Considerations:</strong> Pets, medical needs, mobility issues</li>
+<li><strong>Local Hazards:</strong> Nearby faults, liquefaction zones, tsunami risk</li>
+</ul>`
                         },
                         {
-                            id: '2-2-p2',
-                            type: 'checklist',
-                            title: 'Contacts Checklist',
-                            items: [
-                                { id: 1, text: 'Choose an out-of-state contact person', completed: true },
-                                { id: 2, text: 'Save emergency numbers in your phone', completed: true },
-                                { id: 3, text: 'Practice texting family members', completed: true },
-                                { id: 4, text: 'Set up group chat for family updates', completed: true }
+                            id: '2-2-p3',
+                            type: 'text',
+                            title: 'Plan for Different Situations',
+                            body: `<p>Earthquakes can happen at any time. Consider these scenarios in your plan:</p>
+
+<h3>Daytime (Family Separated):</h3>
+<ul>
+<li>Children at school, adults at work</li>
+<li>Designate school pickup procedures</li>
+<li>Establish communication protocols</li>
+</ul>
+
+<h3>Nighttime (Everyone Home):</h3>
+<ul>
+<li>Bedroom safety procedures</li>
+<li>Evacuation routes in darkness</li>
+<li>Emergency lighting locations</li>
+</ul>
+
+<h3>Special Circumstances:</h3>
+<ul>
+<li>Power outages</li>
+<li>Blocked exits</li>
+<li>Injuries within household</li>
+</ul>`
+                        },
+                        {
+                            id: '2-2-p4',
+                            type: 'input',
+                            title: 'Create Your Plan',
+                            description: 'Opens interactive form to build your emergency plan'
+                        },
+                        {
+                            id: '2-2-p5',
+                            type: 'text',
+                            title: 'Review Your Plan',
+                            body: `<p>Your customized plan includes:</p>
+<ul>
+<li>Household member profiles</li>
+<li>Safe spots and meeting places</li>
+<li>Communication protocols</li>
+<li>Special scenario procedures</li>
+</ul>
+
+<h3>Action Items:</h3>
+<ul>
+<li>Save plan to your device</li>
+<li>Print two copies (home and car)</li>
+<li>Share with out-of-area contact</li>
+</ul>`
+                        },
+                        {
+                            id: '2-2-p6',
+                            type: 'quiz',
+                            title: 'Plan Creation Quiz',
+                            questions: [
+                                {
+                                    id: 1,
+                                    question: 'When should you review and update your emergency plan?',
+                                    options: [
+                                        'Only after major earthquakes',
+                                        'Yearly or after life changes',
+                                        'Every month',
+                                        'Never after creation'
+                                    ],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 2,
+                                    question: 'What special considerations should be included in your plan?',
+                                    options: [
+                                        'Only adult family members',
+                                        'Pets and medical needs',
+                                        'Favorite foods',
+                                        'Work schedules only'
+                                    ],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 3,
+                                    question: 'Where should you store copies of your emergency plan?',
+                                    options: [
+                                        'Only on your phone',
+                                        'Multiple accessible locations',
+                                        'In a safe deposit box',
+                                        'Memorized only'
+                                    ],
+                                    correctAnswer: 1
+                                }
                             ]
                         }
                     ]
@@ -363,30 +539,306 @@ export const PREPARE_MODULES = [
             },
             {
                 id: '2-3',
-                title: 'Practice Your Plan',
-                duration: '5 min',
-                type: 'practice',
+                title: 'Define Your Contacts',
+                duration: '10 min',
+                type: 'lesson',
                 content: {
                     pages: [
                         {
                             id: '2-3-p1',
                             type: 'text',
-                            title: 'Practice Your Plan',
-                            body: `<p>Run through your earthquake drill with family members. Practice makes perfect!</p>`
+                            title: 'Communication Overview',
+                            body: `<p>During large earthquakes, cell networks overload, and phone calls often fail. Text messages are more reliable because they use less bandwidth. Your communication plan should identify how family members reconnect and who acts as your main point of contact.</p>
+
+<h3>Tips:</h3>
+<ul>
+<li>Choose one out-of-state contact — it's often easier to reach someone outside the disaster zone</li>
+<li>Preload emergency numbers into your phone, and also write them down</li>
+<li>Practice short, clear text messages like "I'm safe at home. No damage"</li>
+<li>Set up a family group chat for quick updates</li>
+<li>If internet is available, use tools like Google's "I'm Safe" or the Red Cross Safe & Well list</li>
+</ul>`
                         },
                         {
                             id: '2-3-p2',
+                            type: 'text',
+                            title: 'Add Your Contacts',
+                            body: `<p>Fill out your personal contact network. These entries should sync with your phone or remain saved locally.</p>
+
+<h3>Sections:</h3>
+<ul>
+<li><strong>Primary Household Contacts:</strong> Add names and numbers of people you live with. Include emergency details (e.g., medications, mobility needs)</li>
+<li><strong>Out-of-Area Contact:</strong> Choose a trusted friend or relative who lives out of state. They serve as a relay for updates when local lines fail</li>
+<li><strong>Work and School Numbers:</strong> Store emergency numbers for workplaces, schools, and caregivers</li>
+</ul>`
+                        },
+                        {
+                            id: '2-3-p3',
+                            type: 'input',
+                            title: 'Emergency Contacts',
+                            description: 'Opens contact management form'
+                        },
+                        {
+                            id: '2-3-p4',
                             type: 'checklist',
-                            title: 'Practice Checklist',
+                            title: 'Communication Readiness Checklist',
                             items: [
-                                { id: 1, text: 'Conduct a family earthquake drill', completed: true },
-                                { id: 2, text: 'Time how long it takes to get to safe spots', completed: true },
-                                { id: 3, text: 'Review and improve your plan', completed: true }
+                                { id: 1, text: 'Choose an out-of-state contact person', completed: false },
+                                { id: 2, text: 'Save emergency numbers in your phone and write them down', completed: false },
+                                { id: 3, text: 'Add work, school, and medical contacts', completed: false },
+                                { id: 4, text: 'Practice sending short emergency text messages', completed: false },
+                                { id: 5, text: 'Set up or test your family group chat', completed: false },
+                                { id: 6, text: 'Store your plan digitally and physically', completed: false }
+                            ]
+                        },
+                        {
+                            id: '2-3-p5',
+                            type: 'quiz',
+                            title: 'Emergency Communication Quiz',
+                            questions: [
+                                {
+                                    id: 1,
+                                    question: 'Why are text messages more reliable during a disaster?',
+                                    options: [
+                                        'They require less network bandwidth',
+                                        'They automatically send to everyone nearby',
+                                        'They\'re prioritized by carriers',
+                                        'They use satellite connections'
+                                    ],
+                                    correctAnswer: 0
+                                },
+                                {
+                                    id: 2,
+                                    question: 'What is the best role for an out-of-state contact?',
+                                    options: [
+                                        'Sending you supplies',
+                                        'Relaying information between separated family members',
+                                        'Calling 911 for you',
+                                        'Tracking earthquakes online'
+                                    ],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 3,
+                                    question: 'Where should you store emergency contact info?',
+                                    options: [
+                                        'Only in your phone',
+                                        'In your phone and written copy',
+                                        'Only online',
+                                        'Only in the cloud'
+                                    ],
+                                    correctAnswer: 1
+                                }
                             ]
                         }
                     ]
                 }
             },
+            {
+                id: '2-4',
+                title: 'Save Important Documents',
+                duration: '10 min',
+                type: 'lesson',
+                content: {
+                    pages: [
+                        {
+                            id: '2-4-p1',
+                            type: 'text',
+                            title: 'Secure Vital Documents',
+                            body: `<p>After an earthquake, you may need to prove identity, ownership, or access funds. Protecting important documents ensures you can recover faster.</p>
+
+<h3>Essential Documents Checklist:</h3>
+<ul>
+<li>Identification (passports, driver's licenses, birth certificates)</li>
+<li>Financial records (insurance policies, bank account information)</li>
+<li>Medical information (prescriptions, insurance cards)</li>
+<li>Property documents (deeds, rental agreements)</li>
+</ul>`
+                        },
+                        {
+                            id: '2-4-p3',
+                            type: 'text',
+                            title: 'Create Digital Copies',
+                            body: `<h3>Digital Storage Options:</h3>
+<ul>
+<li>Password-protected cloud storage</li>
+<li>Encrypted USB drive in your Go-Bag</li>
+<li>Secure mobile app storage</li>
+<li>Email attachments to yourself and out-of-area contact</li>
+</ul>
+
+<h3>Step-by-Step Process:</h3>
+<ul>
+<li>Scan or photograph all important documents</li>
+<li>Organize into clearly labeled folders</li>
+<li>Store in at least two secure locations</li>
+<li>Update regularly when documents change</li>
+</ul>`
+                        },
+                        {
+                            id: '2-4-p4',
+                            type: 'input',
+                            title: 'Upload Documents',
+                            description: 'Secure document upload and storage'
+                        },
+                        {
+                            id: '2-4-p5',
+                            type: 'text',
+                            title: 'Secure Physical Documents',
+                            body: `<h3>Protection Methods:</h3>
+<ul>
+<li>Fireproof/waterproof safe</li>
+<li>Safety deposit box</li>
+<li>Waterproof document bag in Go-Bag</li>
+<li>Laminated copies of essential cards</li>
+</ul>
+
+<h3>Emergency Access:</h3>
+<ul>
+<li>Keep copies with out-of-area contact</li>
+<li>Store digital access information securely</li>
+<li>Ensure trusted family members know locations</li>
+</ul>`
+                        },
+                        {
+                            id: '2-4-p6',
+                            type: 'quiz',
+                            title: 'Document Security Quiz',
+                            questions: [
+                                {
+                                    id: 1,
+                                    question: 'What is the best practice for document storage?',
+                                    options: [
+                                        'Keep originals in car glove compartment',
+                                        'Multiple secure locations',
+                                        'Only digital copies',
+                                        'Memorize important information'
+                                    ],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 2,
+                                    question: 'Why should you include digital copies of documents?',
+                                    options: [
+                                        'Physical documents may be damaged',
+                                        'They look more official',
+                                        'Digital is always safer',
+                                        'Required by law'
+                                    ],
+                                    correctAnswer: 0
+                                },
+                                {
+                                    id: 3,
+                                    question: 'Who should have access to your document locations?',
+                                    options: [
+                                        'No one else',
+                                        'Only your lawyer',
+                                        'Trusted family members',
+                                        'All neighbors'
+                                    ],
+                                    correctAnswer: 2
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+            {
+                id: '2-5',
+                title: 'Practice Your Plan',
+                duration: '15 min',
+                type: 'lesson',
+                content: {
+                    pages: [
+                        {
+                            id: '2-5-p1',
+                            type: 'text',
+                            title: 'Introduction',
+                            body: `<p>The best emergency plan fails if it's never practiced. Drills help identify problems early — confusion, cluttered exits, or forgotten steps. Practicing your plan transforms panic into reflex.</p>
+
+<h3>Guidelines:</h3>
+<ul>
+<li>Schedule drills twice a year</li>
+<li>Involve everyone in your household, including kids or roommates</li>
+<li>Simulate realistic conditions: lights off, blocked exits, loss of communication</li>
+<li>After each drill, discuss what went right and what didn't</li>
+</ul>`
+                        },
+                        {
+                            id: '2-5-p3',
+                            type: 'text',
+                            title: 'Conducting Your Drill',
+                            body: `<h3>Step 1:</h3>
+<p>Announce a mock "earthquake." Everyone Drops, Covers, and Holds On for at least 60 seconds</p>
+
+<h3>Step 2:</h3>
+<p>After shaking "stops," evacuate carefully and meet at your designated outside spot</p>
+
+<h3>Step 3:</h3>
+<p>Check if everyone has their Go-Bag and phones</p>
+
+<h3>Step 4:</h3>
+<p>Practice sending a brief text to your out-of-area contact</p>
+
+<h3>Step 5:</h3>
+<p>Debrief together: Were any exits blocked? Did anyone forget a key step?</p>`
+                        },
+                        {
+                            id: '2-5-p4',
+                            type: 'checklist',
+                            title: 'Household Practice Tracker',
+                            items: [
+                                { id: 1, text: 'Conducted a full family earthquake drill', completed: false },
+                                { id: 2, text: 'Timed how long it took to reach safe spots', completed: false },
+                                { id: 3, text: 'Practiced "Drop, Cover, and Hold On"', completed: false },
+                                { id: 4, text: 'Practiced evacuation and outdoor meeting', completed: false },
+                                { id: 5, text: 'Tested emergency texts to contact person', completed: false },
+                                { id: 6, text: 'Reviewed and updated plan after practice', completed: false }
+                            ]
+                        },
+                        {
+                            id: '2-5-p5',
+                            type: 'quiz',
+                            title: 'Drill Practice Quiz',
+                            questions: [
+                                {
+                                    id: 1,
+                                    question: 'How often should you practice your earthquake plan?',
+                                    options: [
+                                        'Every month',
+                                        'Twice a year',
+                                        'Only once when created',
+                                        'Only after major quakes'
+                                    ],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 2,
+                                    question: 'What is the correct action during shaking?',
+                                    options: [
+                                        'Run to the doorway',
+                                        'Drop, Cover, and Hold On',
+                                        'Stand by a window',
+                                        'Exit the building immediately'
+                                    ],
+                                    correctAnswer: 1
+                                },
+                                {
+                                    id: 3,
+                                    question: 'What\'s the most important part of a drill debrief?',
+                                    options: [
+                                        'Timing only',
+                                        'Identifying what worked and what didn\'t',
+                                        'Posting on social media',
+                                        'Turning off the alarm'
+                                    ],
+                                    correctAnswer: 1
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
         ]
     },
     {
@@ -1667,7 +2119,7 @@ export const PREPARE_MODULES = [
 // Helper function to convert plain text to HTML
 const convertTextToHTML = (text) => {
     if (!text || typeof text !== 'string') return '';
-    
+
     // Replace bullet points with HTML lists
     let html = text
         .replace(/\r\n/g, '\n')
@@ -1678,10 +2130,10 @@ const convertTextToHTML = (text) => {
     const lines = html.split('\n');
     let inList = false;
     let processedLines = [];
-    
+
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
-        
+
         if (!line) {
             if (inList) {
                 processedLines.push('</ul>');
@@ -1689,7 +2141,7 @@ const convertTextToHTML = (text) => {
             }
             continue;
         }
-        
+
         // Detect headings (lines ending with colon)
         if (line.endsWith(':')) {
             if (inList) {
@@ -1700,7 +2152,7 @@ const convertTextToHTML = (text) => {
             processedLines.push(`<h3>${headingText}</h3>`);
             continue;
         }
-        
+
         // Detect bullet points
         if (/^[•\-\*]\s+/.test(line) || /^\d+\.\s+/.test(line)) {
             if (!inList) {
@@ -1711,13 +2163,13 @@ const convertTextToHTML = (text) => {
             processedLines.push(`<li>${listItem}</li>`);
             continue;
         }
-        
+
         // Regular paragraph
         if (inList) {
             processedLines.push('</ul>');
             inList = false;
         }
-        
+
         // Check if this is a bolded section (text with asterisks)
         if (/^\*\*.+\*\*$/.test(line)) {
             const boldText = line.replace(/\*\*/g, '').trim();
@@ -1726,12 +2178,12 @@ const convertTextToHTML = (text) => {
             processedLines.push(`<p>${line}</p>`);
         }
     }
-    
+
     // Close any open list
     if (inList) {
         processedLines.push('</ul>');
     }
-    
+
     return processedLines.join('\n');
 };
 
@@ -1845,7 +2297,7 @@ export const getLessonPages = (lesson) => {
     if (!lesson || !lesson.content) return [];
     const pages = lesson.content.pages;
     if (!Array.isArray(pages) || pages.length === 0) return [];
-    
+
     return pages.map(page => ({
         ...page,
         // For text pages expose 'body' as precomputed html field
