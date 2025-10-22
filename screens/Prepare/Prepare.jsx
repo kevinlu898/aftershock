@@ -195,19 +195,6 @@ const Prepare = () => {
         <Text style={globalStyles.heading}>Prepare</Text>
         <Text style={prepareStyles.subtitle}>Complete your journey to earthquake safety</Text>
 
-        <TouchableOpacity onPress={() => navigation.navigate("myPlan")}>
-          <Text style={prepareStyles.buttonText}>My Plan</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("contactInfo")}>
-          <Text style={prepareStyles.buttonText}>Contact Information</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("medicalInfo")}>
-          <Text style={prepareStyles.buttonText}>Medical Information</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("importantDocuments")}>
-          <Text style={prepareStyles.buttonText}>Important Documents</Text>
-        </TouchableOpacity>
-
         <View style={[prepareStyles.overallProgress, { backgroundColor: colors.white }]}>
           <View style={prepareStyles.progressHeader}>
             <Text style={prepareStyles.progressLabel}>Overall Progress</Text>

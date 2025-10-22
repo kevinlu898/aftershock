@@ -8,17 +8,23 @@ import prepareLessonStyles from './prepareLessonStyles';
 import { getLessonById, getLessonCurrentPageIndex, getLessonPages, getModuleById } from './prepareModules';
 import completion from './prepareModulesCompletion';
 
+// Add mapping from button label to navigator route name
+const BUTTON_ROUTE_MAP = {
+  'My Plan': 'myPlan',
+  'Contact Info': 'contactInfo',
+  'Medical Info': 'medicalInfo',
+  'Important Documents': 'importantDocuments',
+};
+
 const SimpleHtmlRenderer = ({ html = '', contentWidth, config = {} }) => {
     if (!html) return null;
     const trimmed = String(html).replace(/\r/g, '').trim();
 
     const elements = [];
-    const h3Regex = /<h3>(.*?)<\/h3>/gi;
-    let lastIndex = 0;
-    let match;
     const ulRegex = /<ul>([\s\S]*?)<\/ul>/gi;
     let cursor = 0;
     const parts = [];
+    let match;
     while ((match = ulRegex.exec(trimmed)) !== null) {
         const start = match.index;
         const before = trimmed.slice(cursor, start);
@@ -49,8 +55,11 @@ const SimpleHtmlRenderer = ({ html = '', contentWidth, config = {} }) => {
                     );
                 }
 
-                // For generic HTML part replace tags with newlines and basic bold handling
-                const cleaned = part.content
+                // Tokenize button tags into markers so they can be rendered as React Native buttons
+                const buttonRegex = /<button(?:\s+[^>]*)?>([\s\S]*?)<\/button>/gi;
+                const placeholderHtml = part.content.replace(buttonRegex, (s, g1) => `\n__BTN__${g1}__BTN__\n`);
+
+                const cleaned = placeholderHtml
                     .replace(/<h3>(.*?)<\/h3>/gi, (s, g1) => `\n__H3__${g1}__H3__\n`)
                     .replace(/<p>(.*?)<\/p>/gi, (s, g1) => `\n${g1}\n`)
                     .replace(/<strong>(.*?)<\/strong>/gi, (s, g1) => `**${g1}**`)
@@ -60,6 +69,43 @@ const SimpleHtmlRenderer = ({ html = '', contentWidth, config = {} }) => {
                 return (
                     <View key={`part-${idx}`} style={{ marginBottom: 8 }}>
                         {segments.map((seg, i) => {
+                            // button token -> render TouchableOpacity
+                            if (seg.startsWith('__BTN__') && seg.endsWith('__BTN__')) {
+                                const btnText = seg.replace(/^__BTN__(.*)__BTN__$/i, '$1').trim();
+                                return (
+                                    <TouchableOpacity
+                                        key={`btn-${i}`}
+                                        activeOpacity={0.87}
+                                        onPress={() => {
+                                            try {
+                                                if (typeof config.onButton === 'function') config.onButton(btnText);
+                                            } catch (_e) {}
+                                        }}
+                                        style={config.buttonStyle || {
+                                            backgroundColor: colors.primary,   // primary solid button like other app buttons
+                                            paddingVertical: 12,
+                                            paddingHorizontal: 16,
+                                            borderRadius: 10,
+                                            alignSelf: 'center',
+                                            marginTop: 12,
+                                            minWidth: 140,
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            // subtle shadow / elevation
+                                            shadowColor: '#000',
+                                            shadowOpacity: 0.08,
+                                            shadowOffset: { width: 0, height: 4 },
+                                            shadowRadius: 6,
+                                            elevation: 3
+                                        }}
+                                    >
+                                        <Text style={config.buttonTextStyle || { color: '#fff', fontWeight: '800', fontSize: 15 }}>
+                                            {btnText}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            }
+
                             if (seg.startsWith('__H3__') && seg.endsWith('__H3__')) {
                                 const text = seg.replace(/__H3__(.*)__H3__/i, '$1');
                                 return <Text key={`h3-${i}`} style={config.tagsStyles?.h3 || { fontSize: 18, fontWeight: '700', marginVertical: 8 }}>{stripTags(text)}</Text>;
@@ -299,10 +345,20 @@ const PrepareLessons = ({ route, navigation }) => {
         >
           <View style={prepareLessonStyles.lessonContentCard}>
             <SimpleHtmlRenderer
-                            html={content}
-                            contentWidth={screenWidth - 48}
-                            config={htmlConfig}
-                        />
+                html={content}
+                contentWidth={screenWidth - 48}
+                config={{
+                  ...htmlConfig,
+                  onButton: (btnText) => {
+                    const route = BUTTON_ROUTE_MAP[(btnText || '').trim()] || null;
+                    if (route) {
+                      try { navigation.navigate(route); } catch (e) { console.warn('navigate failed', e); }
+                    } else {
+                      console.warn('No route mapped for button:', btnText);
+                    }
+                  }
+                }}
+            />
           </View>
         </ScrollView>
         {/* Continue button */}
@@ -359,7 +415,17 @@ const PrepareLessons = ({ route, navigation }) => {
                 {/* caption / content area with same padding as other pages */}
                 {caption ? (
                             caption.includes('<') ? (
-                                <SimpleHtmlRenderer html={caption} contentWidth={screenWidth - 48} config={htmlConfig} />
+                                <SimpleHtmlRenderer html={caption} contentWidth={screenWidth - 48} config={{
+                                  ...htmlConfig,
+                                  onButton: (btnText) => {
+                                    const route = BUTTON_ROUTE_MAP[(btnText || '').trim()] || null;
+                                    if (route) {
+                                      try { navigation.navigate(route); } catch (e) { console.warn('navigate failed', e); }
+                                    } else {
+                                      console.warn('No route mapped for button:', btnText);
+                                    }
+                                  }
+                                }} />
                             ) : (
                                 <Text style={prepareLessonStyles.lessonContentText}>{caption}</Text>
                             )

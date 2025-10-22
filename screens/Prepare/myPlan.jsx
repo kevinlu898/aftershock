@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { addDoc, collection, query as fsQuery, getDocs, where } from 'firebase/firestore';
 import { useEffect, useRef, useState } from "react";
 import { InputAccessoryView, Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
 import Markdown from "react-native-markdown-display";
@@ -7,6 +8,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { WebView } from 'react-native-webview';
 import { colors } from "../../css";
+import { db } from '../../db/firebaseConfig';
+import { getData } from '../../storage/storageUtils';
 
 const STORAGE_KEY = "my_plan";
 
@@ -50,6 +53,35 @@ export default function MyPlan({ navigation }) {
         if (raw) {
           const parsed = JSON.parse(raw);
           setPlan((prev) => ({ ...prev, ...parsed }));
+        } else {
+          // No local plan found -> try loading the latest plan from Firestore
+          try {
+            const username = (await getData('username')) || null;
+            if (username) {
+              const q = fsQuery(
+                collection(db, 'emergencyData'),
+                where('username', '==', username),
+                where('dataType', '==', 'plans')
+              );
+              const snaps = await getDocs(q);
+              if (!snaps.empty && snaps.docs.length > 0) {
+                // pick the last document (most recently added in typical usage)
+                const docSnap = snaps.docs[snaps.docs.length - 1];
+                const remote = docSnap.data()?.data || {};
+                const next = {
+                  evacuateRoute: remote.evacuationRoute || remote.content || '',
+                  meetUpPoints: remote.meetUpPoints || '',
+                  aftermathProcedures: remote.aftermathProcedures || '',
+                  other: remote.other || '',
+                };
+                setPlan((prev) => ({ ...prev, ...next }));
+                // persist into AsyncStorage for offline use
+                try { await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch (_) {}
+              }
+            }
+          } catch (dbErr) {
+            console.warn('myPlan: firestore load failed', dbErr);
+          }
         }
       } catch (e) {
         console.warn("Failed to load plan", e);
@@ -64,6 +96,29 @@ export default function MyPlan({ navigation }) {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       setPlan(next);
+
+      // Store to database emergencyData collection
+      try {
+        const username = (await getData('username')) || 'unknown';
+        // Storage format: evacuationRoute, meetUpPoints, aftermathProcedures, other, and a blank field
+        const dataObj = {
+          evacuationRoute: next.evacuateRoute || '',
+          meetUpPoints: next.meetUpPoints || '',
+          aftermathProcedures: next.aftermathProcedures || '',
+          other: next.other || '',
+          blank: ''
+        };
+
+        await addDoc(collection(db, 'emergencyData'), {
+          data: dataObj,
+          dataType: 'plans',
+          username
+        });
+        console.log('myPlan: saved to firestore');
+      } catch (e) {
+        console.warn('myPlan: firestore save failed', e);
+      }
+
     } catch (e) {
       console.warn("Failed to save plan", e);
     }

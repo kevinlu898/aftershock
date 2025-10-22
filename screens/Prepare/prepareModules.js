@@ -471,9 +471,9 @@ export const PREPARE_MODULES = [
                         },
                         {
                             id: '2-2-p4',
-                            type: 'input',
+                            type: 'text',
                             title: 'Create Your Plan',
-                            description: 'Opens interactive form to build your emergency plan'
+                            body: `<p>Create your earthquake plan with Aftershock here!</p> <button>My Plan</button>`
                         },
                         {
                             id: '2-2-p5',
@@ -574,9 +574,9 @@ export const PREPARE_MODULES = [
                         },
                         {
                             id: '2-3-p3',
-                            type: 'input',
+                            type: 'text',
                             title: 'Emergency Contacts',
-                            description: 'Opens contact management form'
+                            description: 'Input your emergency contacts for easy access in Aftershock here. <button>Contact Info</button>'
                         },
                         {
                             id: '2-3-p4',
@@ -677,12 +677,18 @@ export const PREPARE_MODULES = [
                         },
                         {
                             id: '2-4-p4',
-                            type: 'input',
-                            title: 'Upload Documents',
-                            description: 'Secure document upload and storage'
+                            type: 'text',
+                            title: 'Medical Information',
+                            description: 'Save your medical information in one place by entering details into Aftershock. <button>Medical Info</button>'
                         },
                         {
                             id: '2-4-p5',
+                            type: 'text',
+                            title: 'Upload Documents',
+                            description: 'Upload copies of important documents securly to Aftershock for easy access here. <button>Important Documents</button>'
+                        },
+                        {
+                            id: '2-4-p6',
                             type: 'text',
                             title: 'Secure Physical Documents',
                             body: `<h3>Protection Methods:</h3>
@@ -701,7 +707,7 @@ export const PREPARE_MODULES = [
 </ul>`
                         },
                         {
-                            id: '2-4-p6',
+                            id: '2-4-p7',
                             type: 'quiz',
                             title: 'Document Security Quiz',
                             questions: [
@@ -2193,10 +2199,14 @@ PREPARE_MODULES.forEach(module => {
     module.lessons.forEach(lesson => {
         if (lesson.content && Array.isArray(lesson.content.pages)) {
             lesson.content.pages.forEach(page => {
-                if (page.type === 'text' && page.body) {
-                    page.html = page.body.includes('<') ? page.body : convertTextToHTML(page.body);
-                    // Replace the original body with the HTML version so data consumers can use page.body directly
-                    page.body = page.html;
+                if (page.type === 'text') {
+                    // Use page.body if present, otherwise fall back to page.description
+                    const sourceText = (page.body && String(page.body).trim()) ? page.body : (page.description || '');
+                    if (sourceText) {
+                        page.html = sourceText.includes('<') ? sourceText : convertTextToHTML(sourceText);
+                        // Replace the original body with the HTML version so data consumers can use page.body directly
+                        page.body = page.html;
+                    }
                 }
             });
         }
@@ -2208,10 +2218,15 @@ PREPARE_MODULES.forEach(module => {
     module.lessons.forEach(lesson => {
         if (!lesson.content || !Array.isArray(lesson.content.pages)) return;
         lesson.content.pages.forEach(page => {
-            if (page.type !== 'text' || !page.body) return;
-            const hasHtml = /<[^>]+>/i.test(page.body);
+            if (page.type !== 'text') return;
+            const currentBody = page.body || page.description || '';
+            const hasHtml = /<[^>]+>/i.test(currentBody);
             if (!hasHtml) {
-                page.html = convertTextToHTML(page.body);
+                page.html = convertTextToHTML(currentBody);
+                page.body = page.html;
+            } else {
+                // ensure html field exists for consistent access
+                page.html = page.html || currentBody;
                 page.body = page.html;
             }
         });

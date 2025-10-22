@@ -1,8 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useRef, useState } from "react";
-import { Alert, InputAccessoryView, Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
+import { Alert, Dimensions, InputAccessoryView, Keyboard, Modal, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../css";
+
+// Firestore + storage helpers
+import { addDoc, collection, deleteDoc, doc, query as fsQuery, getDocs, updateDoc, where } from 'firebase/firestore';
+import { db } from '../../db/firebaseConfig';
+import { getData } from '../../storage/storageUtils';
 
 const MED_KEY = 'medical_info';
 
@@ -23,6 +28,9 @@ export default function MedicalInfo({ navigation }) {
   const bloodRef = useRef(null);
   const notesRef = useRef(null);
   const inputRefs = [nameRef, medsRef, allergiesRef, bloodRef, notesRef];
+  // refs for modal layout and scrolling
+  const modalScrollRef = useRef(null);
+  const modalCardRef = useRef(null);
   const [currentFieldIndex, setCurrentFieldIndex] = useState(-1);
 
   const focusNext = (idx) => {
@@ -42,6 +50,39 @@ export default function MedicalInfo({ navigation }) {
           const parsed = JSON.parse(rawMed);
           if (Array.isArray(parsed)) setMedicalList(parsed);
           else if (parsed && typeof parsed === 'object') setMedicalList([parsed]);
+        } else {
+          // fallback: try loading from Firestore for this user's medical entries
+          try {
+            const username = (await getData('username')) || null;
+            if (username) {
+              const q = fsQuery(
+                collection(db, 'emergencyData'),
+                where('username', '==', username),
+                where('dataType', '==', 'medical')
+              );
+              const snaps = await getDocs(q);
+              if (!snaps.empty) {
+                const fromDb = snaps.docs.map(d => {
+                  const payload = d.data()?.data || {};
+                  return {
+                    id: d.id,
+                    name: payload.name || payload.Name || '',
+                    medications: payload.medications || payload.Medications || '',
+                    allergies: payload.allergies || payload.Allergies || '',
+                    bloodType: payload.bloodType || payload.BloodType || '',
+                    notes: payload.notes || payload.Notes || '',
+                    updatedAt: payload.updatedAt || null
+                  };
+                });
+                if (fromDb.length) {
+                  setMedicalList(fromDb);
+                  try { await AsyncStorage.setItem(MED_KEY, JSON.stringify(fromDb)); } catch (_) {}
+                }
+              }
+            }
+          } catch (dbErr) {
+            console.warn('medicalInfo: failed to load from firestore', dbErr);
+          }
         }
       } catch (e) {
         // ignore
@@ -67,8 +108,54 @@ export default function MedicalInfo({ navigation }) {
 
   const saveMedicalList = async (next) => {
     try {
-      await AsyncStorage.setItem(MED_KEY, JSON.stringify(next));
-      setMedicalList(next);
+      // synchronize with Firestore: create new docs for local items, update existing remote docs
+      const username = (await getData('username')) || 'unknown';
+      const finalList = [];
+
+      for (const entry of (next || [])) {
+        const dataObj = {
+          name: entry.name || '',
+          medications: entry.medications || '',
+          allergies: entry.allergies || '',
+          bloodType: entry.bloodType || '',
+          notes: entry.notes || '',
+          updatedAt: new Date().toISOString()
+        };
+
+        if (String(entry.id).startsWith('m_')) {
+          // new local entry -> create remote doc and replace id
+          try {
+            const docRef = await addDoc(collection(db, 'emergencyData'), {
+              data: dataObj,
+              dataType: 'medical',
+              username
+            });
+            finalList.push({ ...entry, id: docRef.id, updatedAt: dataObj.updatedAt });
+          } catch (e) {
+            console.warn('medicalInfo: failed to add new doc to firestore', e);
+            finalList.push(entry); // keep local if remote fails
+          }
+        } else {
+          // existing remote doc -> update
+          try {
+            const remoteRef = doc(db, 'emergencyData', entry.id);
+            await updateDoc(remoteRef, { data: dataObj });
+            finalList.push({ ...entry, updatedAt: dataObj.updatedAt });
+          } catch (e) {
+            console.warn('medicalInfo: failed to update remote doc', e);
+            finalList.push(entry);
+          }
+        }
+      }
+
+      // persist final list locally
+      try {
+        await AsyncStorage.setItem(MED_KEY, JSON.stringify(finalList));
+        setMedicalList(finalList);
+      } catch (e) {
+        console.warn('medicalInfo: failed to persist locally', e);
+        setMedicalList(next);
+      }
     } catch (e) {
       console.warn('Failed to save medical info', e);
     }
@@ -120,6 +207,14 @@ export default function MedicalInfo({ navigation }) {
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete', style: 'destructive', onPress: async () => {
+          // delete remote doc if id looks like a Firestore id
+          try {
+            if (!String(id).startsWith('m_')) {
+              await deleteDoc(doc(db, 'emergencyData', id));
+            }
+          } catch (e) {
+            console.warn('medicalInfo: failed to delete remote doc', e);
+          }
           const next = medicalList.filter(m => m.id !== id);
           await saveMedicalList(next);
         }
@@ -175,27 +270,54 @@ export default function MedicalInfo({ navigation }) {
 
       </ScrollView>
 
-      {/* Medical Info Modal */}
-      <Modal visible={showMedForm} animationType="slide" transparent>
+      {/* Medical Info Modal (keyboard-aware, footer fixed) */}
+      <Modal visible={showMedForm} animationType="fade" transparent>
         <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
           <View style={styles.modalBackdrop}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 20}>
-              <View style={styles.modalCard}>
+            {/* modalCard is absolutely positioned with height computed so bottom aligns with keyboard top */}
+            <View
+              ref={modalCardRef}
+              style={[
+                styles.modalCard,
+                (() => {
+                  const topInset = insets?.top || 20;
+                  const bottomInset = insets?.bottom || 8;
+                  const topOffset = topInset + 12;
+                  const modalHeight = Math.max(220, Dimensions.get('window').height - topOffset - (keyboardHeight || bottomInset) - 12);
+                  // when keyboard not shown, cap modal smaller to reduce gap to footer
+                  const finalHeight = keyboardHeight ? modalHeight : Math.min(modalHeight, Math.round(Dimensions.get('window').height * 0.60));
+                  return {
+                    position: 'absolute',
+                    left: 16,
+                    right: 16,
+                    top: topOffset,
+                    height: finalHeight,
+                  };
+                })(),
+              ]}
+            >
+              <ScrollView
+                ref={modalScrollRef}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingBottom: 8 }}
+                showsVerticalScrollIndicator={true}
+              >
                 <Text style={styles.modalTitle}>{editingMedId ? 'Edit Medical Entry' : 'Add Medical Entry'}</Text>
-                <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 12 }}>
-                  <Text style={styles.modalLabel}>Name</Text>
-                  <TextInput ref={nameRef} inputAccessoryViewID={inputAccessoryId} placeholder="Name" value={medForm.name} onChangeText={(t) => setMedForm(f => ({ ...f, name: t }))} style={styles.input} returnKeyType="next" onFocus={() => setCurrentFieldIndex(0)} onSubmitEditing={() => focusNext(0)} />
-                  <Text style={styles.modalLabel}>Medications</Text>
-                  <TextInput ref={medsRef} inputAccessoryViewID={inputAccessoryId} placeholder="Medications (comma-separated)" value={medForm.medications} onChangeText={(t) => setMedForm(f => ({ ...f, medications: t }))} style={[styles.input, { height: 80 }]} multiline textAlignVertical="top" onFocus={() => setCurrentFieldIndex(1)} />
-                  <Text style={styles.modalLabel}>Allergies</Text>
-                  <TextInput ref={allergiesRef} inputAccessoryViewID={inputAccessoryId} placeholder="Allergies" value={medForm.allergies} onChangeText={(t) => setMedForm(f => ({ ...f, allergies: t }))} style={[styles.input, { height: 60 }]} multiline textAlignVertical="top" onFocus={() => setCurrentFieldIndex(2)} />
-                  <Text style={styles.modalLabel}>Blood Type</Text> 
-                  <TextInput ref={bloodRef} inputAccessoryViewID={inputAccessoryId} placeholder="Blood Type" value={medForm.bloodType} onChangeText={(t) => setMedForm(f => ({ ...f, bloodType: t }))} style={styles.input} returnKeyType="next" onFocus={() => setCurrentFieldIndex(3)} onSubmitEditing={() => focusNext(3)} />
-                  <Text style={styles.modalLabel}>Notes</Text>
-                  <TextInput ref={notesRef} inputAccessoryViewID={inputAccessoryId} placeholder="Additional notes" value={medForm.notes} onChangeText={(t) => setMedForm(f => ({ ...f, notes: t }))} style={[styles.input, { height: 80 }]} multiline textAlignVertical="top" onFocus={() => setCurrentFieldIndex(4)} />
-                </ScrollView>
+                <Text style={styles.modalLabel}>Name</Text>
+                <TextInput ref={nameRef} inputAccessoryViewID={inputAccessoryId} placeholder="Name" value={medForm.name} onChangeText={(t) => setMedForm(f => ({ ...f, name: t }))} style={styles.input} returnKeyType="next" onFocus={() => setCurrentFieldIndex(0)} onSubmitEditing={() => focusNext(0)} />
+                <Text style={styles.modalLabel}>Medications</Text>
+                <TextInput ref={medsRef} inputAccessoryViewID={inputAccessoryId} placeholder="Medications (comma-separated)" value={medForm.medications} onChangeText={(t) => setMedForm(f => ({ ...f, medications: t }))} style={[styles.input, { height: 80 }]} multiline textAlignVertical="top" onFocus={() => setCurrentFieldIndex(1)} />
+                <Text style={styles.modalLabel}>Allergies</Text>
+                <TextInput ref={allergiesRef} inputAccessoryViewID={inputAccessoryId} placeholder="Allergies" value={medForm.allergies} onChangeText={(t) => setMedForm(f => ({ ...f, allergies: t }))} style={[styles.input, { height: 60 }]} multiline textAlignVertical="top" onFocus={() => setCurrentFieldIndex(2)} />
+                <Text style={styles.modalLabel}>Blood Type</Text> 
+                <TextInput ref={bloodRef} inputAccessoryViewID={inputAccessoryId} placeholder="Blood Type" value={medForm.bloodType} onChangeText={(t) => setMedForm(f => ({ ...f, bloodType: t }))} style={styles.input} returnKeyType="next" onFocus={() => setCurrentFieldIndex(3)} onSubmitEditing={() => focusNext(3)} />
+                <Text style={styles.modalLabel}>Notes</Text>
+                <TextInput ref={notesRef} inputAccessoryViewID={inputAccessoryId} placeholder="Additional notes" value={medForm.notes} onChangeText={(t) => setMedForm(f => ({ ...f, notes: t }))} style={[styles.input, { height: 80 }]} multiline textAlignVertical="top" onFocus={() => setCurrentFieldIndex(4)} />
+              </ScrollView>
 
-                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
+              {/* fixed footer to avoid extra scrollable gap */}
+              <View style={{ borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 8 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
                   <TouchableOpacity onPress={() => { Keyboard.dismiss(); setShowMedForm(false); setEditingMedId(null); }} style={[styles.modalButton, { backgroundColor: '#E5E7EB' }]}>
                     <Text style={{ color: '#111', fontWeight: '700' }}>Cancel</Text>
                   </TouchableOpacity>
@@ -204,7 +326,7 @@ export default function MedicalInfo({ navigation }) {
                   </TouchableOpacity>
                 </View>
               </View>
-            </KeyboardAvoidingView>
+            </View>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
@@ -252,7 +374,7 @@ const styles = StyleSheet.create({
   backButton: { marginBottom: 12, alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, backgroundColor: '#fff' },
   backButtonText: { color: colors.primary, fontWeight: '700' },
   modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' },
-  modalCard: { backgroundColor: '#fff', padding: 16, borderTopLeftRadius: 12, borderTopRightRadius: 12 },
+  modalCard: { backgroundColor: '#fff', padding: 16, borderTopLeftRadius: 12, borderTopRightRadius: 12, borderBottomLeftRadius: 12, borderBottomRightRadius: 12 },
   modalTitle: { fontWeight: '800', fontSize: 18, marginBottom: 8, color: colors.primary },
   modalLabel: {
     fontWeight: '600',

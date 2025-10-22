@@ -3,9 +3,6 @@ import { colors, fontSizes } from "../../css";
 
 const prepareStyles = StyleSheet.create({
   // Page content container
-  contentContainer: {
-    // Removed flex: 1 to allow ScrollView to grow naturally
-  },
 
   // Text
   subtitle: {
