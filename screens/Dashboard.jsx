@@ -137,9 +137,14 @@ export default function Dashboard() {
     {
       useNativeDriver: false,
       listener: (event) => {
-        const offsetX = event.nativeEvent.contentOffset.x;
+        // Copy needed properties immediately so we don't hold onto the
+        // synthetic event object after an async boundary. React may reuse
+        // the event object for performance which can cause confusing errors
+        // if accessed later.
+        const { nativeEvent: { contentOffset: { x: offsetX } } = {} } =
+          event || {};
         const dotIndex = Math.min(
-          Math.round(offsetX / SNAP_INTERVAL),
+          Math.round((offsetX || 0) / SNAP_INTERVAL),
           cards.length - 1
         );
         setActiveDot(dotIndex);

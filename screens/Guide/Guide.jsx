@@ -1,6 +1,18 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View, } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Markdown from "react-native-markdown-display";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { colors } from "../../css";
@@ -413,9 +425,10 @@ export default function Guide() {
   };
 
   const handleInputContentSizeChange = (event) => {
-    setInputHeight(
-      Math.min(100, Math.max(40, event.nativeEvent.contentSize.height))
-    );
+    // Capture the height immediately from the native event to avoid
+    // referencing the synthetic event after it may be pooled/reused.
+    const height = event?.nativeEvent?.contentSize?.height || 40;
+    setInputHeight(Math.min(100, Math.max(40, height)));
   };
 
   // whether any other chat has a non-empty draft
@@ -576,10 +589,10 @@ export default function Guide() {
                       <Image
                         source={
                           isOnline
-                            ? require('../../assets/images/filledEpicenter.png')
-                            : require('../../assets/images/outlineEpicenter.png')
+                            ? require("../../assets/images/filledEpicenter.png")
+                            : require("../../assets/images/outlineEpicenter.png")
                         }
-                        style={{ width: 16, height: 16, resizeMode: 'contain' }}
+                        style={{ width: 16, height: 16, resizeMode: "contain" }}
                       />
                     </View>
                   )}
@@ -701,4 +714,3 @@ export default function Guide() {
     </SafeAreaView>
   );
 }
-
