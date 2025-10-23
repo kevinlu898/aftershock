@@ -1,25 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import {
-  NavigationContainer,
-  createNavigationContainerRef,
-} from "@react-navigation/native";
+import { NavigationContainer, createNavigationContainerRef, } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar as ExpoStatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import {
-  Image,
-  Platform,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { Image, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View, } from "react-native";
+import { SafeAreaProvider, useSafeAreaInsets, } from "react-native-safe-area-context";
 import { fetchEarthquakeData } from "./requests";
 
 import Dashboard from "./screens/Dashboard";
@@ -43,8 +29,6 @@ import Login from "./screens/Profile/Login";
 import PrivacyPolicy from "./screens/Profile/PrivacyPolicy";
 import Profile from "./screens/Profile/Profile";
 import TermsOfService from "./screens/Profile/TermsOfService";
-// Try to load MaterialCommunityIcons at runtime (avoids a static module resolution error
-// in environments where the package isn't installed). If unavailable, we'll render no icon.
 let MaterialCommunityIcons = null;
 try {
   const mod = require("react-native-vector-icons/MaterialCommunityIcons");
@@ -56,10 +40,9 @@ try {
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Navigation ref so non-screen components can navigate
 export const navigationRef = createNavigationContainerRef();
 
-// Global emergency banner shown at the top of the app
+// Emergency Banner
 function EmergencyBanner({ lastEarthquakeTime }) {
   const insets = useSafeAreaInsets();
 
@@ -106,9 +89,6 @@ function EmergencyBanner({ lastEarthquakeTime }) {
   );
 }
 
-// Wrapper to conditionally render the banner based on AsyncStorage
-// (Emergency banner visibility is controlled by App-level state and persisted in AsyncStorage)
-
 const TAB_ICONS = {
   Dashboard: { outline: "home-outline", filled: "home" },
   Prepare: { outline: "clipboard-list-outline", filled: "clipboard-list" },
@@ -128,7 +108,7 @@ function MainTabs() {
     <View
       style={{
         flex: 1,
-        backgroundColor: "#e7f0e7ff", // 💚 matches theme background
+        backgroundColor: "#e7f0e7ff", 
         paddingTop:
           Platform.OS === "android" ? StatusBar.currentHeight : insets.top,
       }}
@@ -144,7 +124,6 @@ function MainTabs() {
           tabBarIcon: ({ focused, color }) => {
             const iconSet = TAB_ICONS[route.name];
             const icon = focused ? iconSet.filled : iconSet.outline;
-            // If icon is a bundled asset (require(...)) it may be a number (native) or an object (web) — render Image
             if (
               icon &&
               (typeof icon === "number" || typeof icon === "object")
@@ -192,7 +171,6 @@ function MainTabs() {
 
 // Root App
 export default function App() {
-  // App-level emergency state (reads from AsyncStorage on mount)
   const [emergencyState, setEmergencyState] = useState("no");
   const [lastEarthquakeTime, setLastEarthquakeTime] = useState(null);
 
@@ -212,7 +190,6 @@ export default function App() {
         }
         if (lastTime) {
           setLastEarthquakeTime(lastTime);
-          // If the last event is older than 20 minutes, clear emergency state
           try {
             const then = isNaN(Number(lastTime))
               ? Date.parse(lastTime)
@@ -222,7 +199,7 @@ export default function App() {
               setEmergencyState("no");
             }
           } catch (_err) {
-            // ignore parse errorsf
+            // ignore 
           }
         }
       } catch (e) {
@@ -237,17 +214,15 @@ export default function App() {
     };
   }, []);
 
-  // Polling: check for latest earthquake on mount and every 10 minutes
+  // Check for latest earthquake on mount and every 10 minutes
   useEffect(() => {
     let mounted = true;
     let intervalId = null;
 
     const computeFingerprint = (ev) => {
       if (!ev) return null;
-      // Prefer an explicit id or fingerprint if present
       if (ev.id) return String(ev.id);
       if (ev.fingerprint) return String(ev.fingerprint);
-      // Fallback: use place+time+mag
       return `${ev.place ?? ""}|${ev.time ?? ev.timeISO ?? ""}|${ev.mag ?? ""}`;
     };
 
@@ -295,11 +270,7 @@ export default function App() {
         console.warn("Earthquake polling error", e);
       }
     };
-
-    // initial check
     checkOnce();
-
-    // every 10 minutes
     intervalId = setInterval(checkOnce, 10 * 60 * 1000);
 
     return () => {
@@ -326,36 +297,12 @@ export default function App() {
           <Stack.Screen name="Home" component={Home} />
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="AccountCreation" component={AccountCreation} />
-          <Stack.Screen
-            name="ChangeUsername"
-            component={ChangeUsername}
-            options={{ headerShown: true, title: "Change Username" }}
-          />
-          <Stack.Screen
-            name="ChangePassword"
-            component={ChangePassword}
-            options={{ headerShown: true, title: "Change Password" }}
-          />
-          <Stack.Screen
-            name="DeleteAccount"
-            component={DeleteAccount}
-            options={{ headerShown: true, title: "Delete Account" }}
-          />
-          <Stack.Screen
-            name="TermsOfService"
-            component={TermsOfService}
-            options={{ headerShown: true, title: "Terms of Service" }}
-          />
-          <Stack.Screen
-            name="PrivacyPolicy"
-            component={PrivacyPolicy}
-            options={{ headerShown: true, title: "Privacy Policy" }}
-          />
-          <Stack.Screen
-            name="ChangeDetails"
-            component={ChangeDetails}
-            options={{ headerShown: true, title: "Change Details" }}
-          />
+          <Stack.Screen name="ChangeUsername" component={ChangeUsername} />
+          <Stack.Screen name="ChangePassword" component={ChangePassword} />
+          <Stack.Screen name="DeleteAccount" component={DeleteAccount} />
+          <Stack.Screen name="TermsOfService" component={TermsOfService} />
+          <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} />
+          <Stack.Screen name="ChangeDetails" component={ChangeDetails} />
           <Stack.Screen name="MainApp" component={MainTabs} />
           <Stack.Screen name="prepareLessons" component={prepareLessons} />
           <Stack.Screen name="LocalRisk" component={LocalRisk} />
@@ -375,7 +322,7 @@ export default function App() {
 
 const styles = StyleSheet.create({
   banner: {
-    backgroundColor: "#b91c1c", // red but slightly muted to fit palette
+    backgroundColor: "#b91c1c", 
     width: "100%",
     alignItems: "center",
     justifyContent: "center",

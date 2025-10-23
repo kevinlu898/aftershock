@@ -74,6 +74,9 @@ export default function ChangeUsername() {
 
   return (
     <View style={styles.page}>
+      <TouchableOpacity onPress={() => navigation?.goBack?.()} style={globalStyles.backButton}>
+        <Text style={globalStyles.backButtonText}>{"← Back"}</Text>
+      </TouchableOpacity>
       <View style={styles.card}>
         <Text style={[globalStyles.heading, styles.heading]}>Change Username</Text>
         <Text style={styles.infoText}>

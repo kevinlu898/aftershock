@@ -52,6 +52,17 @@ const globalStyles = StyleSheet.create({
   red: {
     color: colors.danger,
   },
+  backButton: { 
+    marginTop: 30, 
+    marginBottom: 15, 
+    alignSelf: "flex-start", 
+    paddingVertical: 8, 
+    paddingHorizontal: 12, 
+    borderRadius: 10, 
+    backgroundColor: "#fff" },
+  backButtonText: { 
+    color: colors.primary, 
+    fontWeight: "700" },
 });
 
 // Export platform-specific values

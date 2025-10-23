@@ -2,7 +2,8 @@ import { useNavigation } from '@react-navigation/native';
 import { signOut } from 'firebase/auth';
 import { collection, deleteDoc, getDocs, query, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, globalStyles } from '../../css';
 import { auth, db } from '../../db/firebaseConfig';
 import { backendHash } from '../../requests';
@@ -10,6 +11,7 @@ import { clearData, getData } from '../../storage/storageUtils';
 
 export default function DeleteAccount() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -111,46 +113,51 @@ export default function DeleteAccount() {
   };
 
   return (
-    <View style={styles.page}>
-      <View style={styles.card}>
-        <Text style={[globalStyles.heading, styles.heading]}>Delete Account</Text>
-        <View style={styles.infoBox}>
-          <Text style={styles.infoBoxTitle}>Important</Text>
-          <Text style={styles.infoBoxText}>
-            Deleting your account will permanently remove all of your data — emergency contacts, plans, documents, and preferences. This action cannot be undone.
-          </Text>
-        </View>
-        <Text style={styles.infoText}>
-          To permanently delete your account, please verify your password.
-        </Text>
-
-        {/* Show the logged-in username but prevent editing so users can't delete other accounts */}
-        <TextInput
-          placeholder="Username"
-          value={usernameInput}
-          onChangeText={setUsernameInput}
-          style={[styles.input, styles.disabledInput]}
-          autoCapitalize="none"
-          editable={false}
-          selectTextOnFocus={false}
-        />
-
-        <TextInput
-          placeholder="Password"
-          value={passwordInput}
-          onChangeText={setPasswordInput}
-          secureTextEntry
-          style={styles.input}
-        />
-
-        <TouchableOpacity
-          onPress={handleDelete}
-          style={[styles.button, loading && styles.buttonDisabled]}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>{loading ? 'Deleting...' : 'Delete Account'}</Text>
+    <View style={{ flex: 1, backgroundColor: colors.light }}>
+      <StatusBar backgroundColor={colors.light} barStyle="dark-content" />
+      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: (insets?.bottom || 16) + 24 }} keyboardShouldPersistTaps="handled">
+        <TouchableOpacity onPress={() => navigation?.goBack?.()} style={[globalStyles.backButton, { marginBottom: 20 }]}>
+          <Text style={globalStyles.backButtonText}>{"← Back"}</Text>
         </TouchableOpacity>
-      </View>
+        <View style={styles.card}>
+          <Text style={[globalStyles.heading, styles.heading]}>Delete Account</Text>
+          <Text style={styles.infoText}>
+            To permanently delete your account, please verify your password.
+          </Text>
+
+          {/* Show the logged-in username but prevent editing so users can only delete their own account */}
+          <TextInput
+            placeholder="Username"
+            value={usernameInput}
+            onChangeText={setUsernameInput}
+            style={[styles.input, styles.disabledInput]}
+            autoCapitalize="none"
+            editable={false}
+            selectTextOnFocus={false}
+          />
+
+          <TextInput
+            placeholder="Password"
+            value={passwordInput}
+            onChangeText={setPasswordInput}
+            secureTextEntry
+            style={styles.input}
+          />
+          <View style={styles.infoBox}>
+            <Text style={styles.infoBoxTitle}>Important</Text>
+            <Text style={styles.infoBoxText}>
+              Deleting your account will permanently remove all of your data — emergency contacts, plans, documents, and preferences. This action cannot be undone.
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={handleDelete}
+            style={[styles.button, loading && styles.buttonDisabled]}
+            disabled={loading}
+          >
+            <Text style={styles.buttonText}>{loading ? 'Deleting...' : 'Delete Account'}</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -183,7 +190,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 8,
     marginBottom: 12,
-    marginTop: 6, 
+    marginTop: 6,
   },
   infoBoxTitle: {
     fontWeight: '700',

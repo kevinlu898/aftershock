@@ -118,20 +118,11 @@ export default function Profile() {
     }
   };
 
-  // Emergency hub actions (placeholders)
-  const openManagePlan = () => navigation.navigate("Prepare");
-  const openContacts = () => navigation.navigate("Contacts");
-  const openMedicalInfo = () => navigation.navigate("Medical");
-  const openDocuments = () => navigation.navigate("Documents");
-
   // Account actions
   const changeUsername = () => navigation.navigate('ChangeUsername');
   const changePassword = () => navigation.navigate('ChangePassword');
   const exportData = () => Alert.alert("Export Data", "Preparing export...");
-  const deleteAccount = () => {
-    // Navigate to the DeleteAccount screen which handles confirmation and deletion
-    navigation.navigate('DeleteAccount');
-  };
+  const deleteAccount = () => navigation.navigate('DeleteAccount');
 
   // Support
   const openHelp = () => navigation.navigate("Help");
@@ -169,22 +160,22 @@ export default function Profile() {
             <OptionRow
               title="Manage My Plan"
               subtitle="Review and update your emergency plan"
-              onPress={navigation.navigate.bind(this, "myPlan")}
+              onPress={() => navigation.navigate("myPlan")}
             />
             <OptionRow
               title="Emergency Contacts"
               subtitle="Add or edit emergency contacts"
-              onPress={navigation.navigate.bind(this, "contactInfo")}
+              onPress={() => navigation.navigate("contactInfo")}
             />
             <OptionRow
               title="Medical Information"
               subtitle="Allergies, medications, health notes"
-              onPress={navigation.navigate.bind(this, "medicalInfo")}
+              onPress={() => navigation.navigate("medicalInfo")}
             />
             <OptionRow
               title="Important Documents"
               subtitle="Store copies of IDs and insurance policies"
-              onPress={navigation.navigate.bind(this, "importantDocuments")}
+              onPress={() => navigation.navigate("importantDocuments")}
             />
           </View>
         </View>
@@ -223,53 +214,53 @@ export default function Profile() {
           <View style={styles.sectionContent}>
             <OptionRow 
               title="Change Username" 
-              onPress={changeUsername} 
+              onPress={() => navigation.navigate("ChangeUsername")} 
             />
             <OptionRow 
               title="Change Password" 
-              onPress={changePassword} 
+              onPress={() => navigation.navigate("ChangePassword")} 
             />
             <OptionRow 
               title="Change Details"
               subtitle="Update name, zip, phone, email"
-              onPress={() => navigation.navigate('ChangeDetails')}
+              onPress={() => navigation.navigate("ChangeDetails")}
             />
             <OptionRow
               title="Export Data"
               subtitle="Download your emergency plan and records"
-              onPress={exportData}
+              onPress={() => navigation.navigate("ExportData")}
             />
             
             <View style={styles.divider} />
             
             <OptionRow
               title="Help & Support"
-              onPress={openHelp}
+              onPress={() => navigation.navigate("Help")}
             />
             <OptionRow 
               title="Send Feedback" 
-              onPress={sendFeedback} 
+              onPress={() => navigation.navigate("SendFeedback")} 
             />
             <OptionRow 
               title="Privacy Policy" 
-              onPress={openPrivacy} 
+              onPress={() => navigation.navigate("PrivacyPolicy")} 
             />
             <OptionRow 
               title="Terms of Service" 
-              onPress={openTerms} 
+              onPress={() => navigation.navigate("TermsOfService")} 
             />
             
             <View style={styles.divider} />
             
             <OptionRow 
               title="Log Out" 
-              onPress={handleLogout}
+              onPress={() => navigation.navigate("Login")}
               isDestructive={false}
             />
             <OptionRow
               title="Delete Account"
               subtitle="Permanently remove your account and data"
-              onPress={deleteAccount}
+              onPress={() => navigation.navigate("DeleteAccount")}
               isDestructive={true}
             />
           </View>

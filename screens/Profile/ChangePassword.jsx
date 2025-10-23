@@ -69,6 +69,9 @@ export default function ChangePassword() {
 
   return (
     <View style={styles.page}>
+      <TouchableOpacity onPress={() => navigation?.goBack?.()} style={globalStyles.backButton}>
+        <Text style={globalStyles.backButtonText}>{"← Back"}</Text>
+      </TouchableOpacity>
       <View style={styles.card}>
         <Text style={[globalStyles.heading, styles.heading]}>Change Password</Text>
         <Text style={styles.infoText}>Update your account password. Make sure it's at least 8 characters long.</Text>
