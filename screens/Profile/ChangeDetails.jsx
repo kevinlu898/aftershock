@@ -101,6 +101,7 @@ export default function ChangeDetails() {
       // update AsyncStorage copies
       await storeData("firstname", firstName);
       await storeData("postalcode", zipcode);
+      await storeData("email", email);
       await clearData("riskdata");
 
       Alert.alert("Success", "Details updated.");

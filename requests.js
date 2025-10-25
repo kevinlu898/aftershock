@@ -156,7 +156,7 @@ export const exportData = async () => {
     // Read emergency contact from AsyncStorage and parse if possible
     let emergencyContact = null;
     try {
-      const rawContact = await AsyncStorage.getItem("emergency_contact");
+      const rawContact = await AsyncStorage.getItem("emergency_contacts");
       if (rawContact) {
         try {
           emergencyContact = JSON.parse(rawContact);
