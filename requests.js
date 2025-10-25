@@ -148,15 +148,35 @@ export const exportData = async () => {
 
     // Also include email as a fallback/auxiliary identifier if present
     try {
-      email = "aftershockapp@gmail.com";
+      email = await AsyncStorage.getItem("email");
     } catch (_e) {
       // ignore
     }
 
-    const body = { plan: plan, email: email };
-    console.log(body);
-    // Log the outgoing body to help debug server-side validation errors
+    // Read emergency contact from AsyncStorage and parse if possible
+    let emergencyContact = null;
     try {
+      const rawContact = await AsyncStorage.getItem("emergency_contact");
+      if (rawContact) {
+        try {
+          emergencyContact = JSON.parse(rawContact);
+        } catch (_e) {
+          emergencyContact = rawContact;
+        }
+      }
+    } catch (_e) {
+      console.log("its bad ");
+    }
+
+    // Build request body only with present fields
+    const body = {};
+    if (plan) body.plan = plan;
+    if (email) body.email = email;
+    if (emergencyContact) body.emergency_contact = emergencyContact;
+
+    // Log emergency contact and outgoing body to help debug server-side validation errors
+    try {
+      console.log("exportData: emergency_contact ->", emergencyContact);
       console.log("exportData: sending body ->", body);
     } catch (_e) {}
 

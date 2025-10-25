@@ -10,7 +10,7 @@ import {
 import { colors, fontSizes, globalStyles } from "../../css";
 import { exportData } from "../../requests";
 
-export default function ExportData() {
+export default function ExportData({ navigation }) {
   const [loading, setLoading] = useState(false);
 
   const handleExport = async () => {
@@ -34,6 +34,21 @@ export default function ExportData() {
       contentContainerStyle={{ padding: 16 }}
     >
       <View>
+        <TouchableOpacity
+          onPress={() => navigation?.goBack?.()}
+          style={{
+            marginBottom: 12,
+            alignSelf: "flex-start",
+            paddingVertical: 8,
+            paddingHorizontal: 12,
+            borderRadius: 10,
+            backgroundColor: "#fff",
+          }}
+        >
+          <Text style={{ color: colors.primary, fontWeight: "700" }}>
+            {"← Back"}
+          </Text>
+        </TouchableOpacity>
         <Text style={globalStyles.heading}>Export your data</Text>
         <Text
           style={{
