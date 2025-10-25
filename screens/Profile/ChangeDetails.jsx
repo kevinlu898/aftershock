@@ -1,17 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { collection, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import {
-  Alert,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  StyleSheet,
-  KeyboardAvoidingView,
-  ScrollView,
-  Platform,
-} from 'react-native';
+import { Alert, Text, TextInput, TouchableOpacity, View, StyleSheet, KeyboardAvoidingView, ScrollView, Platform, } from 'react-native';
 import { globalStyles, colors, fontSizes } from '../../css';
 import { db } from '../../db/firebaseConfig';
 import { backendHash } from '../../requests';
@@ -117,12 +107,18 @@ export default function ChangeDetails() {
 
           <View style={styles.card}>
             <Text style={globalStyles.heading}>Change Details</Text>
-            <TextInput placeholder="First name" value={firstName} onChangeText={setFirstName} style={styles.input} />
-            <TextInput placeholder="Last name" value={lastName} onChangeText={setLastName} style={styles.input} />
-            <TextInput placeholder="Zip code" value={zipcode} onChangeText={setZipcode} style={styles.input} keyboardType="number-pad" />
-            <TextInput placeholder="Phone" value={phone} onChangeText={setPhone} style={styles.input} keyboardType="phone-pad" />
-            <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={styles.input} keyboardType="email-address" autoCapitalize="none" />
-            <TextInput placeholder="Current password" value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry style={styles.input} />
+            <Text style={globalStyles.inputLabel}>First Name</Text>
+            <TextInput placeholder="First name" value={firstName} onChangeText={setFirstName} style={globalStyles.input} />
+            <Text style={globalStyles.inputLabel}>Last Name</Text>
+            <TextInput placeholder="Last name" value={lastName} onChangeText={setLastName} style={globalStyles.input} />
+            <Text style={globalStyles.inputLabel}>Zip Code</Text>
+            <TextInput placeholder="Zip code" value={zipcode} onChangeText={setZipcode} style={globalStyles.input} keyboardType="number-pad" />
+            <Text style={globalStyles.inputLabel}>Phone</Text>
+            <TextInput placeholder="Phone" value={phone} onChangeText={setPhone} style={globalStyles.input} keyboardType="phone-pad" />
+            <Text style={globalStyles.inputLabel}>Email</Text>
+            <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={globalStyles.input} keyboardType="email-address" autoCapitalize="none" />
+            <Text style={globalStyles.inputLabel}>Current Password</Text>
+            <TextInput placeholder="Current password" value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry style={globalStyles.input} />
 
             <TouchableOpacity onPress={handleSave} style={{ backgroundColor: '#519872', borderRadius: 8, padding: 12 }} disabled={loading}>
               <Text style={{ color: '#fff', textAlign: 'center' }}>{loading ? 'Saving...' : 'Save'}</Text>
@@ -152,46 +148,5 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
     marginBottom: 12,
-  },
-  infoBox: {
-    backgroundColor: '#FFFBEB',
-    borderLeftWidth: 4,
-    borderLeftColor: '#F97316',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginBottom: 12,
-    marginTop: 6,
-  },
-  heading: {
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E6EEF3',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-    backgroundColor: '#FFF',
-    color: '#111827',
-  },
-  disabledInput: {
-    backgroundColor: '#F3F4F6',
-    color: '#6B7280',
-  },
-  button: {
-    backgroundColor: '#DC2626',
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '700',
   },
 });

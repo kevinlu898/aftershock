@@ -1,11 +1,11 @@
 import { Platform, StyleSheet } from 'react-native';
 
 const colors = {
-  primary: '#519872',   
-  secondary: '#445c52ff', 
-  accent: '#34252F',   
-  light: '#e7f0e7ff',     
-  muted: '#97b4a1ff',     
+  primary: '#498464ff',
+  secondary: '#3a5247',
+  accent: '#2c1e27',
+  light: '#e7f0e7ff',
+  muted: '#66a87dff',
   danger: 'red',
   white: '#ffffff',
   black: '#000000',
@@ -52,17 +52,63 @@ const globalStyles = StyleSheet.create({
   red: {
     color: colors.danger,
   },
-  backButton: { 
-    marginTop: 30, 
-    marginBottom: 15, 
-    alignSelf: "flex-start", 
-    paddingVertical: 8, 
-    paddingHorizontal: 12, 
-    borderRadius: 10, 
-    backgroundColor: "#fff" },
-  backButtonText: { 
-    color: colors.primary, 
-    fontWeight: "700" },
+  backButton: {
+    marginTop: 30,
+    marginBottom: 15,
+    alignSelf: "flex-start",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: "#fff"
+  },
+  backButtonText: {
+    color: colors.primary,
+    fontWeight: "700"
+  },
+  infoBox: {
+    backgroundColor: '#FFFBEB',
+    borderLeftWidth: 4,
+    borderLeftColor: '#F97316',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    marginTop: 6,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#E6EEF3',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    backgroundColor: '#FFF',
+    color: '#111827',
+  },
+  inputLabel: {
+    color: '#111827',
+    marginBottom: 8,
+    fontWeight: '600',
+  },
+  disabledInput: {
+    backgroundColor: '#F3F4F6',
+    color: '#6B7280',
+  },
+  button: {
+    backgroundColor: '#498464ff',
+    borderRadius: 10,
+    marginTop: 4,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: '700',
+  },
 });
 
 // Export platform-specific values

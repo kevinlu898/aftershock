@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { signOut } from 'firebase/auth';
 import { collection, deleteDoc, getDocs, query, where } from 'firebase/firestore';
@@ -7,11 +8,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, globalStyles } from '../../css';
 import { auth, db } from '../../db/firebaseConfig';
 import { backendHash } from '../../requests';
-import { clearData, getData } from '../../storage/storageUtils';
+import { getData } from '../../storage/storageUtils';
 
 export default function DeleteAccount() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
+  // helper: clear entire AsyncStorage (including important documents)
+  const clearAll = async () => {
+    try {
+      await AsyncStorage.clear();
+    } catch (e) {
+      console.warn('Failed to clear storage', e);
+    }
+  };
   const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -78,21 +87,13 @@ export default function DeleteAccount() {
                 // Delete Firestore user document
                 await deleteDoc(userDoc.ref);
 
-                // Clear AsyncStorage keys related to user
-                await clearData('isLoggedIn');
-                await clearData('username');
-                await clearData('emergencyContacts');
-                await clearData('riskdata');
-                await clearData('firstname');
-                await clearData('postalcode');
-
-                // Sign out from Firebase Auth if signed in
+                // Clear all local storage (including important documents), then sign out
+                await clearAll();
                 try {
                   await signOut(auth);
                 } catch (e) {
                   // ignore signOut errors
                 }
-
                 Alert.alert('Deleted', 'Your account has been deleted.');
                 navigation.replace('Login');
               } catch (err) {
@@ -120,28 +121,28 @@ export default function DeleteAccount() {
           <Text style={globalStyles.backButtonText}>{"← Back"}</Text>
         </TouchableOpacity>
         <View style={styles.card}>
-          <Text style={[globalStyles.heading, styles.heading]}>Delete Account</Text>
+          <Text style={[globalStyles.heading]}>Delete Account</Text>
           <Text style={styles.infoText}>
             To permanently delete your account, please verify your password.
           </Text>
 
-          {/* Show the logged-in username but prevent editing so users can only delete their own account */}
+         <Text style={globalStyles.inputLabel}>Username</Text>
           <TextInput
             placeholder="Username"
             value={usernameInput}
             onChangeText={setUsernameInput}
-            style={[styles.input, styles.disabledInput]}
+            style={[globalStyles.input, globalStyles.disabledInput]}
             autoCapitalize="none"
             editable={false}
             selectTextOnFocus={false}
           />
-
+          <Text style={globalStyles.inputLabel}>Confirm Password</Text>
           <TextInput
             placeholder="Password"
             value={passwordInput}
             onChangeText={setPasswordInput}
             secureTextEntry
-            style={styles.input}
+            style={globalStyles.input}
           />
           <View style={styles.infoBox}>
             <Text style={styles.infoBoxTitle}>Important</Text>
@@ -151,10 +152,10 @@ export default function DeleteAccount() {
           </View>
           <TouchableOpacity
             onPress={handleDelete}
-            style={[styles.button, loading && styles.buttonDisabled]}
+            style={[globalStyles.button, loading && globalStyles.buttonDisabled]}
             disabled={loading}
           >
-            <Text style={styles.buttonText}>{loading ? 'Deleting...' : 'Delete Account'}</Text>
+            <Text style={globalStyles.buttonText}>{loading ? 'Deleting...' : 'Delete Account'}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -202,40 +203,9 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontSize: 13,
   },
-  heading: {
-    marginBottom: 8,
-  },
   infoText: {
     marginBottom: 14,
     color: colors.secondary,
     lineHeight: 20,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E6EEF3',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-    backgroundColor: '#FFF',
-    color: '#111827',
-  },
-  disabledInput: {
-    backgroundColor: '#F3F4F6',
-    color: '#6B7280',
-  },
-  button: {
-    backgroundColor: '#DC2626',
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '700',
-  },
+  }
 });

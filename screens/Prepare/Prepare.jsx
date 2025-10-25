@@ -43,7 +43,7 @@ const Prepare = () => {
 
   const ModuleCard = ({ module }) => {
     const isExpanded = expandedModule === module.id;
-    const statusColor = module.completed ? '#10B981' : module.progress > 0 ? colors.primary : '#9CA3AF';
+    const statusColor = module.progress > 0 ? '#10B981' : '#9CA3AF';
 
     return (
       <View style={prepareStyles.card}>

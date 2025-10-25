@@ -82,28 +82,29 @@ export default function ChangeUsername() {
         <Text style={styles.infoText}>
           Choose a new username. It must be at least 3 characters and unique.
         </Text>
+        <Text style={globalStyles.inputLabel}>New Username</Text>
+        <TextInput
+          placeholder="New username"
+          value={newUsername}
+          onChangeText={setNewUsername}
+          style={globalStyles.input}
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType="username"
+        />
+        <Text style={globalStyles.inputLabel}>Confirm Password</Text>
         <TextInput
           placeholder="Current password"
           value={currentPassword}
           onChangeText={setCurrentPassword}
           secureTextEntry
-          style={styles.input}
+          style={globalStyles.input}
           autoCapitalize="none"
           autoCorrect={false}
           textContentType="password"
         />
-
-        <TextInput
-          placeholder="New username"
-          value={newUsername}
-          onChangeText={setNewUsername}
-          style={styles.input}
-          autoCapitalize="none"
-          autoCorrect={false}
-          textContentType="username"
-        />
-        <TouchableOpacity onPress={handleSave} style={[styles.button, false && styles.buttonDisabled]}>
-          <Text style={styles.buttonText}>Save</Text>
+        <TouchableOpacity onPress={handleSave} style={[globalStyles.button]}>
+          <Text style={globalStyles.buttonText}>Save</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -131,23 +132,4 @@ const styles = StyleSheet.create({
   },
   heading: { marginBottom: 8},
   infoText: { marginBottom: 12, color: colors.secondary, lineHeight: 20 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E6EEF3',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-    backgroundColor: '#FFF',
-    color: '#111827',
-  },
-  button: {
-    backgroundColor: '#519872',
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontWeight: '700' },
 });

@@ -1,58 +1,62 @@
-import { useNavigation } from "@react-navigation/native";
-import { signOut } from "firebase/auth";
-import { useState } from "react";
-import {
-  Alert,
-  Linking,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { colors, globalStyles } from "../../css";
-import { auth } from "../../db/firebaseConfig";
-import { clearData } from "../../storage/storageUtils";
+  import AsyncStorage from '@react-native-async-storage/async-storage';
+  import { useNavigation } from "@react-navigation/native";
+  import { signOut } from "firebase/auth";
+  import { useState } from "react";
+  import { Alert, Linking, Platform, SafeAreaView, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View, } from "react-native";
+  import { colors, globalStyles } from "../../css";
+  import { auth } from "../../db/firebaseConfig";
 
-// Enhanced OptionRow with better styling and icons
-const OptionRow = ({ title, subtitle, onPress, rightElement, isDestructive = false }) => (
+// Option Row
+const OptionRow = ({ 
+  title, 
+  subtitle, 
+  onPress, 
+  rightElement, 
+  isDestructive = false 
+}) => (
   <TouchableOpacity
-    style={styles.row}
+    style={styles.optionRow}
     onPress={onPress}
     activeOpacity={0.7}
   >
-    <View style={styles.rowContent}>
+    <View style={styles.optionContent}>
       <Text style={[
-        styles.rowTitle,
+        styles.optionTitle,
         isDestructive && styles.destructiveText
       ]}>
         {title}
       </Text>
-      {subtitle ? (
+      
+      {subtitle && (
         <Text style={[
-          styles.rowSubtitle,
+          styles.optionSubtitle,
           isDestructive && styles.destructiveSubtitle
         ]}>
           {subtitle}
         </Text>
-      ) : null}
+      )}
     </View>
+    
     {rightElement || <View style={styles.chevron} />}
   </TouchableOpacity>
 );
 
-// Switch Row component for consistent toggle styling
-const SwitchRow = ({ title, subtitle, value, onValueChange }) => (
-  <View style={styles.row}>
-    <View style={styles.rowContent}>
-      <Text style={styles.rowTitle}>{title}</Text>
-      {subtitle ? (
-        <Text style={styles.rowSubtitle}>{subtitle}</Text>
-      ) : null}
+// Switch Row 
+const SwitchRow = ({ 
+  title, 
+  subtitle, 
+  value, 
+  onValueChange 
+}) => (
+  <View style={styles.switchRow}>
+    <View style={styles.switchContent}>
+      <Text style={styles.switchTitle}>{title}</Text>
+      
+      {subtitle && (
+        <Text style={styles.switchSubtitle}>{subtitle}</Text>
+      )}
     </View>
+    
     <Switch
       value={value}
       onValueChange={onValueChange}
@@ -70,20 +74,38 @@ export default function Profile() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
 
+  // Clear async storage except important documents
+  const clearAllExceptImportant = async () => {
+    try {
+      const allKeys = await AsyncStorage.getAllKeys();
+      if (!allKeys || allKeys.length === 0) return;
+      
+      const keepPatterns = ['important_documents'];
+      const keysToRemove = allKeys.filter(key => {
+        if (!key) return false;
+        const lowerKey = key.toLowerCase();
+        return !keepPatterns.some(pattern => 
+          lowerKey.includes(pattern.toLowerCase())
+        );
+      });
+      
+      if (keysToRemove.length > 0) {
+        await AsyncStorage.multiRemove(keysToRemove);
+      }
+    } catch (error) {
+      console.warn('Failed to clear storage', error);
+    }
+  };
+
   const handleLogout = () => {
     if (Platform.OS === "web") {
       const confirmed = window.confirm("Are you sure you want to log out?");
       if (!confirmed) return;
+      
       signOut(auth)
         .then(async () => {
-          // clear user-related AsyncStorage keys
-          await clearData('isLoggedIn');
-          await clearData('username');
-          await clearData('emergencyContacts');
-          await clearData('riskdata');
-          await clearData('firstname');
-          await clearData('postalcode');
-          navigation.replace("Login");
+          await clearAllExceptImportant();
+          navigation.replace("Home");
         })
         .catch(() => {
           window.alert("Failed to log out.");
@@ -93,21 +115,19 @@ export default function Profile() {
         "Log Out",
         "Are you sure you want to log out?",
         [
-          { text: "No", style: "cancel" },
+          { 
+            text: "Cancel", 
+            style: "cancel" 
+          },
           {
-            text: "Yes",
+            text: "Log Out",
+            style: "destructive",
             onPress: async () => {
               try {
                 await signOut(auth);
-                // clear user-related AsyncStorage keys
-                await clearData('isLoggedIn');
-                await clearData('username');
-                await clearData('emergencyContacts');
-                await clearData('riskdata');
-                await clearData('firstname');
-                await clearData('postalcode');
+                await clearAllExceptImportant();
                 navigation.replace("Login");
-              } catch (e) {
+              } catch (error) {
                 Alert.alert("Error", "Failed to log out.");
               }
             },
@@ -117,42 +137,41 @@ export default function Profile() {
       );
     }
   };
-
-  // Account actions
-  const changeUsername = () => navigation.navigate('ChangeUsername');
-  const changePassword = () => navigation.navigate('ChangePassword');
-  const exportData = () => Alert.alert("Export Data", "Preparing export...");
-  const deleteAccount = () => navigation.navigate('DeleteAccount');
-
-  // Support
+  
+  // Support functions
   const openHelp = () => navigation.navigate("Help");
+  
   const sendFeedback = () => {
     const email = "support@aftershock.app";
     const subject = "Aftershock Feedback";
     const url = `mailto:${email}?subject=${encodeURIComponent(subject)}`;
+    
     Linking.openURL(url).catch(() =>
       Alert.alert("Error", "Unable to open mail client.")
     );
   };
-  const openPrivacy = () => navigation.navigate('PrivacyPolicy');
-  const openTerms = () => navigation.navigate('TermsOfService');
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.light }}>
+    <SafeAreaView style={styles.safeArea}>
       <ScrollView
-        contentContainerStyle={styles.container}
+        contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        
-          <Text style={globalStyles.heading}>Profile</Text>
-          <Text style={styles.subtitle}>Manage your account and preferences</Text>
+        {/* Header Section */}
+        <View style={styles.header}>
+          <Text style={styles.heading}>Profile</Text>
+          <Text style={styles.subtitle}>
+            Manage your account and preferences
+          </Text>
+        </View>
 
-        {/* Emergency Hub */}
+        {/* Emergency Hub Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Emergency Hub</Text>
           </View>
-          <Text style={styles.sectionNote}>
+          
+          <Text style={styles.sectionDescription}>
             Manage your emergency plan, contacts, medical info, and documents
           </Text>
           
@@ -162,16 +181,19 @@ export default function Profile() {
               subtitle="Review and update your emergency plan"
               onPress={() => navigation.navigate("myPlan")}
             />
+            
             <OptionRow
               title="Emergency Contacts"
               subtitle="Add or edit emergency contacts"
               onPress={() => navigation.navigate("contactInfo")}
             />
+            
             <OptionRow
               title="Medical Information"
               subtitle="Allergies, medications, health notes"
               onPress={() => navigation.navigate("medicalInfo")}
             />
+            
             <OptionRow
               title="Important Documents"
               subtitle="Store copies of IDs and insurance policies"
@@ -180,12 +202,13 @@ export default function Profile() {
           </View>
         </View>
 
-        {/* Preferences */}
+        {/* Preferences Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Preferences</Text>
           </View>
-          <Text style={styles.sectionNote}>
+          
+          <Text style={styles.sectionDescription}>
             Customize your app experience and notifications
           </Text>
 
@@ -196,6 +219,7 @@ export default function Profile() {
               value={notificationsEnabled}
               onValueChange={setNotificationsEnabled}
             />
+            
             <SwitchRow
               title="Location Services"
               subtitle="Enable for local emergency guidance"
@@ -205,7 +229,7 @@ export default function Profile() {
           </View>
         </View>
 
-        {/* Account & Support */}
+        {/* Account & Support Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Account & Support</Text>
@@ -216,15 +240,18 @@ export default function Profile() {
               title="Change Username" 
               onPress={() => navigation.navigate("ChangeUsername")} 
             />
+            
             <OptionRow 
               title="Change Password" 
               onPress={() => navigation.navigate("ChangePassword")} 
             />
+            
             <OptionRow 
               title="Change Details"
               subtitle="Update name, zip, phone, email"
               onPress={() => navigation.navigate("ChangeDetails")}
             />
+            
             <OptionRow
               title="Export Data"
               subtitle="Download your emergency plan and records"
@@ -235,16 +262,19 @@ export default function Profile() {
             
             <OptionRow
               title="Help & Support"
-              onPress={() => navigation.navigate("Help")}
+              onPress={openHelp}
             />
+            
             <OptionRow 
               title="Send Feedback" 
-              onPress={() => navigation.navigate("SendFeedback")} 
+              onPress={sendFeedback} 
             />
+            
             <OptionRow 
               title="Privacy Policy" 
               onPress={() => navigation.navigate("PrivacyPolicy")} 
             />
+            
             <OptionRow 
               title="Terms of Service" 
               onPress={() => navigation.navigate("TermsOfService")} 
@@ -254,9 +284,9 @@ export default function Profile() {
             
             <OptionRow 
               title="Log Out" 
-              onPress={() => navigation.navigate("Login")}
-              isDestructive={false}
+              onPress={handleLogout}
             />
+            
             <OptionRow
               title="Delete Account"
               subtitle="Permanently remove your account and data"
@@ -266,9 +296,12 @@ export default function Profile() {
           </View>
         </View>
 
+        {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>Aftershock v1.0.0</Text>
-          <Text style={styles.footerSubtext}>Emergency Preparedness App</Text>
+          <Text style={styles.footerSubtext}>
+            Emergency Preparedness App
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -276,32 +309,44 @@ export default function Profile() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    padding: 20,
+  // Layout containers
+  safeArea: {
+    flex: 1,
     backgroundColor: colors.light,
   },
+  
+  scrollContainer: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  
+  // Header styles
   header: {
-    marginBottom: 8,
-    paddingVertical: 12,
+    marginBottom: 10,
+    paddingVertical: 16,
     alignItems: 'center',
   },
+  
   heading: {
     fontSize: 32,
     fontWeight: "800",
     color: colors.primary,
-    marginBottom: 10,
+    marginBottom: 8,
     textAlign: 'center',
   },
+  
   subtitle: {
     fontSize: 16,
     color: colors.muted,
     fontWeight: "500",
     textAlign: 'center',
+    lineHeight: 22,
   },
+  
+  // Section styles
   section: {
-    marginTop: 4,
-    marginBottom: 8,
+    marginBottom: 24,
     backgroundColor: "#ffffff",
     borderRadius: 16,
     shadowColor: "#000",
@@ -314,60 +359,92 @@ const styles = StyleSheet.create({
     elevation: 2,
     overflow: "hidden",
   },
+  
   sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 8,
+    paddingBottom: 12,
   },
+  
   sectionTitle: {
     fontSize: 20,
     fontWeight: "700",
     color: colors.dark,
   },
-  sectionNote: {
+  
+  sectionDescription: {
     fontSize: 14,
     color: colors.primary,
     paddingHorizontal: 20,
     paddingBottom: 16,
-    lineHeight: 16,
+    lineHeight: 18,
   },
+  
   sectionContent: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
   },
-  row: {
+  
+  // Option row styles
+  optionRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 14,
+    paddingVertical: 16,
     paddingHorizontal: 12,
     marginHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: "#f5f5f5",
   },
-  rowContent: {
+  
+  optionContent: {
     flex: 1,
-    marginRight: 12,
+    marginRight: 16,
   },
-  rowTitle: {
+  
+  optionTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: colors.dark,
-    marginBottom: 2,
+    marginBottom: 4,
   },
-  rowSubtitle: {
+  
+  optionSubtitle: {
     fontSize: 14,
     color: colors.muted,
     lineHeight: 18,
   },
-  destructiveText: {
-    color: "#dc2626",
+  
+  // Switch row styles
+  switchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    marginHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f5f5f5",
   },
-  destructiveSubtitle: {
-    color: "#dc2626" + "cc",
+  
+  switchContent: {
+    flex: 1,
+    marginRight: 16,
   },
+  
+  switchTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.dark,
+    marginBottom: 4,
+  },
+  
+  switchSubtitle: {
+    fontSize: 14,
+    color: colors.muted,
+    lineHeight: 18,
+  },
+  
+  // Visual elements
   chevron: {
     width: 8,
     height: 8,
@@ -376,25 +453,41 @@ const styles = StyleSheet.create({
     borderColor: colors.muted,
     transform: [{ rotate: "45deg" }],
   },
+  
   divider: {
     height: 1,
     backgroundColor: "#f0f0f0",
-    marginVertical: 8,
+    marginVertical: 12,
     marginHorizontal: 12,
   },
+  
+  // Destructive actions
+  destructiveText: {
+    color: "#dc2626",
+  },
+  
+  destructiveSubtitle: {
+    color: "#dc2626",
+    opacity: 0.8,
+  },
+  
+  // Footer
   footer: {
     alignItems: "center",
     paddingVertical: 32,
     paddingHorizontal: 20,
   },
+  
   footerText: {
     fontSize: 14,
     fontWeight: "600",
     color: colors.muted,
-    marginBottom: 4,
+    marginBottom: 6,
   },
+  
   footerSubtext: {
     fontSize: 12,
-    color: colors.muted + "aa",
+    color: colors.muted,
+    opacity: 0.7,
   },
 });

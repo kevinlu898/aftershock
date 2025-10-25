@@ -77,7 +77,7 @@ export default function Dashboard() {
       text: "Keep working on your earthquake plan.",
       icon: "clipboard-list",
       button: "Continue",
-      onPress: () => navigation.navigate("RecentActivity"),
+      onPress: () => navigation.navigate("Prepare"),
     },
     {
       title: "Review Plan",
@@ -107,7 +107,7 @@ export default function Dashboard() {
       icon: "check-circle",
       text: "Recent Activity",
       color: "#10B981",
-      onPress: () => navigation.navigate("Prepare"),
+      onPress: () => navigation.navigate("RecentActivity"),
     },
     {
       icon: "map-marker-radius",
