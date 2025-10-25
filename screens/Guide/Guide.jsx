@@ -35,6 +35,8 @@ export default function Guide() {
   const [requestCount, setRequestCount] = useState(0);
   const [requestDate, setRequestDate] = useState(null);
   const scrollViewRef = useRef(null);
+  const preventAutoScrollRef = useRef(false);
+
   const [chats, setChats] = useState([]);
   const [selectedChatId, setSelectedChatId] = useState(null);
 
@@ -47,15 +49,92 @@ export default function Guide() {
     "Learn first aid basics",
   ];
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom (skip when an update explicitly prevents auto-scroll)
   useEffect(() => {
     if (!scrollViewRef.current) return;
+    if (preventAutoScrollRef.current) {
+      // clear the flag shortly after and do not scroll
+      setTimeout(() => {
+        preventAutoScrollRef.current = false;
+      }, 50);
+      return;
+    }
     setTimeout(() => {
       try {
         scrollViewRef.current.scrollToEnd({ animated: true });
       } catch (_e) {}
     }, 100);
   }, [messages]);
+
+  const toggleStar = (index) => {
+    // Prevent auto-scroll when toggling star so user's view isn't moved
+    preventAutoScrollRef.current = true;
+    setMessages((prev) => {
+      const next = prev.map((m, i) =>
+        i === index ? { ...m, starred: !m.starred } : m
+      );
+      return next;
+    });
+  };
+
+  // Copy helper: attempt a few common clipboard modules at runtime. If none
+  // are available, show an alert so the user knows copy failed.
+  const copyToClipboard = async (text) => {
+    if (!text) return false;
+    // prevent auto-scroll so UI doesn't jump
+    if (preventAutoScrollRef) preventAutoScrollRef.current = true;
+    // Try expo-clipboard first, then @react-native-clipboard/clipboard, then
+    // the legacy React Native Clipboard. Use try/catch to avoid bundler
+    // failures when a module isn't installed.
+    try {
+      try {
+        // expo managed API
+
+        const ExpoClipboard = require("expo-clipboard");
+        if (ExpoClipboard && ExpoClipboard.setStringAsync) {
+          await ExpoClipboard.setStringAsync(text);
+          return true;
+        }
+      } catch (_e) {
+        // ignore and try next
+      }
+
+      try {
+        // community clipboard
+
+        const RNClipboard = require("@react-native-clipboard/clipboard");
+        if (RNClipboard && RNClipboard.setString) {
+          RNClipboard.setString(text);
+          return true;
+        }
+      } catch (_e) {
+        // ignore
+      }
+
+      try {
+        // legacy RN clipboard (may not exist on newer RN versions)
+
+        const { Clipboard: LegacyClipboard } = require("react-native");
+        if (LegacyClipboard && LegacyClipboard.setString) {
+          LegacyClipboard.setString(text);
+          return true;
+        }
+      } catch (_e) {
+        // ignore
+      }
+
+      // If we reach here, copying isn't available in this runtime.
+      Alert.alert(
+        "Copy not available",
+        "Clipboard integration is not installed in this build. Install 'expo-clipboard' or '@react-native-clipboard/clipboard' to enable copying."
+      );
+      return false;
+    } catch (_err) {
+      console.warn("Copy failed", _err);
+      Alert.alert("Copy failed", "Unable to copy message to clipboard.");
+      return false;
+    }
+  };
 
   // Load daily request count from AsyncStorage
   useEffect(() => {
@@ -121,9 +200,7 @@ export default function Guide() {
               return;
             }
           }
-        } catch (_err) {
-          // ignore
-        }
+        } catch (_err) {}
         if (parsed && parsed.length) {
           setSelectedChatId(parsed[0].id);
           setMessages(parsed[0].messages || []);
@@ -134,7 +211,6 @@ export default function Guide() {
     };
     loadChats();
   }, []);
-
   const saveChats = async (nextChats) => {
     try {
       await AsyncStorage.setItem("guide_chats", JSON.stringify(nextChats));
@@ -146,7 +222,6 @@ export default function Guide() {
   // ensure chats are persisted whenever they change (extra safety)
   useEffect(() => {
     if (!chats) return;
-    saveChats(chats);
   }, [chats]);
 
   // Persist messages to the selected chat whenever messages change
@@ -236,6 +311,168 @@ export default function Guide() {
   const handleQuickPrompt = (prompt) => {
     setInputValue(prompt);
     if (selectedChatId) setDrafts((p) => ({ ...p, [selectedChatId]: prompt }));
+  };
+
+  // Regenerate a bot response for the bot message at index `msgIndex`.
+  // This will consume one request from the daily limit and replace the
+  // targeted bot message with a temporary "Thinking..." message while
+  // awaiting a new response from the AI backend.
+  const regenerateResponse = async (msgIndex) => {
+    try {
+      // Prevent the auto-scroll effect from jumping to the bottom when we
+      // replace the message with a temporary "Thinking..." entry.
+      if (preventAutoScrollRef) preventAutoScrollRef.current = true;
+      if (!selectedChatId) return;
+
+      // Rate limit check & increment
+      const today = new Date().toISOString().slice(0, 10);
+      let currentCount = requestCount || 0;
+      if (requestDate !== today) {
+        currentCount = 0;
+        setRequestDate(today);
+        setRequestCount(0);
+      }
+      if (currentCount >= 10) {
+        Alert.alert(
+          "Daily limit reached",
+          "You have reached your daily limit of 10 AI prompts. Please try again tomorrow."
+        );
+        return;
+      }
+
+      // Find the last user message before this bot message in the chat's messages
+      const chat = (chats || []).find((c) => c.id === selectedChatId);
+      if (!chat) return;
+      const msgs = chat.messages || [];
+      // locate the corresponding user message (search backwards from msgIndex)
+      let userMsg = null;
+      for (let i = msgIndex - 1; i >= 0; i--) {
+        if (msgs[i] && msgs[i].from === "user") {
+          userMsg = msgs[i];
+          break;
+        }
+      }
+      if (!userMsg) {
+        Alert.alert(
+          "Cannot regenerate",
+          "No user prompt found to regenerate from."
+        );
+        return;
+      }
+
+      // Build prompt/context similar to send flow
+      const allUserMessages = [
+        ...(msgs || []).filter((m) => m.from === "user"),
+      ];
+      const priorUserMessages = allUserMessages
+        .slice(-8)
+        .map((m) => `User: ${m.text.replace(/\n/g, " ")}`)
+        .join("\n");
+
+      const promptWithContext = priorUserMessages
+        ? `Conversation history:\n${priorUserMessages}\n\nCurrent question: ${userMsg.text}`
+        : userMsg.text;
+
+      // Insert temp Thinking... into both messages state and chats persistence
+      const tempMsg = {
+        from: "bot",
+        text: "Thinking...",
+        time: new Date().toISOString(),
+        temp: true,
+      };
+      setMessages((prev) => {
+        const next = [...prev];
+        if (next[msgIndex]) next[msgIndex] = tempMsg;
+        return next;
+      });
+      // update chats array
+      setChats((prev) => {
+        const next = (prev || []).map((c) =>
+          c.id === selectedChatId
+            ? {
+                ...c,
+                messages: (c.messages || []).map((m, i) =>
+                  i === msgIndex ? tempMsg : m
+                ),
+              }
+            : c
+        );
+        saveChats(next);
+        return next;
+      });
+
+      setIsThinking(true);
+
+      // increment and persist request count immediately
+      const newCount = (currentCount || 0) + 1;
+      setRequestCount(newCount);
+      setRequestDate(today);
+      saveRequestCount(today, newCount);
+
+      try {
+        const resp = await aiResponse(promptWithContext);
+        // prevent auto-scroll when we replace the temp message with the final text
+        if (preventAutoScrollRef) preventAutoScrollRef.current = true;
+        // replace temp msg with actual response
+        setMessages((prev) => {
+          const next = [...prev];
+          if (next[msgIndex] && next[msgIndex].temp) {
+            next[msgIndex] = {
+              from: "bot",
+              text: resp || "(no response)",
+              time: new Date().toISOString(),
+            };
+          } else if (next[msgIndex]) {
+            // fallback: replace text
+            next[msgIndex] = {
+              ...next[msgIndex],
+              text: resp || next[msgIndex].text,
+            };
+          }
+          return next;
+        });
+
+        // persist into chats
+        setChats((prev) => {
+          const next = (prev || []).map((c) =>
+            c.id === selectedChatId
+              ? {
+                  ...c,
+                  messages: (c.messages || []).map((m, i) =>
+                    i === msgIndex
+                      ? {
+                          from: "bot",
+                          text: resp || "(no response)",
+                          time: new Date().toISOString(),
+                        }
+                      : m
+                  ),
+                }
+              : c
+          );
+          saveChats(next);
+          return next;
+        });
+      } catch (_e) {
+        // prevent auto-scroll when replacing with error text
+        if (preventAutoScrollRef) preventAutoScrollRef.current = true;
+        setMessages((prev) => {
+          const next = [...prev];
+          if (next[msgIndex] && next[msgIndex].temp) {
+            next[msgIndex] = {
+              from: "bot",
+              text: "⚠️ **Connection Issue**\n\nI'm having trouble connecting. Please check your internet connection and try again.",
+              time: new Date().toISOString(),
+            };
+          }
+          return next;
+        });
+      } finally {
+        setIsThinking(false);
+      }
+    } catch (_err) {
+      console.warn("regenerateResponse error", _err);
+    }
   };
 
   const handleSubmission = async () => {
@@ -615,6 +852,7 @@ export default function Guide() {
                   style={[
                     styles.bubble,
                     isUser ? styles.bubbleUser : styles.bubbleBot,
+                    msg.starred && { backgroundColor: "#FFF9C4" },
                   ]}
                 >
                   {msg.from === "bot" && msg.text === "Thinking..." ? (
@@ -654,8 +892,79 @@ export default function Guide() {
                       )}
                     </>
                   ) : (
-                    <Text style={styles.bubbleTextUser}>{msg.text}</Text>
+                    <Text
+                      style={[
+                        styles.bubbleTextUser,
+                        msg.starred && { color: colors.secondary },
+                      ]}
+                    >
+                      {msg.text}
+                    </Text>
                   )}
+
+                  {/* Star button at bottom-right of the message bubble */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "flex-end",
+                      marginTop: 8,
+                    }}
+                  >
+                    {/* Copy button */}
+                    {msg.from === "bot" && !msg.temp && (
+                      <>
+                        <TouchableOpacity
+                          onPress={async () => {
+                            try {
+                              await copyToClipboard(msg.text || "");
+                            } catch (_err) {
+                              console.warn("Copy failed", _err);
+                            }
+                          }}
+                          style={{ padding: 6, marginRight: 6 }}
+                          accessibilityLabel="Copy message"
+                        >
+                          <MaterialCommunityIcons
+                            name="content-copy"
+                            size={18}
+                            color={colors.muted}
+                          />
+                        </TouchableOpacity>
+
+                        {/* Regenerate button: request a new AI response for this message */}
+                        <TouchableOpacity
+                          onPress={() => regenerateResponse(idx)}
+                          style={{ padding: 6, marginRight: 6 }}
+                          accessibilityLabel="Regenerate response"
+                        >
+                          <MaterialCommunityIcons
+                            name="autorenew"
+                            size={18}
+                            color={colors.primary}
+                          />
+                        </TouchableOpacity>
+                      </>
+                    )}
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        // prevent auto-scroll when toggling star
+                        if (preventAutoScrollRef)
+                          preventAutoScrollRef.current = true;
+                        toggleStar(idx);
+                      }}
+                      style={{ padding: 6 }}
+                      accessibilityLabel={
+                        msg.starred ? "Unstar message" : "Star message"
+                      }
+                    >
+                      <MaterialCommunityIcons
+                        name={msg.starred ? "star" : "star-outline"}
+                        size={18}
+                        color={msg.starred ? "#F59E0B" : colors.muted}
+                      />
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
             );
