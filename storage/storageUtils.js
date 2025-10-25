@@ -48,6 +48,9 @@ export const fillData = async (username) => {
       const firstname = doc.data().first_name;
       console.log("First name:", firstname);
       storeData("firstname", firstname);
+      // store email for quick local access
+      const email = doc.data().email || null;
+      if (email) storeData("email", email);
       const postal_code = doc.data().zip_code;
       storeData("postalcode", postal_code);
     });

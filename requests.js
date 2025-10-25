@@ -1,3 +1,5 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 export const backendHash = async (message) => {
   try {
     const res = await fetch("https://aftershock-backend.vercel.app/api/hash", {
@@ -122,4 +124,68 @@ export const fetchNews = async () => {
   console.log("News response has worked!");
   // return the stories array if present, otherwise return the whole payload
   return data?.data?.data;
+};
+
+export const exportData = async () => {
+  try {
+    // Try to read the user's saved emergency plan from AsyncStorage
+    // The plan is stored in the app under the key "my_plan" (see screens/Prepare/myPlan.jsx)
+    let plan = null;
+    let email = null;
+    try {
+      const raw = await AsyncStorage.getItem("my_plan");
+      if (raw) {
+        try {
+          plan = JSON.parse(raw);
+        } catch (_e) {
+          // If parsing fails, send the raw string as a fallback
+          plan = raw;
+        }
+      }
+    } catch (_e) {
+      // ignore
+    }
+
+    // Also include email as a fallback/auxiliary identifier if present
+    try {
+      email = "aftershockapp@gmail.com";
+    } catch (_e) {
+      // ignore
+    }
+
+    const body = { plan: plan, email: email };
+    console.log(body);
+    // Log the outgoing body to help debug server-side validation errors
+    try {
+      console.log("exportData: sending body ->", body);
+    } catch (_e) {}
+
+    const res = await fetch(
+      "https://aftershock-backend.vercel.app/api/export",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }
+    );
+
+    if (!res.ok) {
+      // Attempt to read the response body (may be JSON or plain text) to expose server error details
+      let text = null;
+      try {
+        text = await res.text();
+      } catch (_e) {
+        text = null;
+      }
+      console.error("exportData failed: status=", res.status, "body=", text);
+      throw new Error(`Server error: ${res.status}${text ? ` - ${text}` : ""}`);
+    }
+
+    const data = await res.json();
+    console.log("Export response has worked!");
+    return data;
+  } catch (err) {
+    console.error("exportData failed:", err);
+    throw err;
+  }
 };

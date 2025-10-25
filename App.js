@@ -1,11 +1,25 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { NavigationContainer, createNavigationContainerRef, } from "@react-navigation/native";
+import {
+  NavigationContainer,
+  createNavigationContainerRef,
+} from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar as ExpoStatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import { Image, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View, } from "react-native";
-import { SafeAreaProvider, useSafeAreaInsets, } from "react-native-safe-area-context";
+import {
+  Image,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { fetchEarthquakeData } from "./requests";
 
 import Dashboard from "./screens/Dashboard";
@@ -25,6 +39,7 @@ import ChangeDetails from "./screens/Profile/ChangeDetails";
 import ChangePassword from "./screens/Profile/ChangePassword";
 import ChangeUsername from "./screens/Profile/ChangeUsername";
 import DeleteAccount from "./screens/Profile/DeleteAccount";
+import ExportData from "./screens/Profile/ExportData";
 import Login from "./screens/Profile/Login";
 import PrivacyPolicy from "./screens/Profile/PrivacyPolicy";
 import Profile from "./screens/Profile/Profile";
@@ -108,7 +123,7 @@ function MainTabs() {
     <View
       style={{
         flex: 1,
-        backgroundColor: "#e7f0e7ff", 
+        backgroundColor: "#e7f0e7ff",
         paddingTop:
           Platform.OS === "android" ? StatusBar.currentHeight : insets.top,
       }}
@@ -199,7 +214,7 @@ export default function App() {
               setEmergencyState("no");
             }
           } catch (_err) {
-            // ignore 
+            // ignore
           }
         }
       } catch (e) {
@@ -310,6 +325,7 @@ export default function App() {
           <Stack.Screen name="myPlan" component={myPlan} />
           <Stack.Screen name="medicalInfo" component={medicalInfo} />
           <Stack.Screen name="contactInfo" component={contactInfo} />
+          <Stack.Screen name="ExportData" component={ExportData} />
           <Stack.Screen
             name="importantDocuments"
             component={importantDocuments}
@@ -322,7 +338,7 @@ export default function App() {
 
 const styles = StyleSheet.create({
   banner: {
-    backgroundColor: "#b91c1c", 
+    backgroundColor: "#b91c1c",
     width: "100%",
     alignItems: "center",
     justifyContent: "center",

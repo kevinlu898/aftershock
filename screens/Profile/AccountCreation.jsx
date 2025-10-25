@@ -62,6 +62,7 @@ export default function AccountFlow() {
       });
       storeData("isLoggedIn", "yes");
       storeData("username", username);
+      storeData("email", email);
       storeData("firstname", firstName);
       storeData("postalcode", zipCode);
       console.log("Document written with ID:", docRef.id);
