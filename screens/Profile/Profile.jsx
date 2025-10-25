@@ -247,8 +247,8 @@ export default function Profile() {
             />
             
             <OptionRow 
-              title="Change Details"
-              subtitle="Update name, zip, phone, email"
+              title="My Details"
+              subtitle="View and update name, zip code, phone, and email"
               onPress={() => navigation.navigate("ChangeDetails")}
             />
             
