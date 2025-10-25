@@ -726,28 +726,6 @@ export default function Guide() {
                   color={colors.primary}
                 />
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={async () => {
-                  // temp dev button: reset daily request limit
-                  const today = new Date().toISOString().slice(0, 10);
-                  setRequestCount(0);
-                  setRequestDate(today);
-                  try {
-                    await AsyncStorage.setItem(
-                      "guide_request_count",
-                      JSON.stringify({ date: today, count: 0 })
-                    );
-                  } catch (_err) {}
-                }}
-                style={{ marginLeft: 10, padding: 6 }}
-                accessibilityLabel="Reset rate limits"
-              >
-                <MaterialCommunityIcons
-                  name="refresh"
-                  size={18}
-                  color={colors.primary}
-                />
-              </TouchableOpacity>
             </View>
           </View>
           <Text
