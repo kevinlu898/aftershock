@@ -167,6 +167,10 @@ export default function AccountFlow() {
     navigation.replace("Login");
   };
 
+  // Navigate to in-app policy screens
+  const openPrivacy = () => navigation.navigate("PrivacyPolicy");
+  const openTos = () => navigation.navigate("TermsOfService");
+
   return (
     <ScrollView
       style={globalStyles.container}
@@ -324,6 +328,24 @@ export default function AccountFlow() {
           </TouchableOpacity>
         </View>
       )}
+      <View style={{ marginTop: 20, marginBottom: 40, alignItems: "center" }}>
+        <Text style={{ color: colors.muted, fontSize: fontSizes.small }}>
+          By creating an account you agree to our
+        </Text>
+        <View style={{ flexDirection: "row", marginTop: 6 }}>
+          <TouchableOpacity onPress={openPrivacy}>
+            <Text style={{ color: colors.primary, fontSize: fontSizes.small }}>
+              Privacy Policy
+            </Text>
+          </TouchableOpacity>
+          <Text style={{ color: colors.muted, marginHorizontal: 8 }}>•</Text>
+          <TouchableOpacity onPress={openTos}>
+            <Text style={{ color: colors.primary, fontSize: fontSizes.small }}>
+              Terms of Service
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </ScrollView>
   );
 }
