@@ -39,7 +39,7 @@ export default function ExportData({ navigation }) {
         // ignore storage read errors
       }
 
-      if (usage.count >= 2) {
+      if (usage.count >= 4) {
         Alert.alert(
           "Limit reached",
           "You can request an export a maximum of 2 times per day. Please try again tomorrow."
