@@ -1,6 +1,13 @@
 import { useNavigation } from "@react-navigation/native";
 import Checkbox from "expo-checkbox";
-import { addDoc, collection, getDocs, or, query, where } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  getDocs,
+  or,
+  query,
+  where,
+} from "firebase/firestore";
 import { useRef, useState } from "react";
 import {
   Alert,
@@ -43,7 +50,8 @@ export default function AccountFlow() {
   const zipRef = useRef(null);
   const phoneRef = useRef(null);
 
-  const statusBarHeight = Platform.OS === "ios" ? 44 : StatusBar.currentHeight || 24;
+  const statusBarHeight =
+    Platform.OS === "ios" ? 44 : StatusBar.currentHeight || 24;
 
   const addUser = async () => {
     try {
@@ -79,7 +87,10 @@ export default function AccountFlow() {
       return;
     }
     if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-      Alert.alert("Error", "Username must only contain letters, numbers, or underscores.");
+      Alert.alert(
+        "Error",
+        "Username must only contain letters, numbers, or underscores."
+      );
       return;
     }
 
@@ -98,15 +109,16 @@ export default function AccountFlow() {
       return;
     }
 
-    if (password !== "admin") {
-      if (password.length < 8) {
-        Alert.alert("Error", "Password must be at least 8 characters long");
-        return;
-      }
-      if (!/[A-Z]/.test(password) || !/[a-z]/.test(password)) {
-        Alert.alert("Error", "Password must contain a mix of uppercase and lowercase letters");
-        return;
-      }
+    if (password.length < 8) {
+      Alert.alert("Error", "Password must be at least 8 characters long");
+      return;
+    }
+    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password)) {
+      Alert.alert(
+        "Error",
+        "Password must contain a mix of uppercase and lowercase letters"
+      );
+      return;
     }
 
     if (password !== confirmPassword) {
@@ -133,7 +145,10 @@ export default function AccountFlow() {
       return;
     }
 
-    const queryToCheck = query(collection(db, "user"), where("phone_number", "==", phoneNumber));
+    const queryToCheck = query(
+      collection(db, "user"),
+      where("phone_number", "==", phoneNumber)
+    );
     const results = await getDocs(queryToCheck);
     if (!results.empty) {
       Alert.alert("Error", "Phone number already used.");
@@ -259,7 +274,10 @@ export default function AccountFlow() {
                 Enter Your Details
               </Text>
 
-              <TouchableOpacity onPress={() => setStep(1)} style={styles.backButton}>
+              <TouchableOpacity
+                onPress={() => setStep(1)}
+                style={styles.backButton}
+              >
                 <Text style={styles.backButtonText}>{"← Back"}</Text>
               </TouchableOpacity>
 
@@ -339,7 +357,10 @@ export default function AccountFlow() {
                 </Text>
               </View>
 
-              <TouchableOpacity style={styles.button} onPress={handleCreateAccount}>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={handleCreateAccount}
+              >
                 <Text style={styles.buttonText}>Sign Up</Text>
               </TouchableOpacity>
             </View>
@@ -428,12 +449,12 @@ const styles = {
     flex: 1,
   },
   backButton: {
-    marginBottom: 12, 
-    alignSelf: "flex-start", 
-    paddingVertical: 8, 
-    paddingHorizontal: 12, 
-    borderRadius: 10, 
-    backgroundColor: "#fff" 
+    marginBottom: 12,
+    alignSelf: "flex-start",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: "#fff",
   },
   backButtonText: {
     color: colors.primary,
