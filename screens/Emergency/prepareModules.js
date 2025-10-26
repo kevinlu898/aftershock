@@ -1,4 +1,3 @@
-/* Lessons and Modules for prepare page*/
 export const PREPARE_MODULES = [
   {
     id: "1",
@@ -105,7 +104,6 @@ export const getLessonById = (lessonId) => {
   return null;
 };
 
-// Helper function to get module data by ID
 export const getModuleById = (moduleId) => {
   return PREPARE_MODULES.find((module) => module.id === moduleId);
 };
