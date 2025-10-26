@@ -168,11 +168,40 @@ export const exportData = async () => {
       console.log("its bad ");
     }
 
+    // Read medical info from AsyncStorage (try common variants)
+    let medicalInfo = null;
+    try {
+      const medKeys = ["medical_info", "medicalInfo", "medical"];
+      let rawMed = null;
+      for (const k of medKeys) {
+        try {
+          const v = await AsyncStorage.getItem(k);
+          if (v) {
+            rawMed = v;
+            break;
+          }
+        } catch (_e) {
+          // ignore per-key read error
+        }
+      }
+      if (rawMed) {
+        try {
+          medicalInfo = JSON.parse(rawMed);
+        } catch (_e) {
+          medicalInfo = rawMed;
+        }
+      }
+      if (medicalInfo) console.log("exportData: medical_info ->", medicalInfo);
+    } catch (_e) {
+      // ignore
+    }
+
     // Build request body only with present fields
     const body = {};
     if (plan) body.plan = plan;
     if (email) body.email = email;
     if (emergencyContact) body.emergency_contact = emergencyContact;
+    if (medicalInfo) body.medical_info = medicalInfo;
 
     // Log emergency contact and outgoing body to help debug server-side validation errors
     try {
