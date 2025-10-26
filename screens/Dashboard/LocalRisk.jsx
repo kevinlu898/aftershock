@@ -1,6 +1,15 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, } from "react-native";
+import {
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Markdown from "react-native-markdown-display";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../css";
@@ -14,22 +23,18 @@ export default function LocalRisk({ navigation }) {
   const [riskData, setRiskData] = useState(null);
   const insets = useSafeAreaInsets();
 
-  // Helper: pretty-print and sanitize riskData for display
   const formatRiskData = (data) => {
     try {
       if (typeof data === "string") {
-        // Remove surrounding quotes if present and unescape literal "\n" sequences
         let s = data;
         if (s.startsWith('"') && s.endsWith('"')) {
           s = s.slice(2, -2);
         } else if (s.startsWith('"') && s.endsWith('"')) {
           s = s.slice(1, -1);
         }
-        // Replace escaped newline sequences with real newlines
         s = s.replace(/\\n/g, "\n");
         return s;
       }
-      // For objects, pretty-print JSON
       return JSON.stringify(data, null, 2);
     } catch (_e) {
       return String(data);
@@ -42,10 +47,7 @@ export default function LocalRisk({ navigation }) {
         setLoading(true);
         const rawPostal = await AsyncStorage.getItem("postalcode");
         const postal_code = Number(rawPostal) || 95425;
-        console.log(postal_code);
         const data = await fetchEarthquakeData(postal_code);
-        console.log("syzygy");
-        console.log(data.results?.[0]);
         setEarthquakeData(data.results?.[0] || null);
         setRiskData(await getRisk(postal_code));
       } catch (err) {
@@ -76,7 +78,7 @@ export default function LocalRisk({ navigation }) {
     );
   }
 
-  // Attempt to extract some common fields depending on API shape
+  // Attempt to extract some common ields depending on API shape
   const place = earthquakeData?.place;
   const mag = earthquakeData?.mag;
   const time = earthquakeData?.timeISO;
@@ -144,7 +146,12 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { flexGrow: 1 },
   container: { flex: 1, padding: 18, paddingTop: 28 },
-  center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 16 },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+  },
   loadingText: { marginTop: 12, color: colors.primary },
   errorText: { color: "#D02424", fontWeight: "700", marginBottom: 10 },
   card: {
@@ -158,7 +165,12 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
-  title: { fontSize: 20, fontWeight: "800", marginBottom: 8, color: colors.primary },
+  title: {
+    fontSize: 20,
+    fontWeight: "800",
+    marginBottom: 8,
+    color: colors.primary,
+  },
   place: { fontSize: 16, color: colors.secondary, marginBottom: 12 },
   row: {
     flexDirection: "row",
