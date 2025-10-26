@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { InputAccessoryView, Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
 import Markdown from "react-native-markdown-display";
 // add back WebView import for rendering saved HTML
-import { WebView } from 'react-native-webview';
 import { RichEditor, RichToolbar, actions } from 'react-native-pell-rich-editor';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { WebView } from 'react-native-webview';
 import { colors } from "../../css";
 import { db } from '../../db/firebaseConfig';
 import { getData } from '../../storage/storageUtils';
