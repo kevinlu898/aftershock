@@ -3,6 +3,7 @@ import { addDoc, collection, query as fsQuery, getDocs, where } from 'firebase/f
 import { useEffect, useRef, useState } from "react";
 import { InputAccessoryView, Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
 import Markdown from "react-native-markdown-display";
+// add back WebView import for rendering saved HTML
 import { RichEditor, RichToolbar, actions } from 'react-native-pell-rich-editor';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -202,9 +203,16 @@ export default function MyPlan({ navigation }) {
       ) : (
         <View>
           <View style={styles.previewBox}>
+            {/* if the stored content contains HTML, render it so the user sees the formatted result;
+                otherwise render via Markdown (plain text / markdown) */}
             {typeof plan[keyName] === 'string' && /<[^>]+>/.test(plan[keyName]) ? (
               <View style={{ height: 140, overflow: 'hidden' }}>
-                <WebView originWhitelist={["*"]} source={{ html: `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1" /><style>body{font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial; color:#111; padding:8px; margin:0;} img{max-width:100%;height:auto;} p{line-height:1.45;}</style></head><body>${plan[keyName] || ''}</body></html>` }} />
+                <WebView
+                  originWhitelist={["*"]}
+                  source={{
+                    html: `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1" /><style>body{font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial; color:#111; padding:8px; margin:0;} img{max-width:100%;height:auto;} p{line-height:1.45;}</style></head><body>${plan[keyName] || ''}</body></html>`
+                  }}
+                />
               </View>
             ) : (
               <Markdown style={markdownStyles}>{plan[keyName] || "_No content_"}</Markdown>
@@ -219,90 +227,93 @@ export default function MyPlan({ navigation }) {
   );
 
   // SectionEditor component uses local state to avoid re-rendering parent on each keystroke
-  const SectionEditor = ({ title, keyName }) => {
-    const [localText, setLocalText] = useState(plan[keyName] || "");
-    const [sel, setSel] = useState({ start: 0, end: 0 });
-    const ref = refs[keyName];
-    const richRef = useRef(null);
+ const SectionEditor = ({ title, keyName }) => {
+  const [localText, setLocalText] = useState(plan[keyName] || "");
+  const ref = refs[keyName];
+  const richRef = useRef(null);
 
-    useEffect(() => {
-      setLocalText(plan[keyName] || "");
-    }, [editing[keyName]]); // reset when toggling editor
+  useEffect(() => {
+    setLocalText(plan[keyName] || "");
+  }, [editing[keyName]]);
 
-    // register saveAndClose for header control
-    useEffect(() => {
-      editorsApi.current[keyName] = {
-        saveAndClose: async () => {
-          // blur editor first to ensure content updated
-          try { await richRef.current?.blur(); } catch (e) {}
-          await saveAndSync();
-          setEditing(prev => ({ ...prev, [keyName]: false }));
-        }
-      };
-      return () => { delete editorsApi.current[keyName]; };
-    }, [localText]);
-
-    const saveAndSync = async () => {
-      const next = { ...plan, [keyName]: localText };
-      // add last-edited timestamp
-      const meta = { ...(plan._meta || {}) };
-      meta[keyName] = new Date().toISOString();
-      next._meta = meta;
-      await savePlan(next);
+  useEffect(() => {
+    editorsApi.current[keyName] = {
+      saveAndClose: async () => {
+        try { await richRef.current?.blur(); } catch (e) {}
+        await saveAndSync();
+        setEditing(prev => ({ ...prev, [keyName]: false }));
+      }
     };
+    return () => { delete editorsApi.current[keyName]; };
+  }, [localText]);
 
-    const wrap = (left, right = left) => {
-      const text = localText || "";
-      const s = Math.max(0, sel.start || 0);
-      const e = Math.max(0, sel.end || s);
-      const before = text.slice(0, s);
-      const selected = text.slice(s, e);
-      const after = text.slice(e);
-      const updated = before + left + selected + right + after;
-      setLocalText(updated);
-      setTimeout(() => ref?.current?.focus?.(), 50);
-    };
-
-    const linePrefix = (prefix) => {
-      const text = localText || "";
-      const pos = Math.max(0, sel.start || 0);
-      const lastNL = text.slice(0, pos).lastIndexOf("\n");
-      const lineStart = lastNL + 1;
-      const updated = text.slice(0, lineStart) + prefix + text.slice(lineStart);
-      setLocalText(updated);
-      setTimeout(() => ref?.current?.focus?.(), 50);
-    };
-
-    return (
-      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'position'} keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 20}>
-          <View>
-            <RichEditor
-              ref={richRef}
-              initialContentHTML={localText}
-              style={[styles.editor, { minHeight: 160 }]}
-              editorStyle={{ backgroundColor: '#fff', color: '#111' }}
-              placeholder={`Write your ${title.toLowerCase()}...`}
-              onChange={(html) => setLocalText(html)}
-              onBlur={async () => { await saveAndSync(); setCurrentFocusedKey(null); }}
-              onFocus={() => setCurrentFocusedKey(keyName)}
-            />
-
-            <RichToolbar
-              editor={richRef}
-              actions={[actions.setBold, actions.setItalic, actions.setUnderline, actions.insertBulletsList, actions.insertOrderedList, actions.heading1, actions.insertLink]}
-              style={{ backgroundColor: 'transparent', marginTop: 8 }}
-            />
-
-            <Text style={styles.previewLabel}>Preview (plain text)</Text>
-            <View style={styles.previewBox}>
-              <Text>{(localText || '').replace(/<[^>]*>/g, '').trim() || '_No content_'}</Text>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
-    );
+  const saveAndSync = async () => {
+    const next = { ...plan, [keyName]: localText };
+    const meta = { ...(plan._meta || {}) };
+    meta[keyName] = new Date().toISOString();
+    next._meta = meta;
+    await savePlan(next);
   };
+
+  const wrap = (left, right = left) => {
+    const text = localText || "";
+    const s = Math.max(0, sel.start || 0);
+    const e = Math.max(0, sel.end || s);
+    const before = text.slice(0, s);
+    const selected = text.slice(s, e);
+    const after = text.slice(e);
+    const updated = before + left + selected + right + after;
+    setLocalText(updated);
+    setTimeout(() => ref?.current?.focus?.(), 50);
+  };
+
+  const linePrefix = (prefix) => {
+    const text = localText || "";
+    const pos = Math.max(0, sel.start || 0);
+    const lastNL = text.slice(0, pos).lastIndexOf("\n");
+    const lineStart = lastNL + 1;
+    const updated = text.slice(0, lineStart) + prefix + text.slice(lineStart);
+    setLocalText(updated);
+    setTimeout(() => ref?.current?.focus?.(), 50);
+  };
+
+  return (
+    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'position'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 20}
+      >
+        <View>
+          <RichToolbar
+            editor={richRef}
+            actions={[
+              actions.setBold,
+              actions.setItalic,
+              actions.setUnderline,
+              actions.insertBulletsList,
+              actions.insertOrderedList,
+              actions.heading1,
+              actions.insertLink
+            ]}
+            style={{ backgroundColor: 'transparent', marginBottom: 8, alignSelf: 'stretch' }}
+          />
+
+          <RichEditor
+            ref={richRef}
+            initialContentHTML={localText}
+            style={[styles.editor, { minHeight: 160 }]}
+            editorStyle={{ backgroundColor: '#fff', color: '#111' }}
+            placeholder={`Write your ${title.toLowerCase()}...`}
+            onChange={(html) => setLocalText(html)}
+            onBlur={async () => { await saveAndSync(); setCurrentFocusedKey(null); }}
+            onFocus={() => setCurrentFocusedKey(keyName)}
+          />
+        </View>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
+  );
+};
+
 
   // helper to format last edited
   const formatEdited = (iso) => {
@@ -324,24 +335,24 @@ export default function MyPlan({ navigation }) {
 
   const FullModal = () => {
     const lastSaved = getLastSaved();
-    const wrapHtml = (content) => {
-      const safe = content || '<p><em>No content</em></p>';
-      return `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1" /><style>body{font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial; color:#111; padding:12px; background:transparent;} img{max-width:100%;height:auto;} p{line-height:1.5;}</style></head><body>${safe}</body></html>`;
-    };
 
-    const combined = `
-      <h1 style="font-size:20px">My Emergency Plan</h1>
-      ${plan.evacuateRoute || ''}
-      <hr/>
-      <h2>Meet-up Points</h2>
-      ${plan.meetUpPoints || ''}
-      <hr/>
-      <h2>Aftermath Procedures</h2>
-      ${plan.aftermathProcedures || ''}
-      <hr/>
-      <h2>Other</h2>
-      ${plan.other || ''}
-    `;
+    // Build a markdown version of the combined plan instead of HTML for WebView
+    const markdownCombined = `# My Emergency Plan
+
+${plan.evacuateRoute || ''}
+
+## Meet-up Points
+
+${plan.meetUpPoints || ''}
+
+## Aftermath Procedures
+
+${plan.aftermathProcedures || ''}
+
+## Other
+
+${plan.other || ''}
+`;
 
     return (
       <Modal visible={showFull} animationType="slide">
@@ -350,8 +361,10 @@ export default function MyPlan({ navigation }) {
           <View style={{ flex: 1, padding: 18 }}>
             <Text style={styles.title}>Full Emergency Plan</Text>
             {lastSaved ? <Text style={styles.metaText}>Last saved: {lastSaved}</Text> : null}
-            <View style={{ flex: 1, marginTop: 12, borderRadius: 8, overflow: 'hidden', backgroundColor: '#fff' }}>
-              <WebView originWhitelist={["*"]} source={{ html: wrapHtml(combined) }} style={{ flex: 1 }} />
+            <View style={{ flex: 1, marginTop: 12, borderRadius: 8, overflow: 'hidden', backgroundColor: '#fff', padding: 12 }}>
+              <ScrollView contentContainerStyle={{ padding: 8 }}>
+                <Markdown style={markdownStyles}>{markdownCombined}</Markdown>
+              </ScrollView>
             </View>
 
             <TouchableOpacity onPress={() => setShowFull(false)} style={[styles.saveButton, { marginTop: 18 }]}>
@@ -410,7 +423,8 @@ const styles = StyleSheet.create({
   subtitle: { color: colors.muted, marginBottom: 12 },
   backButton: { marginBottom: 12, alignSelf: "flex-start", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, backgroundColor: "#fff" },
   backButtonText: { color: colors.primary, fontWeight: "700" },
-  sectionCard: { backgroundColor: "#fff", padding: 14, borderRadius: 12, marginBottom: 12, shadowColor: "#000", shadowOpacity: 0.03, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, elevation: 2 },
+  // ensure card clips children (so editor toolbar / webview do not hang outside rounded corners)
+  sectionCard: { backgroundColor: "#fff", padding: 14, borderRadius: 12, marginBottom: 12, shadowColor: "#000", shadowOpacity: 0.03, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, elevation: 2, overflow: 'hidden' },
   sectionTitle: { fontWeight: "800", fontSize: 16, color: colors.secondary },
   toolbar: { flexDirection: "row", flexWrap: 'wrap', marginTop: 12, marginBottom: 8, alignItems: 'center' },
   toolButton: { paddingVertical: 6, paddingHorizontal: 10, backgroundColor: "#F8FAF8", borderRadius: 8, marginRight: 8, marginBottom: 8 },
@@ -418,7 +432,8 @@ const styles = StyleSheet.create({
   smallButtonText: { color: colors.primary, fontWeight: "700" },
   editor: { minHeight: 120, borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 8, padding: 10, backgroundColor: "#fff" },
   previewLabel: { marginTop: 10, marginBottom: 6, color: colors.muted, fontWeight: "700" },
-  previewBox: { backgroundColor: "#F8FAFC", borderRadius: 8, padding: 10, minHeight: 60 },
+  // clip preview content and remove extra padding that could push children outside
+  previewBox: { backgroundColor: "#F8FAFC", borderRadius: 8, padding: 8, minHeight: 60, overflow: 'hidden' },
   saveButton: { backgroundColor: colors.primary, paddingVertical: 12, borderRadius: 10, alignItems: "center" },
   saveButtonText: { color: "#fff", fontWeight: "800" },
   accessory: { backgroundColor: "#fff", padding: 10, borderTopWidth: 1, borderColor: "#E5E7EB", flexDirection: "row", justifyContent: "flex-end" },

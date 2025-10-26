@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, Modal, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
+import { Animated, Easing, Modal, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { colors, fontSizes, globalStyles } from "../../css";
 import { getData } from "../../storage/storageUtils";
@@ -441,65 +441,8 @@ export default function Emergency() {
     </View>
   );
 
-  // If active emergency, show banner + quick data
-  if (emergencyActive) {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.light }}>
-        <StatusBar backgroundColor={colors.light} barStyle="dark-content" />
-        <ScrollView contentContainerStyle={localStyles.emergencyContainer}>
-          <View style={localStyles.largeBanner}>
-            <Text style={localStyles.bannerTitle}>EARTHQUAKE — DROP, COVER, HOLD</Text>
-            <Text style={localStyles.bannerSubtitle}>An earthquake has been detected near you. Move to safe cover now.</Text>
-            <TouchableOpacity style={localStyles.localRiskButton} onPress={() => navigation.navigate('LocalRisk')}>
-              <Text style={localStyles.localRiskButtonText}>View current earthquakes</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={{ width: '100%', paddingHorizontal: 16 }}>
-            <MiniCard title={`Emergency Contacts (${(emergencyContacts||[]).length})`}>
-              {(emergencyContacts||[]).length ? emergencyContacts.slice(0,3).map((c,i)=> (
-                <View key={i} style={localStyles.contactRow}>
-                  <MaterialCommunityIcons name="phone" size={20} color={colors.primary} style={localStyles.rowIcon} />
-                  <View style={localStyles.contactText}>
-                    <Text style={localStyles.contactName}>{c.name || c.label || 'Contact'}</Text>
-                    <Text style={localStyles.contactDetail}>{c.phone || c.contact || ''}</Text>
-                  </View>
-                </View>
-              )) : <Text style={localStyles.itemTextMuted}>No emergency contacts saved.</Text>}
-            </MiniCard>
-
-            <MiniCard title={`Medical Info (${(medicalList||[]).length})`}>
-              {(medicalList||[]).length ? medicalList.slice(0,3).map((m,i)=> (
-                <View key={i} style={localStyles.medRow}>
-                  <MaterialCommunityIcons name="clipboard-list" size={20} color={colors.primary} style={localStyles.rowIcon} />
-                  <View style={localStyles.medText}>
-                    <Text style={localStyles.medTitle}>{m.name || (m.medications ? 'Medical Record' : 'Record')}</Text>
-                    {m.medications ? <Text style={localStyles.medDetail}>Meds: {m.medications}</Text> : null}
-                    {m.allergies ? <Text style={localStyles.medDetail}>Allergies: {m.allergies}</Text> : null}
-                    {m.bloodType ? <Text style={localStyles.medDetail}>Blood: {m.bloodType}</Text> : null}
-                  </View>
-                </View>
-              )) : <Text style={localStyles.itemTextMuted}>No medical info saved.</Text>}
-            </MiniCard>
-
-            <MiniCard title={`Important Documents (${(documents||[]).length})`}>
-              {(documents||[]).length ? documents.slice(0,3).map((d,i)=> (
-                <View key={i} style={localStyles.docRow}>
-                  <MaterialCommunityIcons name="file-document-outline" size={20} color={colors.primary} style={localStyles.rowIcon} />
-                  <View style={localStyles.docText}>
-                    <Text style={localStyles.docTitle}>{d.title || d.fileName || d.name || 'Document'}</Text>
-                    {d.fileName ? <Text style={localStyles.docMeta}>{d.fileName}</Text> : null}
-                  </View>
-                </View>
-              )) : <Text style={localStyles.itemTextMuted}>No documents stored.</Text>}
-            </MiniCard>
-           </View>
-        </ScrollView>
-      </View>
-    );
-  }
-
-  // default Emergency Hub UI (no full-screen banner unless emergencyActive)
+  // Always render the standard Emergency Hub UI. If an earthquake is active,
+  // show the prominent banner directly under the page title.
   return (
     <ScrollView
       style={globalStyles.container}
@@ -511,11 +454,22 @@ export default function Emergency() {
     >
       <Text style={globalStyles.heading}>Emergency Hub</Text>
 
-      {/* only show smaller alert banner here if desired; removed large banner when not active */}
-      {/* <View style={styles.alertBanner}>
-        <Text style={styles.alertText}>EARTHQUAKE! DROP, COVER, HOLD ON</Text>
-      </View> */}
+      {emergencyActive && (
+        <View style={localStyles.largeBanner}>
+          <Text style={localStyles.bannerTitle}>EARTHQUAKE — DROP, COVER, HOLD</Text>
+          <Text style={localStyles.bannerSubtitle}>
+            An earthquake has been detected near you. Move to safe cover now.
+          </Text>
+          <TouchableOpacity
+            style={localStyles.localRiskButton}
+            onPress={() => navigation.navigate('LocalRisk')}
+          >
+            <Text style={localStyles.localRiskButtonText}>View current earthquakes</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
+      {/* default grid of quick cards */}
       <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
         {emergencyCards.map((module) => (
           <View key={module.id} style={{ width: "50%", aspectRatio: 1, padding: 8 }}>
@@ -524,6 +478,7 @@ export default function Emergency() {
         ))}
       </View>
 
+      {/* checklist modules */}
       <View style={{ ...prepareStyles.modulesList, marginTop: 16 }}>
         {EMERGENCY_MODULES.map((module) => (
           <ModuleCard key={module.id} module={module} />
