@@ -173,14 +173,22 @@ export default function ChangeDetails() {
               keyboardType="email-address"
               autoCapitalize="none"
             />
-            <Text style={globalStyles.inputLabel}>Current Password</Text>
-            <TextInput
-              placeholder="Current password"
-              value={currentPassword}
-              onChangeText={setCurrentPassword}
-              secureTextEntry
-              style={globalStyles.input}
-            />
+
+            {/* Confirm password in a separate clearly-marked box */}
+            <View style={styles.confirmBox}>
+              <Text style={styles.confirmHeading}>Enter password</Text>
+              <Text style={globalStyles.inputLabel}>
+                Enter your password to confirm your changes
+              </Text>
+              <TextInput
+                placeholder="Current password"
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                secureTextEntry
+                style={styles.confirmInput}
+                accessibilityLabel="Confirm current password"
+              />
+            </View>
 
             <TouchableOpacity
               onPress={handleSave}
@@ -220,5 +228,29 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
     marginBottom: 12,
+  },
+  
+  confirmBox: {
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#FBFCFD",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  confirmHeading: {
+    fontWeight: "700",
+    color: colors.secondary,
+    marginBottom: 6,
+  },
+  confirmInput: {
+    minHeight: 44,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: Platform.OS === "ios" ? 10 : 6,
+    backgroundColor: "#fff",
+    marginTop: 6,
   },
 });

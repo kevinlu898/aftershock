@@ -412,7 +412,6 @@ const PrepareLessons = ({ route, navigation }) => {
                   )}
                 </View>
 
-                {/* caption / content area with same padding as other pages */}
                 {caption ? (
                             caption.includes('<') ? (
                                 <SimpleHtmlRenderer html={caption} contentWidth={screenWidth - 48} config={{
@@ -427,7 +426,7 @@ const PrepareLessons = ({ route, navigation }) => {
                                   }
                                 }} />
                             ) : (
-                                <Text style={prepareLessonStyles.lessonContentText}>{caption}</Text>
+                                <Text style={prepareLessonStyles.lessonVideoCaption}>{caption}</Text>
                             )
                         ) : null}
               </View>

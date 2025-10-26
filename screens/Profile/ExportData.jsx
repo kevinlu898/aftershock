@@ -1,13 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, } from "react-native";
 import { colors, fontSizes, globalStyles } from "../../css";
 import { exportData } from "../../requests";
 
@@ -92,7 +85,7 @@ export default function ExportData({ navigation }) {
   return (
     <ScrollView
       style={globalStyles.container}
-      contentContainerStyle={{ padding: 16 }}
+      contentContainerStyle={{ padding: 0 }}
     >
       <View>
         <TouchableOpacity
@@ -110,44 +103,60 @@ export default function ExportData({ navigation }) {
             {"← Back"}
           </Text>
         </TouchableOpacity>
-        <Text style={globalStyles.heading}>Export your data</Text>
-        <Text
-          style={{
-            color: colors.muted,
-            marginTop: 8,
-            fontSize: fontSizes.medium,
-          }}
-        >
-          Request a copy of your account data. The server will prepare an export
-          and respond with details. This may take a few moments.
-        </Text>
 
-        <TouchableOpacity
-          style={{
-            marginTop: 20,
-            backgroundColor: colors.primary,
-            paddingVertical: 14,
-            borderRadius: 8,
-            alignItems: "center",
-          }}
-          onPress={handleExport}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text
-              style={{
-                color: "#fff",
-                fontSize: fontSizes.large,
-                fontWeight: "700",
-              }}
-            >
-              Export Data
-            </Text>
-          )}
-        </TouchableOpacity>
+        <View style={styles.card}>
+          <Text style={globalStyles.heading}>Export Data</Text>
+          <Text
+            style={{
+              color: colors.muted,
+              marginTop: 8,
+              fontSize: fontSizes.medium,
+            }}
+          >
+            Send a copy of all your emergency data to your email. This will take a few moments to prepare your export. 
+          </Text>
+
+          <TouchableOpacity
+            style={{
+              marginTop: 20,
+              backgroundColor: colors.primary,
+              paddingVertical: 14,
+              borderRadius: 8,
+              alignItems: "center",
+            }}
+            onPress={handleExport}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text
+                style={{
+                  color: "#fff",
+                  fontSize: fontSizes.large,
+                  fontWeight: "700",
+                }}
+              >
+                Export Data
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: "#fff",
+    padding: 18,
+    borderRadius: 14,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 12,
+    elevation: 4,
+    marginBottom: 12,
+  },
+});

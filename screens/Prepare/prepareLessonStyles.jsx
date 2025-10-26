@@ -172,12 +172,7 @@ const prepareLessonStyles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 12,
   },
-  lessonContentScroll: {
-    // removed flexGrow to avoid large empty space below content when using ScrollView
-    // flex: 1,
-  },
   lessonScrollContent: {
-    // avoid forcing full-height content which created extra space under text
     paddingBottom: 8,
   },
 
@@ -187,7 +182,6 @@ const prepareLessonStyles = StyleSheet.create({
     borderRadius: 12,
     padding: 20,
     marginBottom: 12,
-    // shadow
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
@@ -208,11 +202,6 @@ const prepareLessonStyles = StyleSheet.create({
   },
 
   // Video screen components
-  lessonVideoContainer: {
-    alignItems: 'center',
-    marginBottom: 16,
-    borderRadius: 12,
-  },
   lessonVideoPlaceholder: {
     width: '100%',
     height: 200,
@@ -223,22 +212,11 @@ const prepareLessonStyles = StyleSheet.create({
     marginBottom: 12,
   },
   lessonVideoCaption: {
-    fontSize: fontSizes.small,
-    color: colors.lessonLoadingText,
+    fontSize: 13,
+    color: colors.muted,
     textAlign: 'center',
-    lineHeight: 18,
-  },
-  lessonWatchButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignSelf: 'center',
-  },
-  lessonWatchButtonText: {
-    color: '#fff',
-    fontSize: fontSizes.medium,
-    fontWeight: '600',
+    marginTop: 6,
+    padding: 5,
   },
 
   // Checklist screen styles

@@ -97,7 +97,7 @@ export default function Dashboard() {
       title: "Epicenter AI",
       text: "Ask AI for instant help and advice.",
       iconImage: require("../assets/images/filledEpicenter.png"),
-      button: "Ask",
+      button: "New Chat",
       onPress: () => navigation.navigate("Guide"),
     },
   ];
