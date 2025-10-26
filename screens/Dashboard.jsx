@@ -84,7 +84,7 @@ export default function Dashboard() {
       text: "Check your current preparedness steps.",
       icon: "account-check",
       button: "Review",
-      onPress: () => navigation.navigate("Profile"),
+      onPress: () => navigation.navigate("myPlan"),
     },
     {
       title: "Offline Access",
@@ -103,12 +103,6 @@ export default function Dashboard() {
   ];
 
   const feedItems = [
-    {
-      icon: "check-circle",
-      text: "Recent Activity",
-      color: "#10B981",
-      onPress: () => navigation.navigate("RecentActivity"),
-    },
     {
       icon: "map-marker-radius",
       text: "Local Risk",
@@ -137,10 +131,6 @@ export default function Dashboard() {
     {
       useNativeDriver: false,
       listener: (event) => {
-        // Copy needed properties immediately so we don't hold onto the
-        // synthetic event object after an async boundary. React may reuse
-        // the event object for performance which can cause confusing errors
-        // if accessed later.
         const { nativeEvent: { contentOffset: { x: offsetX } } = {} } =
           event || {};
         const dotIndex = Math.min(
@@ -443,9 +433,8 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   feedGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
+    flexDirection: "column",
+    width: "100%",
   },
   feedItem: {
     flexDirection: "row",
@@ -453,8 +442,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: 16,
     borderRadius: 12,
-    flex: 1,
-    minWidth: "48%",
+    width: "100%",
+    marginBottom: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,

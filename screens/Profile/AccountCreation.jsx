@@ -1,18 +1,13 @@
 import { useNavigation } from "@react-navigation/native";
-// eslint-disable-next-line import/no-named-as-default
 import Checkbox from "expo-checkbox";
-import {
-  addDoc,
-  collection,
-  getDocs,
-  or,
-  query,
-  where,
-} from "firebase/firestore";
+import { addDoc, collection, getDocs, or, query, where } from "firebase/firestore";
 import { useRef, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
+  StatusBar,
   Text,
   TextInput,
   TouchableOpacity,
@@ -48,6 +43,8 @@ export default function AccountFlow() {
   const zipRef = useRef(null);
   const phoneRef = useRef(null);
 
+  const statusBarHeight = Platform.OS === "ios" ? 44 : StatusBar.currentHeight || 24;
+
   const addUser = async () => {
     try {
       const thehash = await backendHash(password);
@@ -82,10 +79,7 @@ export default function AccountFlow() {
       return;
     }
     if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-      Alert.alert(
-        "Error",
-        "Username must only contain letters, numbers, or underscores."
-      );
+      Alert.alert("Error", "Username must only contain letters, numbers, or underscores.");
       return;
     }
 
@@ -110,10 +104,7 @@ export default function AccountFlow() {
         return;
       }
       if (!/[A-Z]/.test(password) || !/[a-z]/.test(password)) {
-        Alert.alert(
-          "Error",
-          "Password must contain a mix of uppercase and lowercase letters"
-        );
+        Alert.alert("Error", "Password must contain a mix of uppercase and lowercase letters");
         return;
       }
     }
@@ -142,10 +133,7 @@ export default function AccountFlow() {
       return;
     }
 
-    const queryToCheck = query(
-      collection(db, "user"),
-      where("phone_number", "==", phoneNumber)
-    );
+    const queryToCheck = query(collection(db, "user"), where("phone_number", "==", phoneNumber));
     const results = await getDocs(queryToCheck);
     if (!results.empty) {
       Alert.alert("Error", "Phone number already used.");
@@ -164,216 +152,249 @@ export default function AccountFlow() {
   };
 
   const handleNavigateToLogin = () => {
-    console.log("Navigating to Login...");
     navigation.replace("Login");
   };
 
-  // Navigate to in-app policy screens
   const openPrivacy = () => navigation.navigate("PrivacyPolicy");
   const openTos = () => navigation.navigate("TermsOfService");
 
   return (
-    <ScrollView
-      style={globalStyles.container}
-      keyboardShouldPersistTaps="handled"
-    >
-      {step === 1 ? (
-        <>
-          <Text style={globalStyles.heading}>Create New Account</Text>
+    <View style={{ flex: 1, backgroundColor: colors.light }}>
+      {/* Status Bar Background */}
+      <View style={[styles.statusBarBackground, { height: statusBarHeight }]} />
 
-          <Text style={[globalStyles.text, styles.inputLabel]}>Username:</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Username"
-            value={username}
-            onChangeText={setUsername}
-            returnKeyType="next"
-            blurOnSubmit={false}
-            onSubmitEditing={() => emailRef.current?.focus()}
-          />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={colors.primary}
+        translucent={Platform.OS === "android"}
+      />
 
-          <Text style={[globalStyles.text, styles.inputLabel]}>Email:</Text>
-          <TextInput
-            ref={emailRef}
-            style={styles.input}
-            placeholder="Enter Email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            returnKeyType="next"
-            blurOnSubmit={false}
-            onSubmitEditing={() => passwordRef.current?.focus()}
-          />
-
-          <Text style={[globalStyles.text, styles.inputLabel]}>Password:</Text>
-          <TextInput
-            ref={passwordRef}
-            style={styles.input}
-            placeholder="Enter Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            returnKeyType="next"
-            blurOnSubmit={false}
-            onSubmitEditing={() => confirmPasswordRef.current?.focus()}
-          />
-
-          <Text style={[globalStyles.text, styles.inputLabel]}>
-            Confirm Password:
-          </Text>
-          <TextInput
-            ref={confirmPasswordRef}
-            style={styles.input}
-            placeholder="Confirm Password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-            returnKeyType="done"
-            onSubmitEditing={handleNext}
-          />
-
-          <TouchableOpacity style={styles.button} onPress={handleNext}>
-            <Text style={styles.buttonText}>Next</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={handleNavigateToLogin}>
-            <Text
-              style={{
-                color: colors.primary,
-                textAlign: "center",
-                marginTop: 16,
-              }}
-            >
-              I already have an account
-            </Text>
-          </TouchableOpacity>
-        </>
-      ) : (
-        <View>
-          <Text style={globalStyles.heading}>Enter Your Details</Text>
-
-          <View style={styles.row}>
-            <View style={{ flex: 1, marginRight: 8 }}>
-              <Text style={[globalStyles.text, styles.inputLabel]}>
-                First Name:
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : statusBarHeight}
+      >
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContainer,
+            { paddingTop: statusBarHeight + 18, paddingBottom: 40 },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {step === 1 ? (
+            <>
+              <Text style={[globalStyles.heading, styles.heading]}>
+                Create New Account
               </Text>
+
+              <Text style={styles.inputLabel}>Username:</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter First Name"
-                value={firstName}
-                onChangeText={setFirstName}
+                placeholder="Enter Username"
+                value={username}
+                onChangeText={setUsername}
                 returnKeyType="next"
                 blurOnSubmit={false}
-                onSubmitEditing={() => lastNameRef.current?.focus()}
+                onSubmitEditing={() => emailRef.current?.focus()}
+                placeholderTextColor={colors.muted}
               />
-            </View>
 
-            <View style={{ flex: 1, marginLeft: 8 }}>
-              <Text style={[globalStyles.text, styles.inputLabel]}>
-                Last Name:
-              </Text>
+              <Text style={styles.inputLabel}>Email:</Text>
               <TextInput
-                ref={lastNameRef}
+                ref={emailRef}
                 style={styles.input}
-                placeholder="Enter Last Name"
-                value={lastName}
-                onChangeText={setLastName}
+                placeholder="Enter Email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
                 returnKeyType="next"
                 blurOnSubmit={false}
-                onSubmitEditing={() => zipRef.current?.focus()}
+                onSubmitEditing={() => passwordRef.current?.focus()}
+                placeholderTextColor={colors.muted}
               />
+
+              <Text style={styles.inputLabel}>Password:</Text>
+              <TextInput
+                ref={passwordRef}
+                style={styles.input}
+                placeholder="Enter Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                placeholderTextColor={colors.muted}
+              />
+
+              <Text style={styles.inputLabel}>Confirm Password:</Text>
+              <TextInput
+                ref={confirmPasswordRef}
+                style={styles.input}
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+                returnKeyType="done"
+                onSubmitEditing={handleNext}
+                placeholderTextColor={colors.muted}
+              />
+
+              <TouchableOpacity style={styles.button} onPress={handleNext}>
+                <Text style={styles.buttonText}>Next</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleNavigateToLogin}
+                style={styles.linkContainer}
+              >
+                <Text style={styles.linkText}>I already have an account</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View>
+              <Text style={[globalStyles.heading, styles.heading]}>
+                Enter Your Details
+              </Text>
+
+              <TouchableOpacity onPress={() => setStep(1)} style={styles.backButton}>
+                <Text style={styles.backButtonText}>{"← Back"}</Text>
+              </TouchableOpacity>
+
+              <View style={styles.row}>
+                <View style={styles.nameContainer}>
+                  <Text style={styles.inputLabel}>First Name:</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter First Name"
+                    value={firstName}
+                    onChangeText={setFirstName}
+                    returnKeyType="next"
+                    blurOnSubmit={false}
+                    onSubmitEditing={() => lastNameRef.current?.focus()}
+                    placeholderTextColor={colors.muted}
+                  />
+                </View>
+
+                <View style={styles.nameContainer}>
+                  <Text style={styles.inputLabel}>Last Name:</Text>
+                  <TextInput
+                    ref={lastNameRef}
+                    style={styles.input}
+                    placeholder="Enter Last Name"
+                    value={lastName}
+                    onChangeText={setLastName}
+                    returnKeyType="next"
+                    blurOnSubmit={false}
+                    onSubmitEditing={() => zipRef.current?.focus()}
+                    placeholderTextColor={colors.muted}
+                  />
+                </View>
+              </View>
+
+              <Text style={styles.inputLabel}>Zip Code:</Text>
+              <TextInput
+                ref={zipRef}
+                style={styles.input}
+                placeholder="Enter Zip Code"
+                value={zipCode}
+                onChangeText={setZipCode}
+                keyboardType="numeric"
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => phoneRef.current?.focus()}
+                placeholderTextColor={colors.muted}
+              />
+
+              <Text style={styles.inputLabel}>Phone Number:</Text>
+              <TextInput
+                ref={phoneRef}
+                style={styles.input}
+                placeholder="Enter Phone Number"
+                value={phoneNumber}
+                onChangeText={setPhoneNumber}
+                keyboardType="phone-pad"
+                returnKeyType="done"
+                onSubmitEditing={handleCreateAccount}
+                placeholderTextColor={colors.muted}
+              />
+
+              <View style={styles.checkboxContainer}>
+                <Checkbox
+                  value={termsAgree}
+                  onValueChange={setTermsAgree}
+                  color={termsAgree ? colors.primary : undefined}
+                />
+                <Text style={styles.checkboxLabel}>
+                  I agree to the{" "}
+                  <Text style={styles.link} onPress={openTos}>
+                    Terms of Service
+                  </Text>{" "}
+                  &amp;{" "}
+                  <Text style={styles.link} onPress={openPrivacy}>
+                    Privacy Policy
+                  </Text>
+                </Text>
+              </View>
+
+              <TouchableOpacity style={styles.button} onPress={handleCreateAccount}>
+                <Text style={styles.buttonText}>Sign Up</Text>
+              </TouchableOpacity>
             </View>
-          </View>
-
-          <Text style={[globalStyles.text, styles.inputLabel]}>Zip Code:</Text>
-          <TextInput
-            ref={zipRef}
-            style={styles.input}
-            placeholder="Enter Zip Code"
-            value={zipCode}
-            onChangeText={setZipCode}
-            keyboardType="numeric"
-            returnKeyType="next"
-            blurOnSubmit={false}
-            onSubmitEditing={() => phoneRef.current?.focus()}
-          />
-
-          <Text style={[globalStyles.text, styles.inputLabel]}>
-            Phone Number:
-          </Text>
-          <TextInput
-            ref={phoneRef}
-            style={styles.input}
-            placeholder="Enter Phone Number"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-            keyboardType="phone-pad"
-            returnKeyType="done"
-            onSubmitEditing={handleCreateAccount}
-          />
-
-          <View style={styles.checkboxContainer}>
-            <Checkbox
-              value={termsAgree}
-              onValueChange={setTermsAgree}
-              color={termsAgree ? colors.primary : undefined}
-            />
-            <Text style={styles.checkboxLabel}>
-              I agree to the Terms & Privacy Policy
-            </Text>
-          </View>
-
-          <TouchableOpacity style={styles.button} onPress={handleCreateAccount}>
-            <Text style={styles.buttonText}>Sign Up</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-      <View style={{ marginTop: 20, marginBottom: 40, alignItems: "center" }}>
-        <Text style={{ color: colors.muted, fontSize: fontSizes.small }}>
-          By creating an account you agree to our
-        </Text>
-        <View style={{ flexDirection: "row", marginTop: 6 }}>
-          <TouchableOpacity onPress={openPrivacy}>
-            <Text style={{ color: colors.primary, fontSize: fontSizes.small }}>
-              Privacy Policy
-            </Text>
-          </TouchableOpacity>
-          <Text style={{ color: colors.muted, marginHorizontal: 8 }}>•</Text>
-          <TouchableOpacity onPress={openTos}>
-            <Text style={{ color: colors.primary, fontSize: fontSizes.small }}>
-              Terms of Service
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </ScrollView>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = {
+  statusBarBackground: {
+    backgroundColor: colors.light,
+    width: "100%",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    zIndex: 1000,
+  },
+  scrollContainer: {
+    padding: 18,
+    flexGrow: 1,
+  },
+  heading: {
+    marginTop: 10,
+    marginBottom: 30,
+    textAlign: "center",
+  },
   input: {
     height: 50,
-    borderColor: colors.secondary,
+    borderColor: colors.secondary + "80",
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
     marginBottom: 16,
     fontSize: fontSizes.medium,
     backgroundColor: "#fff",
-    marginTop: 10,
+    color: colors.dark,
   },
   button: {
     backgroundColor: colors.primary,
     paddingVertical: 14,
     borderRadius: 8,
     marginTop: 10,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   inputLabel: {
     fontSize: fontSizes.medium,
     color: colors.accent,
-    textAlign: "left",
     marginBottom: 4,
+    fontWeight: "600",
   },
   buttonText: {
     color: "#fff",
@@ -390,9 +411,41 @@ const styles = {
     marginLeft: 8,
     fontSize: fontSizes.medium,
     color: colors.accent,
+    flex: 1,
+    lineHeight: 20,
+  },
+  link: {
+    color: colors.primary,
+    fontWeight: "700",
+    textDecorationLine: "underline",
   },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: 8,
+  },
+  nameContainer: {
+    flex: 1,
+  },
+  backButton: {
+    marginBottom: 12, 
+    alignSelf: "flex-start", 
+    paddingVertical: 8, 
+    paddingHorizontal: 12, 
+    borderRadius: 10, 
+    backgroundColor: "#fff" 
+  },
+  backButtonText: {
+    color: colors.primary,
+    fontSize: fontSizes.medium,
+    fontWeight: "700",
+  },
+  linkContainer: {
+    marginTop: 20,
+  },
+  linkText: {
+    color: colors.primary,
+    textAlign: "center",
+    fontWeight: "500",
   },
 };

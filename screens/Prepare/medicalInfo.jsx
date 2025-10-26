@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useRef, useState } from "react";
-import { Alert, Dimensions, InputAccessoryView, Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
+import { Alert, Dimensions, Keyboard, Modal, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../css";
 
@@ -13,6 +13,13 @@ const MED_KEY = 'medical_info';
 
 export default function MedicalInfo({ navigation }) {
   const insets = useSafeAreaInsets();
+  // status bar height for Android / iOS safe area
+  const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 24 : (insets.top || 20);
+  // modal sizing constants
+  const MODAL_MAX = Math.min(Dimensions.get('window').height * 0.85, 760);
+  const MODAL_HEADER_H = 56;
+  const MODAL_FOOTER_H = 64;
+  const modalContentMaxHeight = MODAL_MAX - MODAL_HEADER_H - MODAL_FOOTER_H;
   const [medicalList, setMedicalList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showMedForm, setShowMedForm] = useState(false);
@@ -20,7 +27,6 @@ export default function MedicalInfo({ navigation }) {
   const [editingMedId, setEditingMedId] = useState(null);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const inputAccessoryId = 'medAccessory';
   // refs for inputs so we can focus next field
   const nameRef = useRef(null);
   const medsRef = useRef(null);
@@ -30,8 +36,7 @@ export default function MedicalInfo({ navigation }) {
   const inputRefs = [nameRef, medsRef, allergiesRef, bloodRef, notesRef];
   // refs for modal layout and scrolling
   const modalScrollRef = useRef(null);
-  const modalCardRef = useRef(null);
-  const [currentFieldIndex, setCurrentFieldIndex] = useState(-1);
+  const [activeInputRef, setActiveInputRef] = useState(null);
 
   const focusNext = (idx) => {
     const next = inputRefs[idx + 1];
@@ -40,6 +45,17 @@ export default function MedicalInfo({ navigation }) {
     } else {
       Keyboard.dismiss();
     }
+  };
+
+  const handleInputFocus = (ref, index) => {
+    setActiveInputRef(ref);
+    // Scroll to make the input visible at the bottom when keyboard is open
+    setTimeout(() => {
+      if (modalScrollRef.current && keyboardVisible) {
+        const scrollPosition = index * 120; // Approximate scroll position
+        modalScrollRef.current.scrollTo({ y: scrollPosition, animated: true });
+      }
+    }, 100);
   };
 
   useEffect(() => {
@@ -198,6 +214,7 @@ export default function MedicalInfo({ navigation }) {
     await saveMedicalList(next);
     setShowMedForm(false);
     setEditingMedId(null);
+    setActiveInputRef(null);
   };
 
   const handleDeleteMed = (id) => {
@@ -222,14 +239,17 @@ export default function MedicalInfo({ navigation }) {
     ]);
   };
 
-  const topPadding = Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : (insets.top || 20);
+  const handleCancel = () => {
+    Keyboard.dismiss();
+    setShowMedForm(false);
+    setEditingMedId(null);
+    setActiveInputRef(null);
+  };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.light }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={topPadding + 10} // adjust if you have a header
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.light }}>
+      {/* Status bar background to ensure top area uses app color */}
+      <View style={[styles.statusBarBackground, { height: statusBarHeight }]} />
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={{ flex: 1 }}>
           <StatusBar barStyle="dark-content" backgroundColor={colors.light} translucent={false} />
@@ -287,80 +307,166 @@ export default function MedicalInfo({ navigation }) {
             </View>
           </ScrollView>
 
-          {/* Modal */}
-          {/* Modal */}
-<Modal visible={showMedForm} animationType="fade" transparent>
-  <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-    <View style={styles.modalBackdrop}>
-      <View style={[styles.modalCard, { margin: 16 }]}>
-        <ScrollView
-          contentContainerStyle={{ paddingBottom: keyboardVisible ? keyboardHeight : 8 }}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Your form inputs here */}
-        </ScrollView>
+          <Modal visible={showMedForm} animationType="slide" transparent>
+            <View style={styles.modalBackdrop}>
+              <View
+                style={[
+                  styles.modalCard,
+                  {
+                    margin: 16,
+                    marginBottom: keyboardVisible ? keyboardHeight + 8 : 16,
+                    maxHeight: MODAL_MAX - 275, 
+                  },
+                ]}
+              >
+                {/* 1. Modal Heading */}
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>
+                    {editingMedId ? 'Edit Medical Info' : 'Add Medical Info'}
+                  </Text>
+                </View>
 
-        {/* Footer */}
-        <View style={{ borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 8 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-            <TouchableOpacity
-              onPress={() => {
-                Keyboard.dismiss();
-                setShowMedForm(false);
-                setEditingMedId(null);
-              }}
-              style={[styles.modalButton, { backgroundColor: '#E5E7EB' }]}
-            >
-              <Text style={{ color: '#111', fontWeight: '700' }}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleSaveMedical}
-              style={[styles.modalButton, { marginLeft: 8, backgroundColor: colors.primary }]}
-            >
-              <Text style={{ color: '#fff', fontWeight: '700' }}>Save</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </View>
-  </TouchableWithoutFeedback>
-</Modal>
+                {/* 2. Scrollable Input Forms Section - with significantly reduced height */}
+                <ScrollView
+                  ref={modalScrollRef}
+                  style={{ maxHeight: modalContentMaxHeight - 120 }} // Significantly reduced scrollview height
+                  contentContainerStyle={{ paddingBottom: 12, paddingHorizontal: 0 }}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  <Text style={styles.modalLabel}>Name</Text>
+                  <TextInput
+                    ref={nameRef}
+                    value={medForm.name}
+                    onChangeText={(t) => setMedForm((p) => ({ ...p, name: t }))}
+                    style={styles.input}
+                    returnKeyType="next"
+                    onSubmitEditing={() => focusNext(0)}
+                    onFocus={() => handleInputFocus(nameRef, 0)}
+                  />
 
+                  <Text style={styles.modalLabel}>Medications</Text>
+                  <TextInput
+                    ref={medsRef}
+                    value={medForm.medications}
+                    onChangeText={(t) => setMedForm((p) => ({ ...p, medications: t }))}
+                    style={styles.input}
+                    returnKeyType="next"
+                    onSubmitEditing={() => focusNext(1)}
+                    onFocus={() => handleInputFocus(medsRef, 1)}
+                  />
+
+                  <Text style={styles.modalLabel}>Allergies</Text>
+                  <TextInput
+                    ref={allergiesRef}
+                    value={medForm.allergies}
+                    onChangeText={(t) => setMedForm((p) => ({ ...p, allergies: t }))}
+                    style={styles.input}
+                    returnKeyType="next"
+                    onSubmitEditing={() => focusNext(2)}
+                    onFocus={() => handleInputFocus(allergiesRef, 2)}
+                  />
+
+                  <Text style={styles.modalLabel}>Blood Type</Text>
+                  <TextInput
+                    ref={bloodRef}
+                    value={medForm.bloodType}
+                    onChangeText={(t) => setMedForm((p) => ({ ...p, bloodType: t }))}
+                    style={styles.input}
+                    returnKeyType="next"
+                    onSubmitEditing={() => focusNext(3)}
+                    onFocus={() => handleInputFocus(bloodRef, 3)}
+                  />
+
+                  <Text style={styles.modalLabel}>Notes</Text>
+                  <TextInput
+                    ref={notesRef}
+                    value={medForm.notes}
+                    onChangeText={(t) => setMedForm((p) => ({ ...p, notes: t }))}
+                    style={[styles.input, { minHeight: 80, textAlignVertical: 'top' }]}
+                    multiline
+                    numberOfLines={4}
+                    returnKeyType="done"
+                    onFocus={() => handleInputFocus(notesRef, 4)}
+                  />
+                </ScrollView>
+
+                {/* 3. Modal Action Buttons */}
+                <View style={styles.modalFooter}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'flex-end', width: '100%' }}>
+                    <TouchableOpacity
+                      onPress={handleCancel}
+                      style={[styles.modalButton, { backgroundColor: '#E5E7EB' }]}
+                    >
+                      <Text style={{ color: '#111', fontWeight: '700' }}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={handleSaveMedical}
+                      style={[styles.modalButton, { marginLeft: 8, backgroundColor: colors.primary }]}
+                    >
+                      <Text style={{ color: '#fff', fontWeight: '700' }}>Save</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </Modal>
         </View>
       </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
-  const styles = StyleSheet.create({
-    card: {
-      backgroundColor: '#fff', padding: 16, borderRadius: 12, marginBottom: 12,
-      shadowColor: '#000', shadowOpacity: 0.04, shadowOffset: { width: 0, height: 3 }, shadowRadius: 6, elevation: 2
-    },
-    title: { fontSize: 20, fontWeight: '800', color: colors.primary },
-    subtitle: { color: colors.muted, marginTop: 6 },
-    addButton: { marginTop: 12, paddingVertical: 10, paddingHorizontal: 12, backgroundColor: '#F1FDF6', borderRadius: 8, alignSelf: 'flex-start' },
-    addButtonText: { color: colors.primary, fontWeight: '700' },
-    backButton: { marginBottom: 12, alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, backgroundColor: '#fff' },
-    backButtonText: { color: colors.primary, fontWeight: '700' },
-    modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' },
-    modalCard: { backgroundColor: '#fff', padding: 16, borderTopLeftRadius: 12, borderTopRightRadius: 12, borderBottomLeftRadius: 12, borderBottomRightRadius: 12 },
-    modalTitle: { fontWeight: '800', fontSize: 18, marginBottom: 8, color: colors.primary },
-    modalLabel: {
-      fontWeight: '600',
-      marginTop: 12,
-      marginBottom: 4,
-      color: colors.secondary,
-      fontSize: 14,
-    },
-    input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, padding: 10, marginTop: 8, backgroundColor: '#fff' },
-    modalButton: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10 },
-    medLabel: { fontWeight: '700', color: colors.secondary, marginTop: 12 },
-    medText: { color: colors.muted, marginTop: 4, marginBottom: 12 },
-    accessory: { backgroundColor: '#fff', padding: 8, borderTopWidth: 1, borderColor: '#E5E7EB', flexDirection: 'row', justifyContent: 'flex-end' },
-    accessoryButton: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10 },
-    accessoryText: { color: colors.primary, fontWeight: '700' },
-    androidAccessory: { position: 'absolute', left: 0, right: 0, zIndex: 1000, alignItems: 'flex-end', padding: 16 },
-    accessoryButtonAndroid: { backgroundColor: '#F1FDF6', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10 },
-    iconButton: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: '#F3F4F6' },
-    iconText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
-  });
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: '#fff', padding: 16, borderRadius: 12, marginBottom: 12,
+    shadowColor: '#000', shadowOpacity: 0.04, shadowOffset: { width: 0, height: 3 }, shadowRadius: 6, elevation: 2
+  },
+  title: { fontSize: 20, fontWeight: '800', color: colors.primary },
+  subtitle: { color: colors.muted, marginTop: 6 },
+  addButton: { marginTop: 12, paddingVertical: 10, paddingHorizontal: 12, backgroundColor: '#F1FDF6', borderRadius: 8, alignSelf: 'flex-start' },
+  addButtonText: { color: colors.primary, fontWeight: '700' },
+  backButton: { marginBottom: 12, alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, backgroundColor: '#fff' },
+  backButtonText: { color: colors.primary, fontWeight: '700' },
+  modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' },
+  modalCard: { backgroundColor: '#fff', padding: 16, borderTopLeftRadius: 12, borderTopRightRadius: 12, borderBottomLeftRadius: 12, borderBottomRightRadius: 12 },
+  modalTitle: { fontWeight: '800', fontSize: 18, marginBottom: 8, color: colors.primary },
+  modalLabel: {
+    fontWeight: '600',
+    marginTop: 12,
+    marginBottom: 4,
+    color: colors.secondary,
+    fontSize: 14,
+  },
+  input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, padding: 10, marginTop: 8, backgroundColor: '#fff' },
+  modalButton: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10 },
+  medLabel: { fontWeight: '700', color: colors.secondary, marginTop: 12 },
+  medText: { color: colors.muted, marginTop: 4, marginBottom: 12 },
+  accessory: { backgroundColor: '#fff', padding: 8, borderTopWidth: 1, borderColor: '#E5E7EB', flexDirection: 'row', justifyContent: 'flex-end' },
+  accessoryButton: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10 },
+  accessoryText: { color: colors.primary, fontWeight: '700' },
+  androidAccessory: { position: 'absolute', left: 0, right: 0, zIndex: 1000, alignItems: 'flex-end', padding: 16 },
+  accessoryButtonAndroid: { backgroundColor: '#F1FDF6', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10 },
+  iconButton: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: '#F3F4F6' },
+  iconText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
+  statusBarBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.light,
+    zIndex: 1000,
+  },
+  modalHeader: {
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+    marginBottom: 6,
+  },
+  modalFooter: {
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    paddingTop: 10,
+    paddingBottom: 8,
+    marginTop: 8,
+  },
+});
