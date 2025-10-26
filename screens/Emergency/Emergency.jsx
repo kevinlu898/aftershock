@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Easing,
+  Image,
   Modal,
   Platform,
   ScrollView,
@@ -27,6 +28,158 @@ export default function Emergency() {
   const [emergencyContacts, setEmergencyContacts] = useState([]);
   const [medicalList, setMedicalList] = useState([]);
   const [documents, setDocuments] = useState([]);
+
+  // Small render component that displays emergency contacts from state
+  const EmergencyContactsList = () => {
+    // support both array state and JSON-encoded string from storage
+    let list = emergencyContacts;
+    if (!list || (Array.isArray(list) && list.length === 0)) {
+      return (
+        <View>
+          <Text style={localStyles.itemTextMuted}>
+            No emergency contacts saved.
+          </Text>
+        </View>
+      );
+    }
+
+    // normalize to array
+    if (!Array.isArray(list)) list = [list];
+
+    return (
+      <View>
+        {list.map((c, idx) => {
+          const name = c.name || c.raw?.name || "Unnamed";
+          const phone =
+            c.phone || c.contact || c.raw?.phone || c.raw?.contact || "-";
+          const relation = c.relation || c.raw?.relation || c.raw?.rel || "";
+          return (
+            <View key={idx} style={localStyles.contactRow}>
+              <View style={localStyles.contactText}>
+                <Text style={localStyles.contactName}>{name}</Text>
+                <Text style={localStyles.contactDetail}>
+                  {relation ? `${relation} • ${phone}` : `${phone}`}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    );
+  };
+
+  // Small render component that displays medical info from state
+  const MedicalInfoList = () => {
+    let list = medicalList;
+    if (typeof list === "string") {
+      return (
+        <View>
+          {list.map((m, idx) => {
+            const title = m.name || m.raw?.name || "Medical Record";
+            // If notes contains a JSON-encoded array of medical records, parse & render them
+            let nested = null;
+            if (typeof m.notes === "string") {
+              try {
+                const parsed = JSON.parse(m.notes);
+                if (Array.isArray(parsed)) nested = parsed;
+              } catch (_e) {
+                // not JSON — leave nested as null
+              }
+            }
+
+            return (
+              <View key={idx} style={localStyles.medRow}>
+                <View style={localStyles.medText}>
+                  <Text style={localStyles.medTitle}>{title}</Text>
+                  {m.medications && (
+                    <Text style={localStyles.medDetail}>
+                      Medications: {m.medications}
+                    </Text>
+                  )}
+                  {m.allergies && (
+                    <Text style={localStyles.medDetail}>
+                      Allergies: {m.allergies}
+                    </Text>
+                  )}
+                  {m.bloodType && (
+                    <Text style={localStyles.medDetail}>
+                      Blood Type: {m.bloodType}
+                    </Text>
+                  )}
+
+                  {nested ? (
+                    <View style={{ marginTop: 8 }}>
+                      {nested.map((n, i) => (
+                        <View key={i} style={{ marginBottom: 8 }}>
+                          <Text style={localStyles.medTitle}>
+                            {n.name || "Medical Record"}
+                          </Text>
+                          {n.medications && (
+                            <Text style={localStyles.medDetail}>
+                              Medications: {n.medications}
+                            </Text>
+                          )}
+                          {n.allergies && (
+                            <Text style={localStyles.medDetail}>
+                              Allergies: {n.allergies}
+                            </Text>
+                          )}
+                          {n.bloodType && (
+                            <Text style={localStyles.medDetail}>
+                              Blood Type: {n.bloodType}
+                            </Text>
+                          )}
+                          {n.notes && (
+                            <Text style={localStyles.medDetail}>{n.notes}</Text>
+                          )}
+                        </View>
+                      ))}
+                    </View>
+                  ) : (
+                    m.notes && (
+                      <Text style={localStyles.medDetail}>{m.notes}</Text>
+                    )
+                  )}
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      );
+    }
+
+    if (!Array.isArray(list)) list = [list];
+
+    return (
+      <View>
+        {list.map((m, idx) => (
+          <View key={idx} style={localStyles.medRow}>
+            <View style={localStyles.medText}>
+              <Text style={localStyles.medTitle}>
+                {m.name || m.raw?.name || "Medical Record"}
+              </Text>
+              {m.medications && (
+                <Text style={localStyles.medDetail}>
+                  Medications: {m.medications}
+                </Text>
+              )}
+              {m.allergies && (
+                <Text style={localStyles.medDetail}>
+                  Allergies: {m.allergies}
+                </Text>
+              )}
+              {m.bloodType && (
+                <Text style={localStyles.medDetail}>
+                  Blood Type: {m.bloodType}
+                </Text>
+              )}
+              {m.notes && <Text style={localStyles.medDetail}>{m.notes}</Text>}
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  };
 
   const modalContainerStyle = {
     flex: 1,
@@ -102,40 +255,152 @@ export default function Emergency() {
     },
   };
 
+  // Load emergency data from AsyncStorage (extracted so we can call it on focus)
+  const loadEmergencyData = async () => {
+    try {
+      const stateRaw =
+        (await AsyncStorage.getItem("emergencyState")) ||
+        (await getData("emergencyState")) ||
+        "no";
+      setEmergencyActive(String(stateRaw).toLowerCase() === "yes");
+
+      let contacts = [];
+      // support multiple storage key variants and helper getter
+      let contactsRaw = null;
+      try {
+        contactsRaw = await AsyncStorage.getItem("emergency_contacts");
+      } catch (_) {}
+      if (!contactsRaw) {
+        try {
+          contactsRaw = await AsyncStorage.getItem("emergencyContacts");
+        } catch (_) {}
+      }
+      // fall back to getData helper which may return parsed values
+      if (!contactsRaw) {
+        try {
+          const helperVal = await getData("emergency_contacts");
+          if (helperVal) contactsRaw = helperVal;
+        } catch (_) {}
+      }
+      if (!contactsRaw) {
+        try {
+          const helperVal = await getData("emergencyContacts");
+          if (helperVal) contactsRaw = helperVal;
+        } catch (_) {}
+      }
+
+      if (contactsRaw) {
+        // contactsRaw may already be an object/array (from getData) or a JSON string
+        if (typeof contactsRaw === "string") {
+          try {
+            const parsed = JSON.parse(contactsRaw);
+            contacts = Array.isArray(parsed) ? parsed : [parsed];
+          } catch {
+            contacts = [{ name: null, contact: contactsRaw }];
+          }
+        } else if (Array.isArray(contactsRaw)) {
+          contacts = contactsRaw;
+        } else if (typeof contactsRaw === "object") {
+          contacts = [contactsRaw];
+        }
+      }
+      setEmergencyContacts(contacts);
+
+      // Always read the freshest medical_info directly from AsyncStorage
+      let med = [];
+      try {
+        const medRaw = await AsyncStorage.getItem("medical_info");
+        if (medRaw) {
+          try {
+            const parsed = JSON.parse(medRaw);
+            med = Array.isArray(parsed) ? parsed : [parsed];
+          } catch {
+            med = [medRaw];
+          }
+        } else {
+          med = [];
+        }
+      } catch (e) {
+        console.warn(
+          "Emergency: failed to read medical_info from AsyncStorage",
+          e
+        );
+        med = [];
+      }
+
+      med = med
+        .map((m) => {
+          if (!m) return null;
+          if (typeof m === "string")
+            return {
+              id: null,
+              name: null,
+              notes: m,
+              medications: null,
+              allergies: null,
+              bloodType: null,
+              raw: m,
+            };
+          return {
+            id: m.id || m._id || null,
+            name: m.name || m.fullName || null,
+            medications: m.medications || m.Medications || m.meds || null,
+            allergies: m.allergies || m.Allergies || null,
+            bloodType: m.bloodType || m.BloodType || m.blood || null,
+            notes: m.notes || m.Notes || null,
+            raw: m,
+          };
+        })
+        .filter(Boolean);
+
+      setMedicalList(med);
+
+      let docs = [];
+      const docsRaw =
+        (await AsyncStorage.getItem("important_documents")) ||
+        (await AsyncStorage.getItem("importantDocuments"));
+      if (docsRaw) {
+        try {
+          const parsed = JSON.parse(docsRaw);
+          docs = Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          docs = [docsRaw];
+        }
+      }
+      setDocuments(docs);
+    } catch (e) {
+      console.warn("Emergency: failed to load emergency data", e);
+    }
+  };
+
+  useEffect(() => {
+    // initial load
+    loadEmergencyData();
+
+    // reload whenever the screen gains focus (user navigates back)
+    const unsub = navigation.addListener("focus", () => {
+      loadEmergencyData();
+    });
+
+    return unsub;
+  }, [navigation]);
+
   useEffect(() => {
     const dataFetch = async () => {
-      const contact1 = await getData("contact1");
-      const contact2 = await getData("contact2");
-      const contact3 = await getData("contact3");
-      const bloodtype = await getData("bloodtype");
-      const allergies = await getData("allergies");
-      const medications = await getData("medications");
+      // Prepare cards; the Emergency Contacts card will render the
+      // live `emergencyContacts` state via `EmergencyContactsList`.
       setEmergencyCards([
         {
           id: "1",
           title: "Emergency Contacts",
           icon: "phone",
-          component: (
-            <View>
-              <Text>List and manage your emergency contacts here.</Text>
-              <Text>Contact 1: {contact1}</Text>
-              <Text>Contact 2: {contact2}</Text>
-              <Text>Contact 3: {contact3}</Text>
-            </View>
-          ),
+          component: <EmergencyContactsList />,
         },
         {
           id: "2",
           title: "Medical Info",
           icon: "clipboard-list",
-          component: (
-            <View>
-              <Text>List and manage your medical info here.</Text>
-              <Text>Blood Type: {bloodtype}</Text>
-              <Text>Allergies: {allergies}</Text>
-              <Text>Medications: {medications}</Text>
-            </View>
-          ),
+          component: <MedicalInfoList />,
         },
         {
           id: "3",
@@ -179,146 +444,17 @@ export default function Emergency() {
           id: "4",
           title: "Aftershocks",
           icon: "home-alert",
-          component: <>After shock info info info</>,
+          component: (
+            <Text>
+              Be prepared for aftershocks in the coming hours and days.
+            </Text>
+          ),
         },
       ]);
     };
 
     dataFetch();
   }, []);
-
-  useEffect(() => {
-    const loadEmergencyData = async () => {
-      try {
-        const stateRaw =
-          (await AsyncStorage.getItem("emergencyState")) ||
-          (await getData("emergencyState")) ||
-          "no";
-        setEmergencyActive(String(stateRaw).toLowerCase() === "yes");
-
-        let contacts = [];
-        const contactsFromHelper = await getData("emergencyContacts");
-        if (contactsFromHelper) {
-          contacts = Array.isArray(contactsFromHelper)
-            ? contactsFromHelper
-            : [contactsFromHelper];
-        } else {
-          const contactsRaw = await AsyncStorage.getItem("emergencyContacts");
-          if (contactsRaw) {
-            try {
-              const parsed = JSON.parse(contactsRaw);
-              contacts = Array.isArray(parsed) ? parsed : [parsed];
-            } catch {
-              contacts = [{ name: null, contact: contactsRaw }];
-            }
-          } else {
-            const c1 = await getData("contact1");
-            const c2 = await getData("contact2");
-            const c3 = await getData("contact3");
-            if (c1)
-              contacts.push(
-                typeof c1 === "string" ? { name: null, contact: c1 } : c1
-              );
-            if (c2)
-              contacts.push(
-                typeof c2 === "string" ? { name: null, contact: c2 } : c2
-              );
-            if (c3)
-              contacts.push(
-                typeof c3 === "string" ? { name: null, contact: c3 } : c3
-              );
-          }
-        }
-        contacts = contacts
-          .map((c) => {
-            if (!c) return null;
-            if (typeof c === "string") return { name: null, contact: c };
-            if (typeof c === "object") {
-              return {
-                name: c.name || c.label || null,
-                phone: c.phone || c.contact || c.value || null,
-                raw: c,
-              };
-            }
-            return { name: null, contact: String(c) };
-          })
-          .filter(Boolean);
-        setEmergencyContacts(contacts);
-
-        let med = [];
-        const medFromHelper = await getData("medical_info");
-        if (medFromHelper) {
-          med = Array.isArray(medFromHelper) ? medFromHelper : [medFromHelper];
-        } else {
-          const medRaw = await AsyncStorage.getItem("medical_info");
-          if (medRaw) {
-            try {
-              const parsed = JSON.parse(medRaw);
-              med = Array.isArray(parsed) ? parsed : [parsed];
-            } catch {
-              med = [medRaw];
-            }
-          }
-        }
-        med = med
-          .map((m) => {
-            if (!m) return null;
-            if (typeof m === "string") return { name: null, notes: m };
-            return {
-              id: m.id || m._id || null,
-              name: m.name || m.fullName || null,
-              medications: m.medications || m.Medications || m.meds || null,
-              allergies: m.allergies || m.Allergies || null,
-              bloodType: m.bloodType || m.BloodType || m.blood || null,
-              raw: m,
-            };
-          })
-          .filter(Boolean);
-        setMedicalList(med);
-
-        let docs = [];
-        const docsFromHelper =
-          (await getData("important_documents")) ||
-          (await getData("importantDocuments"));
-        if (docsFromHelper) {
-          docs = Array.isArray(docsFromHelper)
-            ? docsFromHelper
-            : [docsFromHelper];
-        } else {
-          const docsRaw =
-            (await AsyncStorage.getItem("important_documents")) ||
-            (await AsyncStorage.getItem("importantDocuments"));
-          if (docsRaw) {
-            try {
-              const parsed = JSON.parse(docsRaw);
-              docs = Array.isArray(parsed) ? parsed : [parsed];
-            } catch {
-              docs = [docsRaw];
-            }
-          }
-        }
-        docs = docs
-          .map((d) => {
-            if (!d) return null;
-            if (typeof d === "string")
-              return { id: null, title: d, fileName: null, uri: d };
-            return {
-              id: d.id || d._id || null,
-              title: d.title || d.name || d.fileName || null,
-              fileName: d.fileName || d.name || null,
-              uri: d.uri || d.path || null,
-              raw: d,
-            };
-          })
-          .filter(Boolean);
-        setDocuments(docs);
-      } catch (e) {
-        console.warn("Emergency: failed to load emergency data", e);
-      }
-    };
-    loadEmergencyData();
-  }, []);
-
   const toggleModule = (moduleId) => {
     setExpandedModule(expandedModule === moduleId ? null : moduleId);
   };
@@ -360,46 +496,83 @@ export default function Emergency() {
 
         {isExpanded && (
           <View style={prepareStyles.lessonsContainer}>
-            <View style={checklistStyles.lessonChecklistContainer}>
-              {checklist.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[
-                    checklistStyles.lessonChecklistItem,
-                    item.completed &&
-                      checklistStyles.lessonChecklistItemCompleted,
-                  ]}
-                  onPress={() => toggleItem(item.id)}
-                >
-                  <View style={checklistStyles.lessonChecklistLeft}>
-                    <View
-                      style={[
-                        checklistStyles.lessonCheckbox,
-                        item.completed &&
-                          checklistStyles.lessonCheckboxCompleted,
-                      ]}
-                    >
-                      {item.completed && (
-                        <MaterialCommunityIcons
-                          name="check"
-                          size={16}
-                          color="#fff"
-                        />
-                      )}
+            {/* If this module is the Important Documents module, render the documents list instead of the checklist */}
+            {module.title &&
+            module.title.toLowerCase().includes("important") ? (
+              <View style={{ padding: 8 }}>
+                {documents && documents.length > 0 ? (
+                  documents.map((d, i) => {
+                    const uri = d.uri || d.path || d.raw?.uri;
+                    const isImage =
+                      typeof uri === "string" &&
+                      /\.(jpe?g|png|gif|bmp|webp|heic|heif)$/i.test(uri);
+                    return (
+                      <View key={d.id || uri || i} style={localStyles.docRow}>
+                        {isImage && (
+                          <Image
+                            source={{ uri }}
+                            style={localStyles.docThumb}
+                          />
+                        )}
+                        <View style={localStyles.docText}>
+                          <Text style={localStyles.docTitle}>
+                            {d.title || d.fileName || uri || "Document"}
+                          </Text>
+                          <Text style={localStyles.docMeta}>
+                            {d.fileName || uri}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })
+                ) : (
+                  <Text style={localStyles.itemTextMuted}>
+                    No important documents saved.
+                  </Text>
+                )}
+              </View>
+            ) : (
+              <View style={checklistStyles.lessonChecklistContainer}>
+                {checklist.map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[
+                      checklistStyles.lessonChecklistItem,
+                      item.completed &&
+                        checklistStyles.lessonChecklistItemCompleted,
+                    ]}
+                    onPress={() => toggleItem(item.id)}
+                  >
+                    <View style={checklistStyles.lessonChecklistLeft}>
+                      <View
+                        style={[
+                          checklistStyles.lessonCheckbox,
+                          item.completed &&
+                            checklistStyles.lessonCheckboxCompleted,
+                        ]}
+                      >
+                        {item.completed && (
+                          <MaterialCommunityIcons
+                            name="check"
+                            size={16}
+                            color="#fff"
+                          />
+                        )}
+                      </View>
+                      <Text
+                        style={[
+                          checklistStyles.lessonChecklistText,
+                          item.completed &&
+                            checklistStyles.lessonChecklistTextCompleted,
+                        ]}
+                      >
+                        {item.text}
+                      </Text>
                     </View>
-                    <Text
-                      style={[
-                        checklistStyles.lessonChecklistText,
-                        item.completed &&
-                          checklistStyles.lessonChecklistTextCompleted,
-                      ]}
-                    >
-                      {item.text}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
         )}
       </View>
@@ -728,6 +901,13 @@ const localStyles = StyleSheet.create({
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#F3F4F6",
+  },
+  docThumb: {
+    width: 64,
+    height: 64,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: "#F3F4F6",
   },
   docText: { flex: 1 },
   docTitle: { fontWeight: "700", color: colors.secondary },
