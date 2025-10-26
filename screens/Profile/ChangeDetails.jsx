@@ -94,7 +94,7 @@ export default function ChangeDetails() {
         first_name: firstName,
         last_name: lastName,
         zip_code: zipcode,
-        phone: phone,
+        phone_number: phone,
         email: email,
       });
 

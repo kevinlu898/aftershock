@@ -258,7 +258,7 @@ export default function Profile() {
 
             <OptionRow
               title="Export Data"
-              subtitle="Download your emergency plan and records"
+              subtitle="Download your emergency plan and records (all non-sensitive data)"
               onPress={() => navigation.navigate("ExportData")}
             />
 
