@@ -67,6 +67,7 @@ export const aiResponse = async (prompt) => {
       3. Reference relevant app features when helpful.  
       4. Handle greetings lightly.
       5. When you redirect user to other tabs, do so naturally. Suggest actions they can take there, but if they want detailed steps or information, provide them directly.
+      Special Note: When the user requests information about their local risk, tell them their risk directly instead of redircting them to other pages.
       ---
       User Message:
       "${prompt}"
