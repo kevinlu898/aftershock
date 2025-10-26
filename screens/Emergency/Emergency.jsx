@@ -33,6 +33,7 @@ export default function Emergency() {
   const EmergencyContactsList = () => {
     // support both array state and JSON-encoded string from storage
     let list = emergencyContacts;
+    console.log(list);
     if (!list || (Array.isArray(list) && list.length === 0)) {
       return (
         <View>
@@ -528,6 +529,89 @@ export default function Emergency() {
                 ) : (
                   <Text style={localStyles.itemTextMuted}>
                     No important documents saved.
+                  </Text>
+                )}
+              </View>
+            ) : module.title &&
+              module.title.toLowerCase().includes("medical") ? (
+              <View style={{ padding: 8 }}>
+                {medicalList && medicalList.length > 0 ? (
+                  medicalList.map((m, idx) => {
+                    const title = m.name || m.raw?.name || "Medical Record";
+                    // parse nested notes if JSON array
+                    let nested = null;
+                    if (typeof m.notes === "string") {
+                      try {
+                        const parsed = JSON.parse(m.notes);
+                        if (Array.isArray(parsed)) nested = parsed;
+                      } catch (_e) {
+                        // not JSON
+                      }
+                    }
+                    return (
+                      <View key={m.id || idx} style={localStyles.medRow}>
+                        <View style={localStyles.medText}>
+                          <Text style={localStyles.medTitle}>{title}</Text>
+                          {m.medications && (
+                            <Text style={localStyles.medDetail}>
+                              Medications: {m.medications}
+                            </Text>
+                          )}
+                          {m.allergies && (
+                            <Text style={localStyles.medDetail}>
+                              Allergies: {m.allergies}
+                            </Text>
+                          )}
+                          {m.bloodType && (
+                            <Text style={localStyles.medDetail}>
+                              Blood Type: {m.bloodType}
+                            </Text>
+                          )}
+
+                          {nested ? (
+                            <View style={{ marginTop: 8 }}>
+                              {nested.map((n, i) => (
+                                <View key={i} style={{ marginBottom: 8 }}>
+                                  <Text style={localStyles.medTitle}>
+                                    {n.name || "Medical Record"}
+                                  </Text>
+                                  {n.medications && (
+                                    <Text style={localStyles.medDetail}>
+                                      Medications: {n.medications}
+                                    </Text>
+                                  )}
+                                  {n.allergies && (
+                                    <Text style={localStyles.medDetail}>
+                                      Allergies: {n.allergies}
+                                    </Text>
+                                  )}
+                                  {n.bloodType && (
+                                    <Text style={localStyles.medDetail}>
+                                      Blood Type: {n.bloodType}
+                                    </Text>
+                                  )}
+                                  {n.notes && (
+                                    <Text style={localStyles.medDetail}>
+                                      {n.notes}
+                                    </Text>
+                                  )}
+                                </View>
+                              ))}
+                            </View>
+                          ) : (
+                            m.notes && (
+                              <Text style={localStyles.medDetail}>
+                                {m.notes}
+                              </Text>
+                            )
+                          )}
+                        </View>
+                      </View>
+                    );
+                  })
+                ) : (
+                  <Text style={localStyles.itemTextMuted}>
+                    No medical information saved.
                   </Text>
                 )}
               </View>
