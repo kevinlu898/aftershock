@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation } from "@react-navigation/native";
-import { useEffect, useRef, useState } from "react";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -29,11 +29,15 @@ export default function Emergency() {
   const [medicalList, setMedicalList] = useState([]);
   const [documents, setDocuments] = useState([]);
 
-  // Small render component that displays emergency contacts from state
-  const EmergencyContactsList = () => {
-    // support both array state and JSON-encoded string from storage
-    let list = emergencyContacts;
-    console.log(list);
+  // Small render component that displays emergency contacts. It accepts
+  // an optional `contacts` prop so callers can pass fresh data; otherwise
+  // it falls back to the parent `emergencyContacts` state.
+  const EmergencyContactsList = ({ contacts }) => {
+    // support both array prop and JSON-encoded string from storage
+    let list = contacts ?? emergencyContacts;
+    // defensive: if list is falsy, ensure it's treated consistently
+    const count = Array.isArray(list) ? list.length : list ? 1 : 0;
+    console.log("the list is here" + count);
     if (!list || (Array.isArray(list) && list.length === 0)) {
       return (
         <View>
@@ -69,9 +73,11 @@ export default function Emergency() {
     );
   };
 
-  // Small render component that displays medical info from state
-  const MedicalInfoList = () => {
-    let list = medicalList;
+  // Small render component that displays medical info. It accepts an
+  // optional `medicalList` prop so callers can pass fresh data; otherwise
+  // it falls back to the parent `medicalList` state.
+  const MedicalInfoList = ({ medicalList: medicalListProp }) => {
+    let list = medicalListProp ?? medicalList;
     if (typeof list === "string") {
       return (
         <View>
@@ -305,6 +311,7 @@ export default function Emergency() {
           contacts = [contactsRaw];
         }
       }
+      console.log(contacts.length);
       setEmergencyContacts(contacts);
 
       // Always read the freshest medical_info directly from AsyncStorage
@@ -353,7 +360,6 @@ export default function Emergency() {
           };
         })
         .filter(Boolean);
-
       setMedicalList(med);
 
       let docs = [];
@@ -374,17 +380,17 @@ export default function Emergency() {
     }
   };
 
+  // initial load on mount
   useEffect(() => {
-    // initial load
     loadEmergencyData();
+  }, []);
 
-    // reload whenever the screen gains focus (user navigates back)
-    const unsub = navigation.addListener("focus", () => {
+  // reload whenever the screen gains focus (user navigates back)
+  useFocusEffect(
+    useCallback(() => {
       loadEmergencyData();
-    });
-
-    return unsub;
-  }, [navigation]);
+    }, [])
+  );
 
   useEffect(() => {
     const dataFetch = async () => {
@@ -395,13 +401,14 @@ export default function Emergency() {
           id: "1",
           title: "Emergency Contacts",
           icon: "phone",
-          component: <EmergencyContactsList />,
+          // store the component *type* (function) so it is rendered fresh
+          component: EmergencyContactsList,
         },
         {
           id: "2",
           title: "Medical Info",
           icon: "clipboard-list",
-          component: <MedicalInfoList />,
+          component: MedicalInfoList,
         },
         {
           id: "3",
@@ -433,10 +440,6 @@ export default function Emergency() {
                   - Check local churches, schools, or fire stations for aid
                   centers.
                 </Text>
-                <Text>
-                  - Check the app&apos;s Crowdsourced Map for water and food
-                  distribution points.
-                </Text>
               </View>
             </ScrollView>
           ),
@@ -446,9 +449,82 @@ export default function Emergency() {
           title: "Aftershocks",
           icon: "home-alert",
           component: (
-            <Text>
-              Be prepared for aftershocks in the coming hours and days.
-            </Text>
+            <ScrollView>
+              <View style={{ paddingVertical: 6 }}>
+                <Text style={{ marginBottom: 8 }}>
+                  Aftershocks are common after an earthquake. They can be strong
+                  enough to cause additional damage — here is what to do and
+                  check in the hours and days after the main event:
+                </Text>
+
+                <Text style={{ fontWeight: "700", marginTop: 6 }}>
+                  Quick safety checks
+                </Text>
+                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
+                  • If you are inside, stay away from damaged walls, windows,
+                  and shelves.
+                </Text>
+                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
+                  • If you are outside, move to an open area clear of power
+                  lines and buildings.
+                </Text>
+
+                <Text style={{ fontWeight: "700", marginTop: 6 }}>
+                  Home & utilities
+                </Text>
+                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
+                  • Check for gas leaks (smell or hissing). If you suspect a
+                  leak, shut off the gas and leave immediately.
+                </Text>
+                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
+                  • Inspect your water, sewage, and electrical systems before
+                  using them — avoid using devices that spark if you suspect
+                  gas.
+                </Text>
+
+                <Text style={{ fontWeight: "700", marginTop: 6 }}>
+                  Food & water
+                </Text>
+                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
+                  • Use your emergency water supply first. If unsure, boil or
+                  treat water before drinking.
+                </Text>
+                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
+                  • Throw out refrigerated food that has been above 40°F (4°C)
+                  for more than 4 hours.
+                </Text>
+
+                <Text style={{ fontWeight: "700", marginTop: 6 }}>
+                  Communication & planning
+                </Text>
+                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
+                  • Text (do not call) family to conserve phone networks. Use
+                  pre-written messages if needed.
+                </Text>
+                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
+                  • Stay tuned to battery-powered or phone-based official
+                  channels for updates and evacuation orders.
+                </Text>
+
+                <Text style={{ fontWeight: "700", marginTop: 6 }}>
+                  When to seek help
+                </Text>
+                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
+                  • If you or someone is injured, get first aid and call
+                  emergency services if the situation is life-threatening.
+                </Text>
+                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
+                  • If your home is severely damaged or unsafe, follow official
+                  evacuation guidance and move to a shelter.
+                </Text>
+
+                <Text style={{ marginTop: 10, fontStyle: "italic" }}>
+                  Tip: Aftershocks may continue for days — keep your emergency
+                  kit accessible and avoid re-entering unstable structures until
+                  they are inspected.
+                </Text>
+              </View>
+            </ScrollView>
           ),
         },
       ]);
@@ -808,7 +884,21 @@ export default function Emergency() {
                     {module.title}
                   </Text>
                   <View style={{ width: "100%", maxHeight: 420 }}>
-                    {module.component}
+                    {(() => {
+                      const Comp = module.component;
+                      // if the card stores a component function, render it fresh
+                      if (typeof Comp === "function") {
+                        return (
+                          <Comp
+                            contacts={emergencyContacts}
+                            medicalList={medicalList}
+                            documents={documents}
+                          />
+                        );
+                      }
+                      // otherwise assume it's already a React element
+                      return Comp || null;
+                    })()}
                   </View>
                 </Animated.View>
               </TouchableWithoutFeedback>
