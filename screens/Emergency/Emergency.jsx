@@ -29,13 +29,8 @@ export default function Emergency() {
   const [medicalList, setMedicalList] = useState([]);
   const [documents, setDocuments] = useState([]);
 
-  // Small render component that displays emergency contacts. It accepts
-  // an optional `contacts` prop so callers can pass fresh data; otherwise
-  // it falls back to the parent `emergencyContacts` state.
   const EmergencyContactsList = ({ contacts }) => {
-    // support both array prop and JSON-encoded string from storage
     let list = contacts ?? emergencyContacts;
-    // defensive: if list is falsy, ensure it's treated consistently
     const count = Array.isArray(list) ? list.length : list ? 1 : 0;
     console.log("the list is here" + count);
     if (!list || (Array.isArray(list) && list.length === 0)) {
