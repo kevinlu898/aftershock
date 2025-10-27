@@ -1,15 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Linking,
-  Platform,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Linking, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../css";
 import { fetchNews } from "../../requests";
@@ -117,17 +107,32 @@ export default function News({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  scrollContent: { flexGrow: 1 },
-  container: { flex: 1, padding: 18, paddingTop: 28 },
+  scrollContent: { 
+    flexGrow: 1 
+  },
+  container: {
+    flex: 1, 
+    padding: 18, 
+    paddingTop: 28 
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "700",
     color: colors.secondary,
     marginBottom: 12,
   },
-  dateText: { color: colors.muted, marginBottom: 12 },
-  textDescription: { color: colors.secondary, marginBottom: 12 },
-  empty: { color: colors.muted, fontStyle: "italic" },
+  dateText: { 
+    color: colors.muted, 
+    marginBottom: 12 
+  },
+  textDescription: { 
+    color: colors.secondary, 
+    marginBottom: 12 
+  },
+  empty: { 
+    color: colors.muted, 
+    fontStyle: "italic" 
+  },
   card: {
     backgroundColor: "#fff",
     padding: 18,
@@ -145,7 +150,11 @@ const styles = StyleSheet.create({
     color: colors.primary,
     marginBottom: 8,
   },
-  cardBody: { fontSize: 14, color: colors.muted, lineHeight: 20 },
+  cardBody: { 
+    fontSize: 14, 
+    color: colors.muted, 
+    lineHeight: 20 
+  },
   readMoreButton: {
     marginTop: 12,
     backgroundColor: colors.primary,
@@ -153,7 +162,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
   },
-  readMoreText: { color: "#fff", fontWeight: "700" },
+  readMoreText: { 
+    color: "#fff", 
+    fontWeight: "700" 
+  },
   backButton: {
     marginBottom: 12,
     alignSelf: "flex-start",

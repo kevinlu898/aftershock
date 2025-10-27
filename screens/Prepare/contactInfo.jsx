@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { addDoc, collection, deleteDoc, doc, query as fsQuery, getDocs, updateDoc, where } from 'firebase/firestore';
 import { useEffect, useRef, useState } from "react";
-import { Alert, Dimensions, FlatList, Keyboard, Modal, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
+import { Alert, Dimensions, FlatList, KeyboardAvoidingView, Modal, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../css";
 import { db } from '../../db/firebaseConfig';
@@ -17,49 +17,12 @@ export default function EmergencyContacts({ navigation }) {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ name: '', phone: '', relation: '' });
 
-  // keyboard-aware modal helpers
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const screenHeight = Dimensions.get('window').height;
-
-  // refs for modal and inputs so we can scroll focused input into view
-  const modalScrollRef = useRef(null);
-  const modalCardRef = useRef(null);
   const nameRef = useRef(null);
   const phoneRef = useRef(null);
   const relationRef = useRef(null);
 
-  useEffect(() => {
-    const onShow = (e) => setKeyboardHeight(e.endCoordinates?.height || 0);
-    const onHide = () => setKeyboardHeight(0);
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    const showSub = Keyboard.addListener(showEvent, onShow);
-    const hideSub = Keyboard.addListener(hideEvent, onHide);
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
-
-  // Scroll the modal ScrollView so the focused input is visible inside modalCard
-  const scrollInputIntoView = (inputRef) => {
-    setTimeout(() => {
-      try {
-        const input = inputRef.current;
-        const card = modalCardRef.current;
-        const scroller = modalScrollRef.current;
-        if (!input || !card || !scroller) return;
-        input.measureLayout(card, (left, top, width, height) => {
-          // scroll a bit above the input
-          const scrollTo = Math.max(0, top - 12);
-          scroller.scrollTo({ y: scrollTo, animated: true });
-        }, () => {});
-      } catch (e) {
-        // ignore
-      }
-    }, 60);
-  };
-
+  // Load data from AsyncStorage and Firebase
   useEffect(() => {
     const load = async () => {
       try {
@@ -67,7 +30,6 @@ export default function EmergencyContacts({ navigation }) {
         if (raw) {
           setContacts(JSON.parse(raw));
         } else {
-          // Fallback: load contacts from Firestore for this user
           try {
             const username = (await getData('username')) || null;
             if (username) {
@@ -78,7 +40,6 @@ export default function EmergencyContacts({ navigation }) {
               );
               const snaps = await getDocs(q);
               if (!snaps.empty) {
-                // Map each document's data field into a contact entry
                 const fromDb = snaps.docs.map(doc => {
                   const d = doc.data()?.data || {};
                   return {
@@ -107,9 +68,9 @@ export default function EmergencyContacts({ navigation }) {
     load();
   }, []);
 
+  // Save data to AsyncStorage and Firebase
   const save = async (next) => {
     try {
-      // We'll persist to Firestore and build a finalContacts array with real IDs
       const username = (await getData('username')) || 'unknown';
       const finalContacts = [];
 
@@ -123,7 +84,6 @@ export default function EmergencyContacts({ navigation }) {
         };
 
         if (String(c.id).startsWith('c_')) {
-          // New local contact -> create in Firestore and replace local id with remote id
           try {
             const docRef = await addDoc(collection(db, 'emergencyData'), {
               data: dataObj,
@@ -133,27 +93,25 @@ export default function EmergencyContacts({ navigation }) {
             finalContacts.push({ ...c, id: docRef.id });
           } catch (e) {
             console.warn('contacts: failed to add new contact to firestore', e);
-            // fallback: keep local id so user data isn't lost
             finalContacts.push(c);
           }
         } else {
-          // Existing remote contact -> update the document
           try {
             const remoteRef = doc(db, 'emergencyData', c.id);
             await updateDoc(remoteRef, { data: dataObj });
             finalContacts.push(c);
           } catch (e) {
             console.warn('contacts: failed to update contact in firestore', e);
-            // still push current contact to final list
             finalContacts.push(c);
           }
         }
       }
 
-      // persist final contacts array locally and update state
       try {
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(finalContacts));
-      } catch (_e) { /* ignore storage errors */ }
+      } catch (_e) {
+         // ignore
+        }
       setContacts(finalContacts);
       console.log('contacts: saved (local + firestore sync)');
     } catch (e) {
@@ -173,6 +131,7 @@ export default function EmergencyContacts({ navigation }) {
     setShowForm(true);
   };
 
+  // Delete contacts
   const handleDelete = (id) => {
     const contact = contacts.find(c => c.id === id);
     if (!contact) return;
@@ -181,7 +140,6 @@ export default function EmergencyContacts({ navigation }) {
       {
         text: 'Delete', style: 'destructive', onPress: async () => {
           const next = contacts.filter(c => c.id !== id);
-          // delete remote doc if this contact appears to be a Firestore doc
           try {
             if (!String(id).startsWith('c_')) {
               await deleteDoc(doc(db, 'emergencyData', id));
@@ -195,6 +153,7 @@ export default function EmergencyContacts({ navigation }) {
     ]);
   };
 
+  // Add contacts
   const handleSaveForm = async () => {
     const name = (form.name || '').trim();
     const phone = (form.phone || '').trim();
@@ -264,96 +223,68 @@ export default function EmergencyContacts({ navigation }) {
       </ScrollView>
 
       <Modal visible={showForm} animationType="fade" transparent>
-        <TouchableWithoutFeedback onPress={() => { Keyboard.dismiss(); }}>
+        <TouchableWithoutFeedback >
           <View style={styles.modalBackdrop}>
-            {/* modalCard: absolutely positioned; compute height so bottom aligns with keyboard top */}
-            <View
-              ref={modalCardRef}
-              style={[
-                styles.modalCard,
-                (() => {
-                  const topInset = insets?.top || 20;
-                  const bottomInset = insets?.bottom || 8;
-                  const topOffset = topInset + 12; // small gap from top safe area
-                  // height = screenHeight - topOffset - keyboardHeight (keyboardHeight may be 0)
-                  let modalHeight = Math.max(220, screenHeight - topOffset - (keyboardHeight || bottomInset) - 12);
-                  // When keyboard is not visible (initial open), cap modal height so footer is closer to inputs
-                  if (!keyboardHeight) {
-                    modalHeight = Math.min(modalHeight, Math.round(screenHeight * 0.60));
-                  }
-                   return {
-                     position: 'absolute',
-                     left: 16,
-                     right: 16,
-                     top: topOffset,
-                     height: modalHeight,
-                   };
-                 })(),
-               ]}
-             >
-              {/* content area scrolls; footer is fixed at bottom of modal to avoid extra empty space */}
-              <ScrollView
-                ref={modalScrollRef}
-                keyboardShouldPersistTaps="handled"
-                contentContainerStyle={{ paddingBottom: 8 }}
-                showsVerticalScrollIndicator={true}
-              >
-                <Text style={styles.modalTitle}>{editingId ? 'Edit Contact' : 'New Contact'}</Text>
-                <Text style={styles.modalLabel}>Name</Text>
-                <TextInput
-                  ref={nameRef}
-                  placeholder="Name"
-                  value={form.name}
-                  onChangeText={(t) => setForm(f => ({ ...f, name: t }))}
-                  style={styles.input}
-                  returnKeyType="next"
-                  blurOnSubmit={false}
-                  onFocus={() => scrollInputIntoView(nameRef)}
-                  onSubmitEditing={() => { phoneRef.current?.focus?.(); }}
-                />
-                <Text style={styles.modalLabel}>Phone Number</Text>
-                <TextInput
-                  ref={phoneRef}
-                  placeholder="Phone"
-                  value={form.phone}
-                  onChangeText={(t) => setForm(f => ({ ...f, phone: t }))}
-                  style={styles.input}
-                  keyboardType="phone-pad"
-                  returnKeyType="done"
-                  blurOnSubmit={false}
-                  onFocus={() => scrollInputIntoView(phoneRef)}
-                />
-                <Text style={styles.modalLabel}>Relation</Text>
-                <TextInput
-                  ref={relationRef}
-                  placeholder="Relation (optional)"
-                  value={form.relation}
-                  onChangeText={(t) => setForm(f => ({ ...f, relation: t }))}
-                  style={styles.input}
-                  returnKeyType="done"
-                  blurOnSubmit={false}
-                  onFocus={() => scrollInputIntoView(relationRef)}
-                />
-              </ScrollView>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              style={{ flex: 1, justifyContent: 'center' }}
+              keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+            >
+              <View style={[styles.modalCard, { marginHorizontal: 16, maxHeight: Math.round(screenHeight * 0.45) }]}>
+                <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 8 }}>
+                  <Text style={styles.modalTitle}>{editingId ? 'Edit Contact' : 'New Contact'}</Text>
+                  <Text style={styles.modalLabel}>Name</Text>
+                  <TextInput
+                    ref={nameRef}
+                    placeholder="Name"
+                    value={form.name}
+                    onChangeText={(t) => setForm(f => ({ ...f, name: t }))}
+                    style={styles.input}
+                    returnKeyType="next"
+                    onSubmitEditing={() => { phoneRef.current?.focus?.(); }}
+                  />
+                  <Text style={styles.modalLabel}>Phone Number</Text>
+                  <TextInput
+                    ref={phoneRef}
+                    placeholder="Phone"
+                    value={form.phone}
+                    onChangeText={(t) => setForm(f => ({ ...f, phone: t }))}
+                    style={styles.input}
+                    keyboardType="phone-pad"
+                    returnKeyType="next"
+                    onSubmitEditing={() => { relationRef.current?.focus?.(); }}
+                  />
+                  <Text style={styles.modalLabel}>Relation</Text>
+                  <TextInput
+                    ref={relationRef}
+                    placeholder="Relation (optional)"
+                    value={form.relation}
+                    onChangeText={(t) => setForm(f => ({ ...f, relation: t }))}
+                    style={styles.input}
+                    returnKeyType="done"
+                    blurOnSubmit={true}
+                    onSubmitEditing={() => { /* close keyboard */ }}
+                  />
+                </ScrollView>
 
-              {/* Footer fixed to bottom of modalCard so no extra empty scroll space appears */}
-              <View style={{ borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 8 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-                  <TouchableOpacity
-                    onPress={() => { Keyboard.dismiss(); setShowForm(false); }}
-                    style={[styles.modalButton, { backgroundColor: '#E5E7EB' }]}
-                  >
-                    <Text style={{ color: '#111', fontWeight: '700' }}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={handleSaveForm} style={[styles.modalButton, { marginLeft: 8, backgroundColor: colors.primary }]}>
-                    <Text style={{ color: '#fff', fontWeight: '700' }}>Save</Text>
-                  </TouchableOpacity>
+                <View style={{ borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingTop: 8 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+                    <TouchableOpacity
+                      onPress={() => { setShowForm(false); }}
+                      style={[styles.modalButton, { backgroundColor: '#E5E7EB' }]}
+                    >
+                      <Text style={{ color: '#111', fontWeight: '700' }}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleSaveForm} style={[styles.modalButton, { marginLeft: 8, backgroundColor: colors.primary }]}>
+                      <Text style={{ color: '#fff', fontWeight: '700' }}>Save</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
-            </View>
-           </View>
-         </TouchableWithoutFeedback>
-       </Modal>
+            </KeyboardAvoidingView>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }
@@ -374,7 +305,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
     color: colors.primary,
-    marginTop: 12, // increased breathing room for the screen heading
+    marginTop: 12, 
   },
   subtitle: {
     color: colors.muted,
@@ -444,15 +375,13 @@ const styles = StyleSheet.create({
   modalCard: {
     backgroundColor: '#fff',
     padding: 16,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12
+    borderRadius: 12,
+    alignSelf: 'stretch',
   },
   modalTitle: {
     fontWeight: '800',
     fontSize: 18,
-    marginTop: 8,    // added top margin so modal heading sits lower
+    marginTop: 8,  
     marginBottom: 8,
     color: colors.primary
   },

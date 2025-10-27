@@ -130,7 +130,6 @@ const Prepare = () => {
                 <TouchableOpacity
                   style={prepareStyles.primaryButton}
                   onPress={async () => {
-                    // Finish: go to first incomplete lesson page (or first lesson)
                     const next = (module.lessons || []).find(l => !l.completed) || (module.lessons && module.lessons[0]);
                     if (next) {
                       const saved = await getLessonCurrentPageIndex(next.id);

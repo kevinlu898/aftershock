@@ -8,7 +8,6 @@ import prepareLessonStyles from './prepareLessonStyles';
 import { getLessonById, getLessonCurrentPageIndex, getLessonPages, getModuleById } from './prepareModules';
 import completion from './prepareModulesCompletion';
 
-// Add mapping from button label to navigator route name
 const BUTTON_ROUTE_MAP = {
   'My Plan': 'myPlan',
   'Contact Info': 'contactInfo',
@@ -16,6 +15,16 @@ const BUTTON_ROUTE_MAP = {
   'Important Documents': 'importantDocuments',
 };
 
+const handleButtonPress = (btnText, navigation) => {
+  const route = BUTTON_ROUTE_MAP[(btnText || '').trim()] || null;
+  if (route) {
+    try { navigation.navigate(route); } catch (e) { console.warn('navigate failed', e); }
+  } else {
+    console.warn('No route mapped for button:', btnText);
+  }
+};
+
+// Render HTML
 const SimpleHtmlRenderer = ({ html = '', contentWidth, config = {} }) => {
     if (!html) return null;
     const trimmed = String(html).replace(/\r/g, '').trim();
@@ -39,7 +48,6 @@ const SimpleHtmlRenderer = ({ html = '', contentWidth, config = {} }) => {
         <View>
             {parts.map((part, idx) => {
                 if (part.type === 'ul') {
-                    // extract li items
                     const liRegex = /<li>(.*?)<\/li>/gi;
                     const items = [];
                     let m;
@@ -54,8 +62,6 @@ const SimpleHtmlRenderer = ({ html = '', contentWidth, config = {} }) => {
                         </View>
                     );
                 }
-
-                // Tokenize button tags into markers so they can be rendered as React Native buttons
                 const buttonRegex = /<button(?:\s+[^>]*)?>([\s\S]*?)<\/button>/gi;
                 const placeholderHtml = part.content.replace(buttonRegex, (s, g1) => `\n__BTN__${g1}__BTN__\n`);
 
@@ -69,7 +75,6 @@ const SimpleHtmlRenderer = ({ html = '', contentWidth, config = {} }) => {
                 return (
                     <View key={`part-${idx}`} style={{ marginBottom: 8 }}>
                         {segments.map((seg, i) => {
-                            // button token -> render TouchableOpacity
                             if (seg.startsWith('__BTN__') && seg.endsWith('__BTN__')) {
                                 const btnText = seg.replace(/^__BTN__(.*)__BTN__$/i, '$1').trim();
                                 return (
@@ -79,10 +84,11 @@ const SimpleHtmlRenderer = ({ html = '', contentWidth, config = {} }) => {
                                         onPress={() => {
                                             try {
                                                 if (typeof config.onButton === 'function') config.onButton(btnText);
+                                                else handleButtonPress(btnText, config.navigation);
                                             } catch (_e) {}
                                         }}
                                         style={config.buttonStyle || {
-                                            backgroundColor: colors.primary,   // primary solid button like other app buttons
+                                            backgroundColor: colors.primary, 
                                             paddingVertical: 12,
                                             paddingHorizontal: 16,
                                             borderRadius: 10,
@@ -91,7 +97,6 @@ const SimpleHtmlRenderer = ({ html = '', contentWidth, config = {} }) => {
                                             minWidth: 140,
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            // subtle shadow / elevation
                                             shadowColor: '#000',
                                             shadowOpacity: 0.08,
                                             shadowOffset: { width: 0, height: 4 },
@@ -110,7 +115,6 @@ const SimpleHtmlRenderer = ({ html = '', contentWidth, config = {} }) => {
                                 const text = seg.replace(/__H3__(.*)__H3__/i, '$1');
                                 return <Text key={`h3-${i}`} style={config.tagsStyles?.h3 || { fontSize: 18, fontWeight: '700', marginVertical: 8 }}>{stripTags(text)}</Text>;
                             }
-                            // handle bold markers
                             if (seg.includes('**')) {
                                 const partsBold = seg.split(/\*\*/g);
                                 return (
@@ -128,16 +132,15 @@ const SimpleHtmlRenderer = ({ html = '', contentWidth, config = {} }) => {
     );
 };
 
-// Utility: remove remaining HTML tags and decode basic entities
 const stripTags = (s) => {
     return String(s || '').replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
 };
 
-// Helper: extract YouTube video id from common URL formats
+// Youtube video
 const extractYouTubeId = (url) => {
   if (!url || typeof url !== 'string') return null;
   const patterns = [
-    /(?:v=|\/embed\/|youtu\.be\/)([A-Za-z0-9_-]{11})/, // common
+    /(?:v=|\/embed\/|youtu\.be\/)([A-Za-z0-9_-]{11})/, 
     /youtube\.com\/(?:watch\?v=)([A-Za-z0-9_-]{11})/
   ];
   for (const p of patterns) {
@@ -147,29 +150,22 @@ const extractYouTubeId = (url) => {
   return null;
 };
 
-// Helper to get rendered content for a page: prefer precomputed HTML for text pages
 const getPageContent = (page) => {
   if (!page) return '';
   if (page.type === 'text') return page.html || page.body || '';
   return page.body;
 };
 
-// Main component for displaying and navigating through lesson content
+// Main lessons component
 const PrepareLessons = ({ route, navigation }) => {
-  // Extract parameters from navigation route with default values
   const { lessonId = '1-1', moduleId = '1', lessonData, initialPageIndex = 0 } = route?.params || {};
 
-  // State management for component data and UI
-  const [currentScreenIndex, setCurrentScreenIndex] = useState(0); // Current active screen index
-  const [currentLesson, setCurrentLesson] = useState(null);        // Current lesson data
-  const [currentModule, setCurrentModule] = useState(null);        // Current module data
-  const [screens, setScreens] = useState([]);                      // Array of available screens
+  const [currentScreenIndex, setCurrentScreenIndex] = useState(0); 
+  const [currentLesson, setCurrentLesson] = useState(null);        
+  const [currentModule, setCurrentModule] = useState(null);       
+  const [screens, setScreens] = useState([]);                      
   const [showCompletedView, setShowCompletedView] = useState(false);
-
-  // Get screen width for HTML rendering
   const { width: screenWidth } = Dimensions.get('window');
-
-  // HTML rendering configuration
   const htmlConfig = {
     tagsStyles: {
       h3: { marginBottom: 16, fontSize: 20, fontWeight: '700' },
@@ -179,19 +175,16 @@ const PrepareLessons = ({ route, navigation }) => {
     },
   };
 
-  // Loads lesson and module data when component mounts
+  // Loads data
   useEffect(() => {
     try {
-      // Load lesson data (either from props or by ID)
       const lesson = lessonData || getLessonById(lessonId);
       const module = getModuleById(moduleId);
       
       if (lesson) {
-        // Update state and initialize screens
         setCurrentLesson(lesson);
         setCurrentModule(module);
         const pages = getLessonPages(lesson);
-        console.log('prepareLessons: loaded lesson', lesson.id, 'pages:', pages.map(p => p.id));
         setScreens(pages.map(p => {
                     return {
                         id: p.id,
@@ -201,14 +194,10 @@ const PrepareLessons = ({ route, navigation }) => {
                         content: p.type === 'text' ? getPageContent(p) : (p.type === 'video' ? { url: p.videoUrl, caption: p.description || p.caption || p.title || '' } : (p.type === 'checklist' ? p.items : p.questions)),
                     };
                 }));
-        console.log('prepareLessons: set screens length ->', pages.length);
-        // read saved page index from completion state, fallback to initialPageIndex
         (async () => {
           const saved = await getLessonCurrentPageIndex(lesson.id);
           const start = saved ?? initialPageIndex ?? 0;
-          // if saved index is past the end it means the lesson was completed and stored as pageCount
           if (pages.length > 0 && start >= pages.length) {
-            // mark local state as completed and show Completed view instead of pages
             setCurrentLesson(prev => prev ? { ...prev, completed: true } : prev);
             setShowCompletedView(true);
           } else {
@@ -216,68 +205,54 @@ const PrepareLessons = ({ route, navigation }) => {
             setShowCompletedView(false);
           }
         })();
-        // subscribe to completion changes to keep local state in sync
         const off = completion.events.on('changed', (state) => {
-          // update local module/lesson completed flags if they changed
           try {
             const moduleState = state?.modules?.[module?.id]?.lessons?.[lesson.id];
             if (moduleState) {
               setCurrentLesson(prev => prev ? { ...prev, completed: !!moduleState.completed } : prev);
               setCurrentModule(prev => prev ? { ...prev, completed: !!state.modules[module.id]?.completed } : prev);
             }
-          } catch (e) { /* ignore */ }
+          } catch (e) {
+            // ignore
+           }
         });
         return () => off && off();
       } else {
-        // Lesson not found - show error and navigate back
         Alert.alert('Error', 'Lesson not found');
         navigation.goBack();
       }
     } catch (error) {
-      // Handle errors during data loading
       console.error('Error loading lesson:', error);
       Alert.alert('Error', 'Failed to load lesson');
       navigation.goBack();
     }
   }, [lessonId, lessonData, moduleId, initialPageIndex]);
 
-  // Scroll active menu item into view and center it
   const menuRef = useRef(null);
   useEffect(() => {
     if (!menuRef.current) return;
     const screenWidth = Dimensions.get('window').width;
     const total = screens.length;
-    // compute offsets
-    const itemFull = 110 + 12; // active width
-    const compact = 44 + 12; // compact width
-    // Build cumulative widths to compute exact offset
-    let pos = 0;
-    for (let i = 0; i < currentScreenIndex; i++) {
-      pos += (i === currentScreenIndex ? itemFull : compact);
-    }
+    const itemFull = 110 + 12; 
+    const compact = 44 + 12; 
+    const pos = currentScreenIndex * compact;
 
     if (currentScreenIndex === 0) {
-      // anchor left
       try { menuRef.current.scrollTo({ x: 0, y: 0, animated: true }); } catch (e) {}
       return;
     }
     if (currentScreenIndex === total - 1) {
-      // anchor right: scroll to max
       const estimatedTotalWidth = itemFull + compact * (total - 1);
       const offsetRight = Math.max(0, estimatedTotalWidth - screenWidth + 24);
       try { menuRef.current.scrollTo({ x: offsetRight, y: 0, animated: true }); } catch (e) {}
       return;
     }
 
-    // center other tabs
     const centerOffset = pos - (screenWidth / 2) + (itemFull / 2);
     try { menuRef.current.scrollTo({ x: Math.max(0, centerOffset), y: 0, animated: true }); } catch (e) {}
   }, [currentScreenIndex]);
 
-  // Calculate progress percentage (0 to 1)
   const progress = screens.length > 0 ? (currentScreenIndex + 1) / screens.length : 0;
-
-  // Show loading state while data is being fetched
   if (!currentLesson) {
     return (
       <View style={prepareLessonStyles.lessonLoadingContainer}>
@@ -287,7 +262,6 @@ const PrepareLessons = ({ route, navigation }) => {
     );
   }
 
-  // If lesson loaded but there are no pages, show a friendly fallback
   if (screens.length === 0) {
     return (
       <SafeAreaView style={prepareLessonStyles.lessonSafeArea}>
@@ -301,14 +275,12 @@ const PrepareLessons = ({ route, navigation }) => {
     );
   }
 
-  // Handles progression to next screen or lesson completion
+// Move between screens and mark progress
   const markScreenComplete = async () => {
     console.log('markScreenComplete called, currentScreenIndex=', currentScreenIndex, 'screens.length=', screens.length);
     if (currentScreenIndex < screens.length - 1) {
-      // Move to next screen
       const next = currentScreenIndex + 1;
       setCurrentScreenIndex(next);
-      // persist current page
       try {
         await completion.setLessonCurrentPage(currentModule.id, currentLesson.id, next);
         console.log('prepareLessons: persisted page', next);
@@ -316,7 +288,6 @@ const PrepareLessons = ({ route, navigation }) => {
         console.warn('prepareLessons: failed to persist page', e);
       }
     } else {
-      // All screens completed - persist and show Completed view
       try {
         await completion.markLessonCompleted(currentModule.id, currentLesson.id);
         console.log('prepareLessons: lesson marked completed in storage');
@@ -329,16 +300,14 @@ const PrepareLessons = ({ route, navigation }) => {
     }
   };
 
-  // Allows direct navigation to any screen via tab clicks
   const goToScreen = (index) => {
     setCurrentScreenIndex(index);
   };
 
-  // Displays text-based lesson content in a scrollable view
+  // Text content
   const LessonScreen = ({ content }) => {
     return (
       <View style={prepareLessonStyles.lessonScreenContainer}>
-        {/* Scrollable content area */}
         <ScrollView 
           style={prepareLessonStyles.lessonContentScroll}
           contentContainerStyle={prepareLessonStyles.lessonScrollContent}
@@ -350,18 +319,17 @@ const PrepareLessons = ({ route, navigation }) => {
                 config={{
                   ...htmlConfig,
                   onButton: (btnText) => {
-                    const route = BUTTON_ROUTE_MAP[(btnText || '').trim()] || null;
-                    if (route) {
-                      try { navigation.navigate(route); } catch (e) { console.warn('navigate failed', e); }
+                    if (typeof htmlConfig.onButton === 'function') {
+                      htmlConfig.onButton(btnText);
                     } else {
-                      console.warn('No route mapped for button:', btnText);
+                      handleButtonPress(btnText, navigation);
                     }
-                  }
+                  },
+                  navigation, 
                 }}
             />
           </View>
         </ScrollView>
-        {/* Continue button */}
         <TouchableOpacity 
           style={prepareLessonStyles.lessonContinueButton}
           onPress={markScreenComplete}
@@ -375,7 +343,7 @@ const PrepareLessons = ({ route, navigation }) => {
     );
   };
 
-  // Displays video content with completion tracking
+  // Video content
   const VideoScreen = ({ content }) => {
     const videoUrl = content?.url || '';
     const caption = content?.caption || '';
@@ -394,10 +362,8 @@ const PrepareLessons = ({ route, navigation }) => {
           scrollEnabled={false}
         >
           <View style={{ padding: 12, alignItems: 'center' }}>
-            {/* subtle background card behind the white content card */}
             <View style={{ width: '100%', borderRadius: 14, backgroundColor: '#f8faf8', padding: 8 }}>
               <View style={[prepareLessonStyles.lessonContentCard, { borderRadius: 12, overflow: 'hidden', padding: 0 }]}>
-                {/* video full-bleed */}
                 <View style={{ backgroundColor: '#000', alignItems: 'center' }}>
                   {videoId ? (
                     <View style={{ width: playerWidth, height: playerHeight }}>
@@ -417,13 +383,9 @@ const PrepareLessons = ({ route, navigation }) => {
                                 <SimpleHtmlRenderer html={caption} contentWidth={screenWidth - 48} config={{
                                   ...htmlConfig,
                                   onButton: (btnText) => {
-                                    const route = BUTTON_ROUTE_MAP[(btnText || '').trim()] || null;
-                                    if (route) {
-                                      try { navigation.navigate(route); } catch (e) { console.warn('navigate failed', e); }
-                                    } else {
-                                      console.warn('No route mapped for button:', btnText);
-                                    }
-                                  }
+                                    handleButtonPress(btnText, navigation);
+                                  },
+                                  navigation,
                                 }} />
                             ) : (
                                 <Text style={prepareLessonStyles.lessonVideoCaption}>{caption}</Text>
@@ -447,16 +409,14 @@ const PrepareLessons = ({ route, navigation }) => {
     );
   };
 
-  // Interactive checklist where users mark off completed items
+  // Checklist content
   const ChecklistScreen = ({ content, pageId }) => {
     const initial = Array.isArray(content) ? content : [];
-    const [checklist, setChecklist] = useState(initial); // Local state for checklist items
-    const allCompleted = checklist.length ? checklist.every(item => item.completed) : false; // Check if all items completed
+    const [checklist, setChecklist] = useState(initial); 
+    const allCompleted = checklist.length ? checklist.every(item => item.completed) : false; 
 
-    // Persistence key per module/lesson/page
     const storageKey = currentModule && currentLesson && pageId ? `prepare_checklist:${currentModule.id}:${currentLesson.id}:${pageId}` : null;
 
-    // Load saved checklist state for this page on mount / when page changes
     useEffect(() => {
       let mounted = true;
       const load = async () => {
@@ -466,7 +426,6 @@ const PrepareLessons = ({ route, navigation }) => {
           if (raw) {
             const parsed = JSON.parse(raw);
             if (mounted && Array.isArray(parsed)) {
-              // Merge with initial to preserve any new items
               const merged = initial.map(it => {
                 const found = parsed.find(p => p.id === it.id);
                 return found ? { ...it, completed: !!found.completed } : { ...it };
@@ -475,7 +434,6 @@ const PrepareLessons = ({ route, navigation }) => {
               return;
             }
           }
-          // no saved data: ensure initial structure
           setChecklist(initial);
         } catch (e) {
           // ignore
@@ -485,13 +443,11 @@ const PrepareLessons = ({ route, navigation }) => {
       return () => { mounted = false; };
     }, [storageKey, pageId]);
 
-    // Save checklist whenever it changes
     useEffect(() => {
       if (!storageKey) return;
       AsyncStorage.setItem(storageKey, JSON.stringify(checklist)).catch(() => {});
     }, [checklist, storageKey]);
 
-    // Toggles completion state of a checklist item
     const toggleItem = (itemId) => {
       const updatedChecklist = checklist.map(item =>
         item.id === itemId ? { ...item, completed: !item.completed } : item
@@ -501,7 +457,6 @@ const PrepareLessons = ({ route, navigation }) => {
 
     return (
       <View style={prepareLessonStyles.lessonScreenContainer}>
-        {/* Scrollable checklist area */}
         <ScrollView 
           style={prepareLessonStyles.lessonContentScroll}
           contentContainerStyle={prepareLessonStyles.lessonScrollContent}
@@ -511,7 +466,6 @@ const PrepareLessons = ({ route, navigation }) => {
               Complete the following tasks:
             </Text>
 
-            {/* Single checklist container - not individual cards */}
             <View style={prepareLessonStyles.lessonChecklistContainer}>
               {checklist.map((item) => (
                 <TouchableOpacity
@@ -523,7 +477,6 @@ const PrepareLessons = ({ route, navigation }) => {
                   onPress={() => toggleItem(item.id)}
                 >
                   <View style={prepareLessonStyles.lessonChecklistLeft}>
-                    {/* Custom checkbox */}
                     <View style={[
                       prepareLessonStyles.lessonCheckbox,
                       item.completed && prepareLessonStyles.lessonCheckboxCompleted
@@ -532,7 +485,6 @@ const PrepareLessons = ({ route, navigation }) => {
                         <MaterialCommunityIcons name="check" size={16} color="#fff" />
                       )}
                     </View>
-                    {/* Checklist item text */}
                     <Text style={[
                       prepareLessonStyles.lessonChecklistText,
                       item.completed && prepareLessonStyles.lessonChecklistTextCompleted
@@ -544,7 +496,6 @@ const PrepareLessons = ({ route, navigation }) => {
               ))}
             </View>
 
-            {/* Completion badge (shown when all items completed) */}
             {allCompleted && (
               <View style={prepareLessonStyles.lessonCompletedBadge}>
                 <MaterialCommunityIcons name="check-circle" size={20} color="#10B981" />
@@ -554,7 +505,6 @@ const PrepareLessons = ({ route, navigation }) => {
           </View>
         </ScrollView>
 
-        {/* Continue button (disabled until all items completed) */}
         <TouchableOpacity 
           style={[
             prepareLessonStyles.lessonContinueButton,
@@ -572,21 +522,19 @@ const PrepareLessons = ({ route, navigation }) => {
     );
   };
 
-  // Interactive quiz with multiple-choice questions
+  // Quiz content
   const QuizScreen = ({ content }) => {
-    const [currentQuestion, setCurrentQuestion] = useState(0);        // Current question index
-    const [userAnswers, setUserAnswers] = useState({});               // User's answers by question ID
-    const [showResults, setShowResults] = useState(false);            // Whether to show results screen
+    const [currentQuestion, setCurrentQuestion] = useState(0);       
+    const [userAnswers, setUserAnswers] = useState({});               
+    const [showResults, setShowResults] = useState(false);          
 
-    const questions = content || [];                                  // Quiz questions array
-    const currentQ = questions[currentQuestion];                      // Current question object
+    const questions = content || [];                                 
+    const currentQ = questions[currentQuestion];                
 
-    // Records user's answer for current question
     const handleAnswerSelect = (questionId, answerIndex) => {
       setUserAnswers({ ...userAnswers, [questionId]: answerIndex });
     };
 
-    // Advances to next question or shows results if last question
     const handleNextQuestion = () => {
       if (currentQuestion < questions.length - 1) {
         setCurrentQuestion(currentQuestion + 1);
@@ -595,8 +543,6 @@ const PrepareLessons = ({ route, navigation }) => {
         setShowResults(true);
       }
     };
-
-    // Calculates user's quiz score based on correct answers
     const calculateScore = () => {
       let correct = 0;
       questions.forEach(q => {
@@ -606,17 +552,14 @@ const PrepareLessons = ({ route, navigation }) => {
       });
       return { correct, total: questions.length };
     };
-
-    // Show quiz results screen
     if (showResults) {
       const { correct, total } = calculateScore();
-      const passed = correct >= total * 0.7; // 70% passing threshold
+      const passed = correct >= total * 0.7;
       console.log('Quiz results shown, passed=', passed, 'currentScreenIndex=', currentScreenIndex, 'screens.length=', screens.length);
 
       return (
         <View style={prepareLessonStyles.lessonScreenContainer}>
           <View style={prepareLessonStyles.lessonContentCard}>
-            {/* Results icon (trophy for pass, alert for fail) */}
             <MaterialCommunityIcons 
               name={passed ? 'trophy' : 'alert-circle'} 
               size={48} 
@@ -636,8 +579,6 @@ const PrepareLessons = ({ route, navigation }) => {
               }
             </Text>
           </View>
-
-          {/* Continue or retry button */}
           <TouchableOpacity 
             style={prepareLessonStyles.lessonContinueButton}
             onPress={passed ? () => {
@@ -658,16 +599,13 @@ const PrepareLessons = ({ route, navigation }) => {
       );
     }
 
-    // Show current question screen
     return (
       <View style={prepareLessonStyles.lessonScreenContainer}>
-        {/* Added ScrollView to fix scrolling issue */}
         <ScrollView 
           style={prepareLessonStyles.lessonContentScroll}
           contentContainerStyle={prepareLessonStyles.lessonScrollContent}
         >
           <View style={prepareLessonStyles.lessonContentCard}>
-            {/* Quiz progress indicator */}
             <View style={prepareLessonStyles.lessonQuizProgress}>
               <Text style={prepareLessonStyles.lessonQuizProgressText}>
                 Question {currentQuestion + 1} of {questions.length}
@@ -679,11 +617,8 @@ const PrepareLessons = ({ route, navigation }) => {
                 ]} />
               </View>
             </View>
-
-            {/* Current question text */}
             <Text style={prepareLessonStyles.lessonQuestionText}>{currentQ?.question}</Text>
 
-            {/* Answer options */}
             <View style={prepareLessonStyles.lessonOptionsContainer}>
               {currentQ?.options?.map((option, index) => (
                 <TouchableOpacity
@@ -714,7 +649,6 @@ const PrepareLessons = ({ route, navigation }) => {
           </View>
         </ScrollView>
 
-        {/* Next question button (disabled until answer selected) */}
         <TouchableOpacity 
           style={[
             prepareLessonStyles.lessonContinueButton,
@@ -734,7 +668,7 @@ const PrepareLessons = ({ route, navigation }) => {
     );
   };
 
-  // Completed view component
+  // Complete screen
   const CompletedScreen = () => (
     <View style={prepareLessonStyles.lessonScreenContainer}>
       <View style={prepareLessonStyles.lessonContentCard}>
@@ -745,10 +679,8 @@ const PrepareLessons = ({ route, navigation }) => {
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
           <TouchableOpacity
             onPress={() => {
-              // review: go to first page
               setShowCompletedView(false);
               setCurrentScreenIndex(0);
-              // persist that we're on first page
               completion.setLessonCurrentPage(currentModule.id, currentLesson.id, 0).catch(() => {});
             }}
             style={[prepareLessonStyles.lessonContinueButton, { marginRight: 8, paddingHorizontal: 20 }]}
@@ -773,7 +705,7 @@ const PrepareLessons = ({ route, navigation }) => {
     </View>
   );
 
-  // Renders the current screen based on screen type
+  // Renders screen based on type
   const renderCurrentScreen = () => {
     if (showCompletedView) return <CompletedScreen />;
     const currentScreen = screens[currentScreenIndex];
@@ -793,13 +725,12 @@ const PrepareLessons = ({ route, navigation }) => {
     }
   };
 
-  // Main component render
+  // Render main component
   return (
     <>
       <StatusBar backgroundColor="colors.light" barStyle="dark-content" />
       <SafeAreaView style={prepareLessonStyles.lessonSafeArea}>
         <View style={prepareLessonStyles.lessonContainer}>
-          {/* Redesigned Header - Clean layout with back button top left */}
           <View style={prepareLessonStyles.lessonHeader}>
             <View style={prepareLessonStyles.lessonHeaderLeft}>
               <TouchableOpacity 
@@ -823,7 +754,6 @@ const PrepareLessons = ({ route, navigation }) => {
             </View>
           </View>
 
-          {/* Horizontal menu for lesson pages */}
           <View style={prepareLessonStyles.lessonMenuContainer}>
             <HScrollView ref={menuRef} horizontal showsHorizontalScrollIndicator={false} style={prepareLessonStyles.lessonMenuScroll} contentContainerStyle={{ paddingHorizontal: 6 }}>
               {screens.map((screen, index) => (
@@ -836,7 +766,6 @@ const PrepareLessons = ({ route, navigation }) => {
                   onPress={() => goToScreen(index)}
                 >
                   <MaterialCommunityIcons name={screen.icon} size={18} color={index === currentScreenIndex ? '#fff' : colors.muted} />
-                  {/* show label only for active tab */}
                   {index === currentScreenIndex && (
                     <Text numberOfLines={1} ellipsizeMode="tail" style={[
                       prepareLessonStyles.lessonMenuItemText,
@@ -850,8 +779,6 @@ const PrepareLessons = ({ route, navigation }) => {
              ))}
             </HScrollView>
           </View>
-
-          {/* Dynamic content area */}
           <View style={prepareLessonStyles.lessonContentArea}>
             {renderCurrentScreen()}
           </View>

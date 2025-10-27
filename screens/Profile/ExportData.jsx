@@ -9,10 +9,9 @@ export default function ExportData({ navigation }) {
 
   const handleExport = async () => {
     const USAGE_KEY = "export_data_usage";
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    const today = new Date().toISOString().slice(0, 10); 
     setLoading(true);
     try {
-      // load usage
       let usage = { date: today, count: 0 };
       try {
         const raw = await AsyncStorage.getItem(USAGE_KEY);
@@ -29,9 +28,8 @@ export default function ExportData({ navigation }) {
           }
         }
       } catch (_e) {
-        // ignore storage read errors
+        // ignore 
       }
-
       if (usage.count >= 4) {
         Alert.alert(
           "Limit reached",
@@ -39,13 +37,11 @@ export default function ExportData({ navigation }) {
         );
         return;
       }
-
-      // Tentatively increment count (will rollback on failure)
       usage.count += 1;
       try {
         await AsyncStorage.setItem(USAGE_KEY, JSON.stringify(usage));
       } catch (_e) {
-        // ignore store errors
+        // ignore
       }
 
       try {
@@ -55,7 +51,6 @@ export default function ExportData({ navigation }) {
         Alert.alert("Export", String(msg));
       } catch (err) {
         console.warn("Export failed", err);
-        // rollback usage increment
         try {
           const raw = await AsyncStorage.getItem(USAGE_KEY);
           if (raw) {

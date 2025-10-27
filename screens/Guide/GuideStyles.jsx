@@ -21,9 +21,10 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.light,
   },
-  wrapper: { flex: 1 },
+  wrapper: { 
+    flex: 1 
+  },
 
-  // Header
   header: {
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 12 : 18,
@@ -67,8 +68,12 @@ export const styles = StyleSheet.create({
     borderRadius: 5,
     marginRight: 8,
   },
-  statusOnline: { backgroundColor: '#10B981' },
-  statusOffline: { backgroundColor: '#EF4444' },
+  statusOnline: { 
+    backgroundColor: '#10B981' 
+  },
+  statusOffline: { 
+    backgroundColor: '#EF4444' 
+  },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
@@ -81,22 +86,40 @@ export const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-  clearButton: { padding: 6 },
+  clearButton: { 
+    padding: 6 
+  },
 
   // Messages
-  messagesWrap: { flex: 1, backgroundColor: colors.light },
-  messagesContent: { padding: 16, paddingBottom: 24 },
-  messageContainer: { marginVertical: 10 },
-  botContainer: { alignItems: 'flex-start' },
-  userContainer: { alignItems: 'flex-end' },
+  messagesWrap: { 
+    flex: 1, 
+    backgroundColor: colors.light 
+  },
+  messagesContent: { 
+    padding: 16, 
+    paddingBottom: 24 
+  },
+  messageContainer: { 
+    marginVertical: 10 
+  },
+  botContainer: { 
+    alignItems: 'flex-start' 
+  },
+  userContainer: { 
+    alignItems: 'flex-end' 
+  },
   messageHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 6,
     paddingHorizontal: 8,
   },
-  botHeader: { justifyContent: 'flex-start' },
-  userHeader: { justifyContent: 'flex-end' },
+  botHeader: { 
+    justifyContent: 'flex-start' 
+  },
+  userHeader: { 
+    justifyContent: 'flex-end'
+   },
   avatar: {
     width: 28,
     height: 28,
@@ -139,8 +162,15 @@ export const styles = StyleSheet.create({
   },
 
   // Thinking
-  thinkingRow: { flexDirection: 'row', alignItems: 'center' },
-  thinkingText: { fontSize: 15, color: colors.muted, fontStyle: 'italic' },
+  thinkingRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
+  thinkingText: { 
+    fontSize: 15, 
+    color: colors.muted, 
+    fontStyle: 'italic' 
+  },
 
   // Quick Prompts
   quickPromptsContainer: {
@@ -189,7 +219,10 @@ export const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 4,
   },
-  inputBar: { flexDirection: 'row', alignItems: 'flex-end' },
+  inputBar: { 
+    flexDirection: 'row', 
+    alignItems: 'flex-end' 
+  },
   input: {
     flex: 1,
     borderWidth: 1,
@@ -210,7 +243,9 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sendButtonDisabled: { opacity: 0.5 },
+  sendButtonDisabled: { 
+    opacity: 0.5 
+  },
   offlineWarning: {
     flexDirection: 'row',
     alignItems: 'center',

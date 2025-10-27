@@ -49,7 +49,6 @@ export default function ImportantDocuments({ navigation }) {
       if (res.canceled || res.cancelled) return;
       const asset = res.assets?.[0] || (res.uri ? { uri: res.uri } : null);
       if (!asset) return;
-      // ensure fileName exists when possible
       if (!asset.fileName && asset.uri) asset.fileName = asset.uri.split('/').pop();
       setPendingFile(asset);
       setMeta({ title: asset.fileName || 'Photo', notes: '' });
@@ -182,7 +181,7 @@ export default function ImportantDocuments({ navigation }) {
       <Modal visible={showMetaModal} animationType="slide" transparent>
         <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
           <View style={styles.modalBackdrop}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'position'} keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 20}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'position'} keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 20}>
               <View style={styles.modalCard}>
                 <Text style={styles.modalTitle}>Document Details</Text>
                 <Text style={styles.modalLabel}>Title</Text>
@@ -218,27 +217,139 @@ export default function ImportantDocuments({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: '#fff', padding: 16, borderRadius: 12, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.04, shadowOffset: { width: 0, height: 3 }, shadowRadius: 6, elevation: 2 },
-  title: { fontSize: 20, fontWeight: '800', color: colors.primary },
-  subtitle: { color: colors.muted, marginTop: 6 },
-  actionButton: { paddingVertical: 10, paddingHorizontal: 12, backgroundColor: '#F1FDF6', borderRadius: 8 },
-  actionButtonText: { color: colors.primary, fontWeight: '700' },
-  backButton: { marginBottom: 12, alignSelf: 'flex-start', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, backgroundColor: '#fff' },
-  backButtonText: { color: colors.primary, fontWeight: '700' },
-  docRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  thumb: { width: 64, height: 64, borderRadius: 8, backgroundColor: '#F3F4F6' },
-  thumbPlaceholder: { width: 64, height: 64, borderRadius: 8, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
-  docTitle: { fontWeight: '700', color: colors.secondary },
-  docNotes: { color: colors.muted, marginTop: 4 },
-  iconButton: { paddingVertical: 6, paddingHorizontal: 8, borderRadius: 8, backgroundColor: '#fff', borderWidth: 1, borderColor: '#E5E7EB' },
-  iconText: { color: colors.primary, fontWeight: '700' },
-  modalLabel: { marginTop: 12, fontWeight: '600', color: colors.secondary },
-  modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' },
-  modalCard: { backgroundColor: '#fff', padding: 16, borderTopLeftRadius: 12, borderTopRightRadius: 12 },
-  modalTitle: { fontWeight: '800', fontSize: 18, marginBottom: 8, color: colors.primary },
-  input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 8, padding: 10, marginTop: 8, backgroundColor: '#fff' },
-  modalButton: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10 },
-  accessory: { backgroundColor: '#fff', padding: 8, borderTopWidth: 1, borderColor: '#E5E7EB', flexDirection: 'row', justifyContent: 'flex-end' },
-  accessoryButton: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10 },
-  accessoryText: { color: colors.primary, fontWeight: '700' }
+  card: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 2
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: colors.primary
+  },
+  subtitle: {
+    color: colors.muted,
+    marginTop: 6
+  },
+  actionButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#F1FDF6',
+    borderRadius: 8
+  },
+  actionButtonText: {
+    color: colors.primary,
+    fontWeight: '700'
+  },
+  backButton: {
+    marginBottom: 12,
+    alignSelf: 'flex-start',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: '#fff'
+  },
+  backButtonText: {
+    color: colors.primary,
+    fontWeight: '700'
+  },
+  docRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6'
+  },
+  thumb: {
+    width: 64,
+    height: 64,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6'
+  },
+  thumbPlaceholder: {
+    width: 64,
+    height: 64,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  docTitle: {
+    fontWeight: '700',
+    color: colors.secondary
+  },
+  docNotes: {
+    color: colors.muted,
+    marginTop: 4
+  },
+  iconButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E5E7EB'
+  },
+  iconText: {
+    color: colors.primary,
+    fontWeight: '700'
+  },
+  modalLabel: {
+    marginTop: 12,
+    fontWeight: '600',
+    color: colors.secondary
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.35)'
+  },
+  modalCard: {
+    backgroundColor: '#fff',
+    padding: 16,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12
+  },
+  modalTitle: {
+    fontWeight: '800',
+    fontSize: 18,
+    marginBottom: 8,
+    color: colors.primary
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 8,
+    backgroundColor: '#fff'
+  },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10
+  },
+  accessory: {
+    backgroundColor: '#fff',
+    padding: 8,
+    borderTopWidth: 1,
+    borderColor: '#E5E7EB',
+    flexDirection: 'row',
+    justifyContent: 'flex-end'
+  },
+  accessoryButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10
+  },
+  accessoryText: {
+    color: colors.primary,
+    fontWeight: '700'
+  }
 });

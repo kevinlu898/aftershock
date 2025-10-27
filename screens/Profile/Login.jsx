@@ -1,21 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
 import { and, collection, getDocs, query, where } from "firebase/firestore";
 import { useState } from "react";
-import {
-  Alert,
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-} from "react-native";
+import { Alert, Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View, } from "react-native";
 import { colors, fontSizes } from "../../css";
 import { db } from "../../db/firebaseConfig";
 import { backendHash } from "../../requests";
@@ -48,13 +34,11 @@ export default function LoginPage() {
     }
   };
 
-  // Status bar height adjustment
   const statusBarHeight =
     Platform.OS === "ios" ? 44 : StatusBar.currentHeight || 24;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.light }}>
-      {/* Status Bar Background */}
       <View style={[styles.statusBarBackground, { height: statusBarHeight }]} />
 
       <StatusBar
@@ -68,7 +52,6 @@ export default function LoginPage() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
-        {/* Close keyboard when tapping outside */}
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView
             contentContainerStyle={[

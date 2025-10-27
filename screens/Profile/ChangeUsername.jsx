@@ -31,24 +31,18 @@ export default function ChangeUsername() {
       Alert.alert('Error', 'No current username found.');
       return;
     }
-
-    // Check if new username already exists
     const q = query(collection(db, 'user'), where('username', '==', newUsername));
     const res = await getDocs(q);
     if (!res.empty) {
       Alert.alert('Error', 'Username already taken. Choose another.');
       return;
     }
-
-    // Find current user doc
     const q2 = query(collection(db, 'user'), where('username', '==', oldUsername));
     const r2 = await getDocs(q2);
     if (r2.empty) {
       Alert.alert('Error', 'User record not found.');
       return;
     }
-
-    // Verify current password before allowing username change
     if (!currentPassword || currentPassword.length === 0) {
       Alert.alert('Error', 'Please enter your current password to confirm.');
       return;
@@ -130,6 +124,9 @@ const styles = StyleSheet.create({
     elevation: 4,
     marginBottom: 12,
   },
-  heading: { marginBottom: 8},
-  infoText: { marginBottom: 12, color: colors.secondary, lineHeight: 20 },
+  infoText: { 
+    marginBottom: 12, 
+    color: colors.secondary, 
+    lineHeight: 20 
+  },
 });

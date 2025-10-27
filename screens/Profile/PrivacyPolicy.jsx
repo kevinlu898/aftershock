@@ -141,14 +141,12 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 4,
   },
-
   meta: {
     color: colors.muted,
     fontSize: 13,
     marginTop: 6,
     marginBottom: 12,
   },
-
   h2: {
     fontSize: 16,
     fontWeight: '700',
@@ -156,33 +154,28 @@ const styles = StyleSheet.create({
     marginTop: 18,
     marginBottom: 6,
   },
-
   p: {
     color: colors.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginTop: 8,
   },
-
   ul: {
     marginTop: 8,
     marginLeft: 12,
   },
-
   li: {
     color: colors.secondary,
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 6,
   },
-
   link: {
     color: colors.primary,
     marginTop: 8,
     fontWeight: '600',
     fontSize: 14,
   },
-
   note: {
     backgroundColor: '#F8FAFC',
     borderLeftWidth: 4,
@@ -191,7 +184,6 @@ const styles = StyleSheet.create({
     marginTop: 14,
     borderRadius: 8,
   },
-
   noteText: {
     color: colors.muted,
     fontSize: 13,

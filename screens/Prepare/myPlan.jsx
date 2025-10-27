@@ -23,27 +23,11 @@ export default function MyPlan({ navigation }) {
   });
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState({}); 
-  const refs = {
-    evacuateRoute: useRef(null),
-    meetUpPoints: useRef(null),
-    aftermathProcedures: useRef(null),
-    other: useRef(null),
-  };
 
   const editorsApi = useRef({});
   const [currentFocusedKey, setCurrentFocusedKey] = useState(null);
 
-  const focusNext = (key) => {
-    const order = ['evacuateRoute', 'meetUpPoints', 'aftermathProcedures', 'other'];
-    const idx = order.indexOf(key);
-    if (idx >= 0 && idx < order.length - 1) {
-      const nextKey = order[idx + 1];
-      refs[nextKey]?.current?.focus?.();
-    } else {
-      Keyboard.dismiss();
-    }
-  };
-
+  // Load data
   useEffect(() => {
     const load = async () => {
       try {
@@ -52,7 +36,6 @@ export default function MyPlan({ navigation }) {
           const parsed = JSON.parse(raw);
           setPlan((prev) => ({ ...prev, ...parsed }));
         } else {
-          // No local plan found -> try loading the latest plan from Firestore
           try {
             const username = (await getData('username')) || null;
             if (username) {
@@ -88,7 +71,7 @@ export default function MyPlan({ navigation }) {
     load();
   }, []);
 
-  // Store plan in AsyncStorage and Firebase
+  // Store data
   const savePlan = async (next) => {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
@@ -127,7 +110,7 @@ export default function MyPlan({ navigation }) {
       }
     }
     setEditing((prev) => ({ ...prev, [key]: !prev[key] }));
-    setTimeout(() => refs[key]?.current?.focus?.(), 250);
+    // no automatic focus here — editor components manage focus when opened
   };
 
   const topPadding = Platform.OS === "android" ? (StatusBar.currentHeight || 0) : (insets.top || 20);
@@ -144,7 +127,6 @@ export default function MyPlan({ navigation }) {
       {editing[keyName] ? (
         <SectionEditor title={title} keyName={keyName} />
       ) : (
-        // removed extra nested container — preview sits directly inside the card
         <View style={styles.previewWrapper}>
           {typeof plan[keyName] === 'string' && /<[^>]+>/.test(plan[keyName]) ? (
             <View style={styles.webviewPreview}>
@@ -173,7 +155,6 @@ export default function MyPlan({ navigation }) {
   // Text editor for each section
  const SectionEditor = ({ title, keyName }) => {
   const [localText, setLocalText] = useState(plan[keyName] || "");
-  const ref = refs[keyName];
   const richRef = useRef(null);
 
   useEffect(() => {
@@ -205,7 +186,6 @@ export default function MyPlan({ navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'position'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 20}
       >
-        {/* editor container keeps toolbar and editor clipped and within the card */}
         <View style={styles.editorContainer}>
           <RichToolbar
             editor={richRef}
@@ -256,8 +236,6 @@ export default function MyPlan({ navigation }) {
 
   const FullModal = () => {
     const lastSaved = getLastSaved();
-
-    // detect if any section contains HTML
     const combinedRaw = `${plan.evacuateRoute || ''}${plan.meetUpPoints || ''}${plan.aftermathProcedures || ''}${plan.other || ''}`;
     const hasHtml = /<[^>]+>/.test(combinedRaw);
 
@@ -283,7 +261,6 @@ ${plan.other || ''}
       return `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1" /><style>body{font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial; color:#111; padding:12px; background:transparent;} img{max-width:100%;height:auto;} p{line-height:1.5;}</style></head><body>${safe}</body></html>`;
     };
 
-    // If any section contains HTML, render via WebView so HTML is shown formatted.
     return (
       <Modal visible={showFull} animationType="slide">
         <View style={{ flex: 1, backgroundColor: colors.light, paddingTop: topPadding }}>
@@ -293,7 +270,6 @@ ${plan.other || ''}
             {lastSaved ? <Text style={styles.metaText}>Last saved: {lastSaved}</Text> : null}
             <View style={{ flex: 1, marginTop: 12, borderRadius: 8, overflow: 'hidden', backgroundColor: '#fff', padding: 12 }}>
               {hasHtml ? (
-                // build a single HTML document combining sections so WebView renders formatted HTML
                 <WebView originWhitelist={["*"]} source={{ html: wrapHtml(`
                   <h2>My Emergency Plan</h2>
                   ${plan.evacuateRoute || ''}
@@ -379,14 +355,12 @@ const styles = StyleSheet.create({
   },
   backButtonText: { color: colors.primary, fontWeight: "700" },
 
-  // section card (keeps children clipped)
   sectionCard: {
     backgroundColor: "#fff",
     padding: 12,
     borderRadius: 12,
     marginBottom: 12,
     overflow: "hidden",
-    // compact shadow
     shadowColor: "#000",
     shadowOpacity: 0.04,
     shadowOffset: { width: 0, height: 2 },
@@ -395,7 +369,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: { fontWeight: "800", fontSize: 16, color: colors.secondary },
 
-  // small action button used for edit/save
   smallButton: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -406,12 +379,10 @@ const styles = StyleSheet.create({
   },
   smallButtonText: { color: colors.primary, fontWeight: "700" },
 
-  // preview area wrappers
   previewWrapper: { paddingTop: 8 },
   webviewPreview: { height: 160, borderRadius: 8, overflow: "hidden", backgroundColor: "#fff" },
   markdownWrap: { minHeight: 80, padding: 6 },
 
-  // editor container (toolbar + editor) — keeps content clipped and consistent
   editorContainer: {
     marginTop: 8,
     borderRadius: 10,
@@ -424,7 +395,6 @@ const styles = StyleSheet.create({
   editorInnerWrapper: { minHeight: 140, overflow: "hidden" },
   editorInner: { minHeight: 140, padding: 10, backgroundColor: "#fff" },
 
-  // modal / misc controls
   saveButton: { backgroundColor: colors.primary, paddingVertical: 12, borderRadius: 10, alignItems: "center" },
   saveButtonText: { color: "#fff", fontWeight: "800" },
 

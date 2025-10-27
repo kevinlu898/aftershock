@@ -1,25 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import {
-  NavigationContainer,
-  createNavigationContainerRef,
-} from "@react-navigation/native";
+import { NavigationContainer, createNavigationContainerRef, } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar as ExpoStatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
-import {
-  Image,
-  Platform,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { Image, Platform, StatusBar, StyleSheet, Text, TouchableOpacity, View, } from "react-native";
+import { SafeAreaProvider, useSafeAreaInsets, } from "react-native-safe-area-context";
 import { fetchEarthquakeData } from "./requests";
 
 import Dashboard from "./screens/Dashboard";
@@ -104,6 +90,7 @@ function EmergencyBanner({ lastEarthquakeTime }) {
   );
 }
 
+// Tabs navigation
 const TAB_ICONS = {
   Dashboard: { outline: "home-outline", filled: "home" },
   Prepare: { outline: "clipboard-list-outline", filled: "clipboard-list" },
@@ -115,7 +102,6 @@ const TAB_ICONS = {
   Profile: { outline: "account-outline", filled: "account" },
 };
 
-// Tabs Navigator
 function MainTabs() {
   const insets = useSafeAreaInsets();
 
@@ -229,7 +215,7 @@ export default function App() {
     };
   }, []);
 
-  // Check for latest earthquake on mount and every 10 minutes
+  // Check for latest earthquake in area every 10 minutes
   useEffect(() => {
     let mounted = true;
     let intervalId = null;
@@ -250,7 +236,6 @@ export default function App() {
         console.log("83094820948230948230492840923840928434042420");
         console.log("the latest earthquake data:", latest);
         const fingerprint = computeFingerprint(latest);
-        // Attempt to capture and persist timestamp of latest event if present
         const latestTime = latest?.time || latest?.timeISO || null;
         if (latestTime) {
           const timeVal =
@@ -265,7 +250,6 @@ export default function App() {
         if (!mounted) return;
 
         if (fingerprint && prev && fingerprint !== prev) {
-          // new earthquake
           await AsyncStorage.setItem("lastEarthquakeFingerprint", fingerprint);
           await AsyncStorage.setItem("emergencyState", "yes");
           setEmergencyState("yes");
@@ -273,11 +257,8 @@ export default function App() {
           console.log("Setting initial earthquake fingerprint");
           await AsyncStorage.setItem("emergencyState", "yes");
           setEmergencyState("yes");
-          // first-time populate fingerprint but don't set emergency unless data indicates event >= threshold
           await AsyncStorage.setItem("lastEarthquakeFingerprint", fingerprint);
-          // keep emergency as-is (do not flip to yes just because we populated initial state)
         } else if (!fingerprint) {
-          // no events — clear emergency
           await AsyncStorage.setItem("emergencyState", "no");
           setEmergencyState("no");
         }
@@ -294,9 +275,9 @@ export default function App() {
     };
   }, []);
 
+  // Navigator
   return (
     <SafeAreaProvider>
-      {/* Ensures consistent status bar background on both iOS + Android */}
       <StatusBar backgroundColor="#e7f0e7ff" barStyle="dark-content" />
       <ExpoStatusBar style="dark" backgroundColor="#e7f0e7ff" />
 

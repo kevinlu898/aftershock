@@ -1,20 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-let auth = null;
-let database = null;
-try {
-  // try to require firebase modules only if installed
-  // eslint-disable-next-line global-require
-  auth = require('@react-native-firebase/auth').default;
-  // eslint-disable-next-line global-require
-  database = require('@react-native-firebase/database').default;
-} catch (e) {
-  console.warn('prepareModulesCompletion: Firebase packages not found, remote sync disabled');
-}
-
 const STORAGE_KEY = 'PREPARE_COMPLETION_V1';
 
-// lightweight event emitter for completion changes
 const completionEvents = {
   _listeners: {},
   on(event, cb) {
@@ -33,14 +20,10 @@ const completionEvents = {
   }
 };
 
-// State shape:
-// { modules: { [moduleId]: { completed: bool, lessons: { [lessonId]: { completed: bool, currentPageIndex: number } } } } }
-
+// Build initial default state
 const buildInitialState = () => {
   const state = { modules: {} };
   try {
-    // require at runtime to avoid circular dependency during module initialization
-    // eslint-disable-next-line global-require
     const { PREPARE_MODULES, getLessonPages } = require('./prepareModules');
     PREPARE_MODULES.forEach((m) => {
       const lessons = {};
@@ -55,12 +38,12 @@ const buildInitialState = () => {
       state.modules[m.id] = { completed: !!m.completed, lessons };
     });
   } catch (e) {
-    // If require fails due to circular import, fallback to empty skeleton
     console.warn('prepareModulesCompletion: could not load PREPARE_MODULES for initial state', e);
   }
   return state;
 };
 
+// AsyncStorage read/write
 const readStorage = async () => {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
@@ -81,35 +64,9 @@ const writeStorage = async (state) => {
   }
 };
 
-const writeFirebase = async (state) => {
-  if (!auth || !database) return; // firebase not available
-  try {
-    const user = auth().currentUser;
-    if (!user) return;
-    await database().ref(`/users/${user.uid}/prepareCompletion`).set(state);
-    console.log('prepareModulesCompletion: wrote state to Firebase for user', user.uid);
-  } catch (e) {
-    console.warn('prepareModulesCompletion: writeFirebase error', e);
-  }
-};
-
-const readFirebase = async () => {
-  if (!auth || !database) return null; // firebase not available
-  try {
-    const user = auth().currentUser;
-    if (!user) return null;
-    const snap = await database().ref(`/users/${user.uid}/prepareCompletion`).once('value');
-    return snap.exists() ? snap.val() : null;
-  } catch (e) {
-    console.warn('prepareModulesCompletion: readFirebase error', e);
-    return null;
-  }
-};
-
+// Utility: Get page count from module/lesson definition
 const getPageCountFromCatalog = (moduleId, lessonId) => {
   try {
-    // require at runtime to avoid circular dependency
-    // eslint-disable-next-line global-require
     const { PREPARE_MODULES, getLessonPages } = require('./prepareModules');
     const m = PREPARE_MODULES.find(mm => mm.id === moduleId);
     if (!m) return 0;
@@ -123,37 +80,17 @@ const getPageCountFromCatalog = (moduleId, lessonId) => {
   }
 };
 
-// Initialize: prefer Firebase data (if user logged in), otherwise use local AsyncStorage, otherwise build skeleton
+// Initialize local completion state
 export const initCompletionState = async () => {
-  // Try firebase first
-  let remote = null;
-  try {
-    remote = await readFirebase();
-  } catch (e) {
-    remote = null;
-  }
-
-  if (remote) {
-    // save to async storage and return
-    await writeStorage(remote);
-    completionEvents.emit('changed', remote);
-    return remote;
-  }
-
-  // Fallback to AsyncStorage
   const local = await readStorage();
   if (local) return local;
-
-  // Create initial skeleton
   const initial = buildInitialState();
   await writeStorage(initial);
-  // attempt to write to firebase if logged in
-  try { await writeFirebase(initial); } catch (e) {}
   completionEvents.emit('changed', initial);
   return initial;
 };
 
-// Always read from async storage to ensure up-to-date
+// Get most recent completion data
 export const getCompletionState = async () => {
   const s = await readStorage();
   if (s) return s;
@@ -161,15 +98,17 @@ export const getCompletionState = async () => {
   return init;
 };
 
-// Set current page index for a lesson and persist
+// Update a lesson’s page progress
 export const setLessonCurrentPage = async (moduleId, lessonId, pageIndex) => {
   console.log('prepareModulesCompletion: setLessonCurrentPage', moduleId, lessonId, pageIndex);
   try {
     const state = (await getCompletionState()) || buildInitialState();
     if (!state.modules[moduleId]) state.modules[moduleId] = { completed: false, lessons: {} };
-    if (!state.modules[moduleId].lessons[lessonId]) state.modules[moduleId].lessons[lessonId] = { completed: false, currentPageIndex: 0 };
+    if (!state.modules[moduleId].lessons[lessonId]) {
+      state.modules[moduleId].lessons[lessonId] = { completed: false, currentPageIndex: 0 };
+    }
 
-    // ensure pageCount exists
+    // Ensure page count exists
     let pageCount = state.modules[moduleId].lessons[lessonId].pageCount;
     if (!pageCount || pageCount <= 0) {
       pageCount = getPageCountFromCatalog(moduleId, lessonId) || 0;
@@ -177,14 +116,11 @@ export const setLessonCurrentPage = async (moduleId, lessonId, pageIndex) => {
     }
 
     state.modules[moduleId].lessons[lessonId].currentPageIndex = pageIndex;
-
-    // If pageIndex >= pageCount mark lesson completed
     if (pageCount > 0 && pageIndex >= pageCount) {
       state.modules[moduleId].lessons[lessonId].completed = true;
     }
 
     await writeStorage(state);
-    await writeFirebase(state);
     completionEvents.emit('changed', state);
     console.log('prepareModulesCompletion: setLessonCurrentPage persisted');
     return state;
@@ -194,13 +130,15 @@ export const setLessonCurrentPage = async (moduleId, lessonId, pageIndex) => {
   }
 };
 
-// Mark a lesson completed; set currentPageIndex to pageCount
+// Mark a lesson completed
 export const markLessonCompleted = async (moduleId, lessonId) => {
   console.log('prepareModulesCompletion: markLessonCompleted', moduleId, lessonId);
   try {
     const state = (await getCompletionState()) || buildInitialState();
     if (!state.modules[moduleId]) state.modules[moduleId] = { completed: false, lessons: {} };
-    if (!state.modules[moduleId].lessons[lessonId]) state.modules[moduleId].lessons[lessonId] = { completed: false, currentPageIndex: 0 };
+    if (!state.modules[moduleId].lessons[lessonId]) {
+      state.modules[moduleId].lessons[lessonId] = { completed: false, currentPageIndex: 0 };
+    }
 
     let pageCount = state.modules[moduleId].lessons[lessonId].pageCount;
     if (!pageCount || pageCount <= 0) {
@@ -211,15 +149,14 @@ export const markLessonCompleted = async (moduleId, lessonId) => {
     state.modules[moduleId].lessons[lessonId].completed = true;
     state.modules[moduleId].lessons[lessonId].currentPageIndex = pageCount;
 
-    // Update module completed if all lessons completed
+    // Check if all lessons in this module are complete
     const lessons = state.modules[moduleId].lessons;
     const allDone = Object.keys(lessons).every(lid => lessons[lid].completed);
     state.modules[moduleId].completed = allDone;
 
     await writeStorage(state);
-    await writeFirebase(state);
     completionEvents.emit('changed', state);
-    console.log('prepareModulesCompletion: markLessonCompleted persisted, moduleCompleted=', state.modules[moduleId].completed);
+    console.log('prepareModulesCompletion: markLessonCompleted persisted');
     return state;
   } catch (e) {
     console.warn('prepareModulesCompletion: markLessonCompleted error', e);
@@ -227,14 +164,13 @@ export const markLessonCompleted = async (moduleId, lessonId) => {
   }
 };
 
-// Mark module completed or not
+// Mark an entire module complete/incomplete
 export const setModuleCompleted = async (moduleId, completed) => {
   try {
     const state = (await getCompletionState()) || buildInitialState();
     if (!state.modules[moduleId]) state.modules[moduleId] = { completed: false, lessons: {} };
     state.modules[moduleId].completed = !!completed;
     await writeStorage(state);
-    await writeFirebase(state);
     completionEvents.emit('changed', state);
     return state;
   } catch (e) {
@@ -243,29 +179,11 @@ export const setModuleCompleted = async (moduleId, completed) => {
   }
 };
 
-// Utility: sync remote -> local on app open. If remote missing, create based on PREPARE_MODULES
-export const syncFromFirebaseToLocal = async () => {
-  const remote = await readFirebase();
-  if (remote) {
-    await writeStorage(remote);
-    completionEvents.emit('changed', remote);
-    return remote;
-  }
-  // no remote, ensure local exists
-  const local = await readStorage();
-  if (local) return local;
-  const init = buildInitialState();
-  await writeStorage(init);
-  completionEvents.emit('changed', init);
-  return init;
-};
-
 export default {
   initCompletionState,
   getCompletionState,
   setLessonCurrentPage,
   markLessonCompleted,
   setModuleCompleted,
-  syncFromFirebaseToLocal,
   events: completionEvents,
 };

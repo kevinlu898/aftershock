@@ -1,50 +1,17 @@
 import { useNavigation } from "@react-navigation/native";
-import { useEffect, useRef } from 'react';
-import { 
-  Animated, 
-  Image, 
-  SafeAreaView, 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  useWindowDimensions, 
-  View 
-} from "react-native";
-import { colors, globalStyles } from "../css";
+import { useEffect } from 'react';
+import { Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from "react-native";
+import { colors } from "../css";
 import { getData } from "../storage/storageUtils";
 
 export default function Landing() {
   const navigation = useNavigation();
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   
-  // Animation values
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
-
-  // check login on mount
   useEffect(() => {
     let mounted = true;
-    
-    // Start animations
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      })
-    ]).start();
 
+    // check login and redirect if already signed in
     getData('isLoggedIn').then((val) => {
       if (!mounted) return;
       if (val === 'yes') navigation.replace('MainApp');
@@ -54,21 +21,7 @@ export default function Landing() {
   }, []);
 
   const onPress = () => {
-    // Add button press animation
-    Animated.sequence([
-      Animated.timing(scaleAnim, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      })
-    ]).start(() => {
-      navigation.replace("AccountCreation");
-    });
+    navigation.replace("AccountCreation");
   };
 
   const imageSize = Math.min(300, Math.max(120, width * 0.5));
@@ -76,33 +29,13 @@ export default function Landing() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {/* Header Section */}
-        <Animated.View 
-          style={[
-            styles.header,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }]
-            }
-          ]}
-        >
+        <View style={styles.header}>
           <Text style={styles.mainTitle}>Aftershock</Text>
           <Text style={styles.tagline}>Earthquake Preparedness App</Text>
-        </Animated.View>
+        </View>
 
         <View style={styles.content}>
-          <Animated.View 
-            style={[
-              styles.logoContainer,
-              {
-                opacity: fadeAnim,
-                transform: [
-                  { translateY: slideAnim },
-                  { scale: scaleAnim }
-                ]
-              }
-            ]}
-          >
+          <View style={styles.logoContainer}>
             <Image
               source={require('../assets/images/favicon.png')}
               style={[
@@ -115,33 +48,17 @@ export default function Landing() {
               ]}
               resizeMode="cover"
             />
-          </Animated.View>
+          </View>
 
-          <Animated.View 
-            style={[
-              styles.featureList,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }]
-              }
-            ]}
-          >
+          <View style={styles.featureList}>
             <Text style={styles.featureBullet}>• Emergency Planning</Text>
             <Text style={styles.featureBullet}>• Epicenter AI Assistance</Text>
             <Text style={styles.featureBullet}>• Contact Management</Text>
             <Text style={styles.featureBullet}>• Document Storage</Text>
-          </Animated.View>
+          </View>
         </View>
 
-        <Animated.View 
-          style={[
-            styles.footer,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }]
-            }
-          ]}
-        >
+        <View style={styles.footer}>
           <Text style={styles.missionText}>
             Your comprehensive earthquake preparedness companion
           </Text>
@@ -151,9 +68,7 @@ export default function Landing() {
             style={styles.launchButton}
             activeOpacity={0.8}
           >
-            <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
               <Text style={styles.launchText}>Get Started</Text>
-            </Animated.View>
           </TouchableOpacity>
 
           <TouchableOpacity 
@@ -164,7 +79,7 @@ export default function Landing() {
               Already have an account? <Text style={styles.loginText}>Log In</Text>
             </Text>
           </TouchableOpacity>
-        </Animated.View>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -220,7 +135,7 @@ const styles = StyleSheet.create({
   },
   featureBullet: {
     fontSize: 14,
-    color: colors.dark,
+    color: colors.secondary,
     fontWeight: '500',
     marginBottom: 4,
   },

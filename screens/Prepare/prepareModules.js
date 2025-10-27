@@ -2122,89 +2122,15 @@ export const PREPARE_MODULES = [
     }
 ];
 
-// Helper function to convert plain text to HTML
-const convertTextToHTML = (text) => {
-    if (!text || typeof text !== 'string') return '';
-
-    // Replace bullet points with HTML lists
-    let html = text
-        .replace(/\r\n/g, '\n')
-        .replace(/\n{3,}/g, '\n\n') // Normalize multiple newlines
-        .trim();
-
-    // Process sections with headings and bullet points
-    const lines = html.split('\n');
-    let inList = false;
-    let processedLines = [];
-
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-
-        if (!line) {
-            if (inList) {
-                processedLines.push('</ul>');
-                inList = false;
-            }
-            continue;
-        }
-
-        // Detect headings (lines ending with colon)
-        if (line.endsWith(':')) {
-            if (inList) {
-                processedLines.push('</ul>');
-                inList = false;
-            }
-            const headingText = line.slice(0, -1).trim();
-            processedLines.push(`<h3>${headingText}</h3>`);
-            continue;
-        }
-
-        // Detect bullet points
-        if (/^[•\-\*]\s+/.test(line) || /^\d+\.\s+/.test(line)) {
-            if (!inList) {
-                processedLines.push('<ul>');
-                inList = true;
-            }
-            const listItem = line.replace(/^[•\-\*]\s+/, '').replace(/^\d+\.\s+/, '').trim();
-            processedLines.push(`<li>${listItem}</li>`);
-            continue;
-        }
-
-        // Regular paragraph
-        if (inList) {
-            processedLines.push('</ul>');
-            inList = false;
-        }
-
-        // Check if this is a bolded section (text with asterisks)
-        if (/^\*\*.+\*\*$/.test(line)) {
-            const boldText = line.replace(/\*\*/g, '').trim();
-            processedLines.push(`<p><strong>${boldText}</strong></p>`);
-        } else {
-            processedLines.push(`<p>${line}</p>`);
-        }
-    }
-
-    // Close any open list
-    if (inList) {
-        processedLines.push('</ul>');
-    }
-
-    return processedLines.join('\n');
-};
-
-// Prepare HTML fields for text pages (do not mutate original body)
-// This ensures a separate html property is available for rendering
+// Functions to load modules and get completion
 PREPARE_MODULES.forEach(module => {
     module.lessons.forEach(lesson => {
         if (lesson.content && Array.isArray(lesson.content.pages)) {
             lesson.content.pages.forEach(page => {
                 if (page.type === 'text') {
-                    // Use page.body if present, otherwise fall back to page.description
                     const sourceText = (page.body && String(page.body).trim()) ? page.body : (page.description || '');
                     if (sourceText) {
                         page.html = sourceText.includes('<') ? sourceText : convertTextToHTML(sourceText);
-                        // Replace the original body with the HTML version so data consumers can use page.body directly
                         page.body = page.html;
                     }
                 }
@@ -2213,7 +2139,6 @@ PREPARE_MODULES.forEach(module => {
     });
 });
 
-// Final pass: convert any plain-text page bodies into HTML (if not already HTML)
 PREPARE_MODULES.forEach(module => {
     module.lessons.forEach(lesson => {
         if (!lesson.content || !Array.isArray(lesson.content.pages)) return;
@@ -2225,7 +2150,6 @@ PREPARE_MODULES.forEach(module => {
                 page.html = convertTextToHTML(currentBody);
                 page.body = page.html;
             } else {
-                // ensure html field exists for consistent access
                 page.html = page.html || currentBody;
                 page.body = page.html;
             }
@@ -2315,7 +2239,6 @@ export const getLessonPages = (lesson) => {
 
     return pages.map(page => ({
         ...page,
-        // For text pages expose 'body' as precomputed html field
         body: page.type === 'text' ? (page.html || page.body || '') : page.body
     }));
 };

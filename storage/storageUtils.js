@@ -1,12 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  addDoc,
-  collection,
-  getDocs,
-  or,
-  query,
-  where,
-} from "firebase/firestore";
+import { addDoc, collection, getDocs, or, query, where, } from "firebase/firestore";
 import { db } from "../db/firebaseConfig";
 import { aiResponse } from "../requests";
 
@@ -48,7 +41,6 @@ export const fillData = async (username) => {
       const firstname = doc.data().first_name;
       console.log("First name:", firstname);
       storeData("firstname", firstname);
-      // store email for quick local access
       const email = doc.data().email || null;
       if (email) storeData("email", email);
       const postal_code = doc.data().zip_code;

@@ -1,16 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useRef, useState } from "react";
-import {
-  Animated,
-  Dimensions,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Animated, Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { colors, fontSizes, globalStyles } from "../css";
 import { getData } from "../storage/storageUtils";
@@ -32,7 +23,6 @@ export default function Dashboard() {
     getData("firstname").then((val) => {
       if (isMounted && val) setUsername(val);
     });
-    // Check if this is the first visit
     AsyncStorage.getItem("dashboardVisited").then((visited) => {
       if (isMounted && !visited) {
         setFirstVisit(true);
@@ -44,7 +34,7 @@ export default function Dashboard() {
     };
   }, []);
 
-  // fetch modules and compute overall progress (same approach as Prepare page)
+  // Calculate prepardness progress
   useEffect(() => {
     let mounted = true;
     const fetchModules = async () => {
@@ -71,6 +61,7 @@ export default function Dashboard() {
     };
   }, [navigation]);
 
+  // Quick action cards
   const cards = [
     {
       title: "Continue Preparing",
@@ -102,6 +93,7 @@ export default function Dashboard() {
     },
   ];
 
+  // Your feed
   const feedItems = [
     {
       icon: "map-marker-radius",
@@ -117,7 +109,6 @@ export default function Dashboard() {
     },
   ];
 
-  // Calculate proper centering
   const CARD_WIDTH = 280;
   const CARD_GAP = 8;
   const SNAP_INTERVAL = CARD_WIDTH + CARD_GAP;
@@ -142,7 +133,7 @@ export default function Dashboard() {
     }
   );
 
-  // ProgressBar reused locally to mirror Prepare page
+  // Progress message
   const ProgressBar = ({ progress }) => (
     <View style={prepareStyles.progressContainer}>
       <View
@@ -150,8 +141,6 @@ export default function Dashboard() {
       />
     </View>
   );
-
-  // Get progress message based on preparedness level
   const getProgressMessage = (progress) => {
     if (progress === 0) return "Let's get started on your earthquake plan!";
     if (progress < 0.25) return "Great start! Keep building your safety plan.";
@@ -169,7 +158,7 @@ export default function Dashboard() {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.container}>
-          {/* Header Section */}
+          {/* Header */}
           <View style={styles.headerSection}>
             <Text style={globalStyles.heading}>
               {firstVisit && username
@@ -199,7 +188,7 @@ export default function Dashboard() {
             </View>
           </View>
 
-          {/* Horizontal Scroll Section with Dots */}
+          {/* Quick action cards */}
           <View style={styles.horizontalSection}>
             <Text style={styles.sectionTitle}>Quick Actions</Text>
 
@@ -258,8 +247,6 @@ export default function Dashboard() {
                 </View>
               ))}
             </ScrollView>
-
-            {/* Scroll Indicator Dots */}
             <View style={styles.dotsContainer}>
               {cards.map((_, index) => (
                 <TouchableOpacity key={index}>
@@ -274,7 +261,7 @@ export default function Dashboard() {
             </View>
           </View>
 
-          {/* Feed Section */}
+          {/* Your Feed */}
           <View style={styles.feedSection}>
             <Text style={styles.sectionTitle}>Your Feed</Text>
             <View style={styles.feedGrid}>
@@ -314,14 +301,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  welcomeHeading: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: colors.primary,
-    textAlign: "center",
-    marginBottom: 12,
-    lineHeight: 34,
-  },
   progressContainer: {
     borderRadius: 12,
     padding: 20,
@@ -356,7 +335,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  // Horizontal Scroll Section - Reduced padding
+  // Horizontal Scroll Section 
   horizontalSection: {
     marginBottom: 16,
   },

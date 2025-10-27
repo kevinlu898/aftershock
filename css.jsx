@@ -1,4 +1,4 @@
-import { Platform, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 const colors = {
   primary: '#498464ff',
@@ -111,11 +111,4 @@ const globalStyles = StyleSheet.create({
   },
 });
 
-// Export platform-specific values
-const platform = {
-  isIOS: Platform.OS === 'ios',
-  isAndroid: Platform.OS === 'android',
-  statusBarHeight: Platform.OS === 'ios' ? 44 : 0,
-};
-
-export { colors, fontSizes, globalStyles, platform };
+export { colors, fontSizes, globalStyles };

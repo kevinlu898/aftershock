@@ -13,7 +13,6 @@ import { getData } from '../../storage/storageUtils';
 export default function DeleteAccount() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  // helper: clear entire AsyncStorage (including important documents)
   const clearAll = async () => {
     try {
       await AsyncStorage.clear();
@@ -25,7 +24,6 @@ export default function DeleteAccount() {
   const [passwordInput, setPasswordInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Load the currently logged-in username and lock the field so users can only delete their own account
   useEffect(() => {
     (async () => {
       try {
@@ -45,7 +43,6 @@ export default function DeleteAccount() {
 
     setLoading(true);
     try {
-      // Find user document by username
       const q = query(collection(db, 'user'), where('username', '==', usernameInput));
       const res = await getDocs(q);
       if (res.empty) {
@@ -57,7 +54,6 @@ export default function DeleteAccount() {
       const userDoc = res.docs[0];
       const data = userDoc.data();
 
-      // Verify password by hashing and comparing to stored password_hash
       const hashed = await backendHash(passwordInput);
       if (!hashed || data.password_hash !== hashed) {
         Alert.alert('Error', 'Username or password is incorrect.');
@@ -65,7 +61,6 @@ export default function DeleteAccount() {
         return;
       }
 
-      // Make sure the username being deleted matches the logged-in username
       const logged = await getData('username');
       if (!logged || logged !== usernameInput) {
         Alert.alert('Error', 'You can only delete the account you are currently signed in with.');
@@ -73,7 +68,6 @@ export default function DeleteAccount() {
         return;
       }
 
-      // Confirm final destructive action
       Alert.alert(
         'Confirm Delete',
         'This will permanently delete your account and all associated data. This cannot be undone.',
@@ -84,15 +78,12 @@ export default function DeleteAccount() {
             style: 'destructive',
             onPress: async () => {
               try {
-                // Delete Firestore user document
                 await deleteDoc(userDoc.ref);
-
-                // Clear all local storage (including important documents), then sign out
                 await clearAll();
                 try {
                   await signOut(auth);
                 } catch (e) {
-                  // ignore signOut errors
+                  // ignore
                 }
                 Alert.alert('Deleted', 'Your account has been deleted.');
                 navigation.replace('Login');

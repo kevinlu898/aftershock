@@ -58,7 +58,6 @@ export const aiResponse = async (prompt) => {
         - References features when relevant
       5. Profile Tab
         - Stores user info and offline emergency data (emergency plan, medical info, contacts, documents)
-        - App preferences
         - Account management (account details, logout, delete account)
       Behavior Rules
       1. Stay focused on earthquakes, disaster preparedness, or Aftershock app features.  

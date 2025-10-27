@@ -1,10 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useRef, useState } from "react";
-import { Alert, Dimensions, Keyboard, Modal, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View, Platform } from "react-native";
+import { Alert, Dimensions, Keyboard, Modal, Platform, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../css";
 
-// Firestore + storage helpers
 import { addDoc, collection, deleteDoc, doc, query as fsQuery, getDocs, updateDoc, where } from 'firebase/firestore';
 import { db } from '../../db/firebaseConfig';
 import { getData } from '../../storage/storageUtils';
@@ -13,10 +12,11 @@ const MED_KEY = 'medical_info';
 
 export default function MedicalInfo({ navigation }) {
   const insets = useSafeAreaInsets();
-  // status bar height for Android / iOS safe area
   const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 24 : (insets.top || 20);
-  // modal sizing constants
-  const MODAL_MAX = Math.min(Dimensions.get('window').height * 0.85, 760);
+  const screenHeight = (typeof Dimensions !== 'undefined' && Dimensions.get && typeof Dimensions.get === 'function')
+    ? Dimensions.get('window').height
+    : 800;
+  const MODAL_MAX = Math.min(screenHeight * 0.85, 760);
   const MODAL_HEADER_H = 56;
   const MODAL_FOOTER_H = 64;
   const modalContentMaxHeight = MODAL_MAX - MODAL_HEADER_H - MODAL_FOOTER_H;
@@ -27,14 +27,12 @@ export default function MedicalInfo({ navigation }) {
   const [editingMedId, setEditingMedId] = useState(null);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  // refs for inputs so we can focus next field
   const nameRef = useRef(null);
   const medsRef = useRef(null);
   const allergiesRef = useRef(null);
   const bloodRef = useRef(null);
   const notesRef = useRef(null);
   const inputRefs = [nameRef, medsRef, allergiesRef, bloodRef, notesRef];
-  // refs for modal layout and scrolling
   const modalScrollRef = useRef(null);
   const [activeInputRef, setActiveInputRef] = useState(null);
 
@@ -49,15 +47,15 @@ export default function MedicalInfo({ navigation }) {
 
   const handleInputFocus = (ref, index) => {
     setActiveInputRef(ref);
-    // Scroll to make the input visible at the bottom when keyboard is open
     setTimeout(() => {
       if (modalScrollRef.current && keyboardVisible) {
-        const scrollPosition = index * 120; // Approximate scroll position
+        const scrollPosition = index * 120;
         modalScrollRef.current.scrollTo({ y: scrollPosition, animated: true });
       }
     }, 100);
   };
 
+  // Load data
   useEffect(() => {
     const load = async () => {
       try {
@@ -67,7 +65,6 @@ export default function MedicalInfo({ navigation }) {
           if (Array.isArray(parsed)) setMedicalList(parsed);
           else if (parsed && typeof parsed === 'object') setMedicalList([parsed]);
         } else {
-          // fallback: try loading from Firestore for this user's medical entries
           try {
             const username = (await getData('username')) || null;
             if (username) {
@@ -107,7 +104,6 @@ export default function MedicalInfo({ navigation }) {
       }
     };
     load();
-    // keyboard listeners for accessory on Android and tracking
     const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
       setKeyboardVisible(true);
       setKeyboardHeight(e.endCoordinates?.height || 0);
@@ -122,9 +118,9 @@ export default function MedicalInfo({ navigation }) {
     };
   }, []);
 
+  // Save data
   const saveMedicalList = async (next) => {
     try {
-      // synchronize with Firestore: create new docs for local items, update existing remote docs
       const username = (await getData('username')) || 'unknown';
       const finalList = [];
 
@@ -139,7 +135,6 @@ export default function MedicalInfo({ navigation }) {
         };
 
         if (String(entry.id).startsWith('m_')) {
-          // new local entry -> create remote doc and replace id
           try {
             const docRef = await addDoc(collection(db, 'emergencyData'), {
               data: dataObj,
@@ -149,10 +144,9 @@ export default function MedicalInfo({ navigation }) {
             finalList.push({ ...entry, id: docRef.id, updatedAt: dataObj.updatedAt });
           } catch (e) {
             console.warn('medicalInfo: failed to add new doc to firestore', e);
-            finalList.push(entry); // keep local if remote fails
+            finalList.push(entry); 
           }
         } else {
-          // existing remote doc -> update
           try {
             const remoteRef = doc(db, 'emergencyData', entry.id);
             await updateDoc(remoteRef, { data: dataObj });
@@ -163,8 +157,6 @@ export default function MedicalInfo({ navigation }) {
           }
         }
       }
-
-      // persist final list locally
       try {
         await AsyncStorage.setItem(MED_KEY, JSON.stringify(finalList));
         setMedicalList(finalList);
@@ -194,6 +186,7 @@ export default function MedicalInfo({ navigation }) {
     setShowMedForm(true);
   };
 
+  // Delete 
   const handleSaveMedical = async () => {
     const nextEntry = {
       id: editingMedId || `m_${Date.now()}`,
@@ -224,7 +217,6 @@ export default function MedicalInfo({ navigation }) {
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete', style: 'destructive', onPress: async () => {
-          // delete remote doc if id looks like a Firestore id
           try {
             if (!String(id).startsWith('m_')) {
               await deleteDoc(doc(db, 'emergencyData', id));
@@ -248,7 +240,6 @@ export default function MedicalInfo({ navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.light }}>
-      {/* Status bar background to ensure top area uses app color */}
       <View style={[styles.statusBarBackground, { height: statusBarHeight }]} />
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={{ flex: 1 }}>
@@ -269,41 +260,47 @@ export default function MedicalInfo({ navigation }) {
                 Manage one or more medical records to share in an emergency. These are stored locally on this device.
               </Text>
 
+              <TouchableOpacity style={[styles.addButton, { marginTop: 12 }]} onPress={() => openMedicalEdit()}>
+                <Text style={styles.addButtonText}>{'+ Add Medical Info'}</Text>
+              </TouchableOpacity>
+
               {loading ? (
                 <Text style={{ marginTop: 12, color: colors.muted }}>Loading…</Text>
               ) : medicalList.length === 0 ? (
                 <Text style={{ marginTop: 12, color: colors.muted }}>No medical information saved.</Text>
               ) : (
                 <View style={{ marginTop: 12 }}>
-                  {medicalList.map((entry) => (
-                    <View
-                      key={entry.id}
-                      style={{ marginBottom: 12, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}
-                    >
-                      {entry.name && <Text style={styles.medLabel}>{entry.name}</Text>}
-                      {entry.medications && <Text style={styles.medText}>Medications: {entry.medications}</Text>}
-                      {entry.allergies && <Text style={styles.medText}>Allergies: {entry.allergies}</Text>}
-                      {entry.bloodType && <Text style={styles.medText}>Blood Type: {entry.bloodType}</Text>}
-                      {entry.notes && <Text style={styles.medText}>{entry.notes}</Text>}
-                      <View style={{ flexDirection: 'row', marginTop: 8 }}>
-                        <TouchableOpacity onPress={() => openMedicalEdit(entry)} style={[styles.iconButton, { marginRight: 8 }]}>
-                          <Text style={styles.iconText}>Edit</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => handleDeleteMed(entry.id)} style={styles.iconButton}>
-                          <Text style={[styles.iconText, { color: '#EF4444' }]}>Delete</Text>
-                        </TouchableOpacity>
+                  <ScrollView
+                    style={{ maxHeight: Math.round(screenHeight * 0.55) }}
+                    nestedScrollEnabled
+                    contentContainerStyle={{ paddingBottom: 8 }}
+                  >
+                    {medicalList.map((entry) => (
+                      <View
+                        key={entry.id}
+                        style={{ marginBottom: 12, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}
+                      >
+                        {entry.name && <Text style={styles.medLabel}>{entry.name}</Text>}
+                        {entry.medications && <Text style={styles.medText}>Medications: {entry.medications}</Text>}
+                        {entry.allergies && <Text style={styles.medText}>Allergies: {entry.allergies}</Text>}
+                        {entry.bloodType && <Text style={styles.medText}>Blood Type: {entry.bloodType}</Text>}
+                        {entry.notes && <Text style={styles.medText}>{entry.notes}</Text>}
+                        <View style={{ flexDirection: 'row', marginTop: 8 }}>
+                          <TouchableOpacity onPress={() => openMedicalEdit(entry)} style={[styles.iconButton, { marginRight: 8 }]}>
+                            <Text style={styles.iconText}>Edit</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={() => handleDeleteMed(entry.id)} style={styles.iconButton}>
+                            <Text style={[styles.iconText, { color: '#EF4444' }]}>Delete</Text>
+                          </TouchableOpacity>
+                        </View>
+                        <Text style={{ color: colors.muted, marginTop: 6, fontSize: 12 }}>
+                          Last updated: {entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : '—'}
+                        </Text>
                       </View>
-                      <Text style={{ color: colors.muted, marginTop: 6, fontSize: 12 }}>
-                        Last updated: {entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : '—'}
-                      </Text>
-                    </View>
-                  ))}
+                    ))}
+                  </ScrollView>
                 </View>
               )}
-
-              <TouchableOpacity style={[styles.addButton, { marginTop: 12 }]} onPress={() => openMedicalEdit()}>
-                <Text style={styles.addButtonText}>{'+ Add Medical Info'}</Text>
-              </TouchableOpacity>
             </View>
           </ScrollView>
 
@@ -319,17 +316,14 @@ export default function MedicalInfo({ navigation }) {
                   },
                 ]}
               >
-                {/* 1. Modal Heading */}
                 <View style={styles.modalHeader}>
                   <Text style={styles.modalTitle}>
                     {editingMedId ? 'Edit Medical Info' : 'Add Medical Info'}
                   </Text>
                 </View>
-
-                {/* 2. Scrollable Input Forms Section - with significantly reduced height */}
                 <ScrollView
                   ref={modalScrollRef}
-                  style={{ maxHeight: modalContentMaxHeight - 120 }} // Significantly reduced scrollview height
+                  style={{ maxHeight: modalContentMaxHeight - 120 }} 
                   contentContainerStyle={{ paddingBottom: 12, paddingHorizontal: 0 }}
                   keyboardShouldPersistTaps="handled"
                 >
@@ -389,8 +383,6 @@ export default function MedicalInfo({ navigation }) {
                     onFocus={() => handleInputFocus(notesRef, 4)}
                   />
                 </ScrollView>
-
-                {/* 3. Modal Action Buttons */}
                 <View style={styles.modalFooter}>
                   <View style={{ flexDirection: 'row', justifyContent: 'flex-end', width: '100%' }}>
                     <TouchableOpacity
@@ -443,9 +435,6 @@ const styles = StyleSheet.create({
   medText: { color: colors.muted, marginTop: 4, marginBottom: 12 },
   accessory: { backgroundColor: '#fff', padding: 8, borderTopWidth: 1, borderColor: '#E5E7EB', flexDirection: 'row', justifyContent: 'flex-end' },
   accessoryButton: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10 },
-  accessoryText: { color: colors.primary, fontWeight: '700' },
-  androidAccessory: { position: 'absolute', left: 0, right: 0, zIndex: 1000, alignItems: 'flex-end', padding: 16 },
-  accessoryButtonAndroid: { backgroundColor: '#F1FDF6', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10 },
   iconButton: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, backgroundColor: '#F3F4F6' },
   iconText: { color: colors.primary, fontWeight: '600', fontSize: 14 },
   statusBarBackground: {

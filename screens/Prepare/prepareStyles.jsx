@@ -2,8 +2,6 @@ import { StyleSheet } from "react-native";
 import { colors, fontSizes } from "../../css";
 
 const prepareStyles = StyleSheet.create({
-  // Page content container
-
   // Text
   subtitle: {
     fontSize: fontSizes.medium,
@@ -68,7 +66,7 @@ const prepareStyles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12, // Added margin to separate from progress bar
+    marginBottom: 12, 
   },
   progressContainer: {
     height: 6,
@@ -143,7 +141,7 @@ const prepareStyles = StyleSheet.create({
   },
   lessonRight: {
     flexDirection: "row",
-    alignItems: "center", // This ensures duration and arrow are on same line
+    alignItems: "center", 
   },
 
   // Buttons

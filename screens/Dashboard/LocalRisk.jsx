@@ -1,15 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Platform,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, } from "react-native";
 import Markdown from "react-native-markdown-display";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "../../css";
@@ -77,8 +68,6 @@ export default function LocalRisk({ navigation }) {
       </View>
     );
   }
-
-  // Attempt to extract some common ields depending on API shape
   const place = earthquakeData?.place;
   const mag = earthquakeData?.mag;
   const time = earthquakeData?.timeISO;
@@ -97,7 +86,6 @@ export default function LocalRisk({ navigation }) {
         translucent={false}
       />
       <ScrollView
-        style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
       >
         <View style={[styles.container, { paddingTop: 8 }]}>
@@ -143,17 +131,28 @@ export default function LocalRisk({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1 },
-  scrollContent: { flexGrow: 1 },
-  container: { flex: 1, padding: 18, paddingTop: 28 },
+  scrollContent: { 
+    flexGrow: 1 
+  },
+  container: { 
+    flex: 1, 
+    padding: 18, 
+    paddingTop: 28 },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 16,
   },
-  loadingText: { marginTop: 12, color: colors.primary },
-  errorText: { color: "#D02424", fontWeight: "700", marginBottom: 10 },
+  loadingText: { 
+    marginTop: 12, 
+    color: colors.primary 
+  },
+  errorText: { 
+    color: "#D02424", 
+    fontWeight: "700", 
+    marginBottom: 10 
+  },
   card: {
     backgroundColor: "#fff",
     padding: 18,
@@ -171,15 +170,26 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: colors.primary,
   },
-  place: { fontSize: 16, color: colors.secondary, marginBottom: 12 },
+  place: { 
+    fontSize: 16, 
+    color: colors.secondary, 
+    marginBottom: 12 
+  },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 10,
     alignItems: "center",
   },
-  label: { color: colors.muted, fontSize: 14 },
-  value: { fontWeight: "700", color: colors.secondary, fontSize: 15 },
+  label: { 
+    color: colors.muted, 
+    fontSize: 14 
+  },
+  value: { 
+    fontWeight: "700", 
+    color: colors.secondary, 
+    fontSize: 15 
+  },
   detailsCard: {
     backgroundColor: "#fff",
     padding: 14,
@@ -191,7 +201,11 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 2,
   },
-  detailsTitle: { fontWeight: "700", marginBottom: 8, color: colors.secondary },
+  detailsTitle: { 
+    fontWeight: "700", 
+    marginBottom: 8, 
+    color: colors.secondary 
+  },
   mono: {
     fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
     color: "#374151",

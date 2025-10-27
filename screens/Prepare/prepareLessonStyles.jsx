@@ -213,7 +213,7 @@ const prepareLessonStyles = StyleSheet.create({
   },
   lessonVideoCaption: {
     fontSize: 13,
-    color: colors.muted,
+    color: colors.secondary,
     textAlign: 'center',
     marginTop: 6,
     padding: 5,

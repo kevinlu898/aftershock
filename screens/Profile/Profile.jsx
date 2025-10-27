@@ -2,22 +2,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { signOut } from "firebase/auth";
 import { useState } from "react";
-import {
-  Alert,
-  Linking,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { colors } from "../../css";
+import { Alert, Linking, Platform, SafeAreaView, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View, } from "react-native";
+import { colors, fontSizes, globalStyles } from "../../css";
 import { auth } from "../../db/firebaseConfig";
 
-// Option Row
 const OptionRow = ({
   title,
   subtitle,
@@ -53,38 +41,13 @@ const OptionRow = ({
   </TouchableOpacity>
 );
 
-// Switch Row
-const SwitchRow = ({ title, subtitle, value, onValueChange }) => (
-  <View style={styles.switchRow}>
-    <View style={styles.switchContent}>
-      <Text style={styles.switchTitle}>{title}</Text>
-
-      {subtitle && <Text style={styles.switchSubtitle}>{subtitle}</Text>}
-    </View>
-
-    <Switch
-      value={value}
-      onValueChange={onValueChange}
-      trackColor={{ false: colors.muted, true: colors.primary }}
-      thumbColor={value ? "#fff" : "#f4f3f4"}
-      ios_backgroundColor={colors.muted}
-    />
-  </View>
-);
-
 export default function Profile() {
   const navigation = useNavigation();
 
-  // Preferences state
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [locationEnabled, setLocationEnabled] = useState(true);
-
-  // Clear async storage except important documents
   const clearAllExceptImportant = async () => {
     try {
       const allKeys = await AsyncStorage.getAllKeys();
       if (!allKeys || allKeys.length === 0) return;
-
       const keepPatterns = ["important_documents"];
       const keysToRemove = allKeys.filter((key) => {
         if (!key) return false;
@@ -143,8 +106,6 @@ export default function Profile() {
     }
   };
 
-  // Support functions
-
   const sendFeedback = () => {
     const email = "aftershockapp@gmail.com";
     const subject = "Aftershock Feedback/Support";
@@ -161,15 +122,13 @@ export default function Profile() {
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Section */}
         <View style={styles.header}>
-          <Text style={styles.heading}>Profile</Text>
+          <Text style={globalStyles.heading}>Profile</Text>
           <Text style={styles.subtitle}>
             Manage your account and preferences
           </Text>
         </View>
 
-        {/* Emergency Hub Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Emergency Hub</Text>
@@ -206,34 +165,6 @@ export default function Profile() {
           </View>
         </View>
 
-        {/* Preferences Section */}
-        {/* <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Preferences</Text>
-          </View>
-
-          <Text style={styles.sectionDescription}>
-            Customize your app experience and notifications
-          </Text>
-
-          <View style={styles.sectionContent}>
-            <SwitchRow
-              title="Push Notifications"
-              subtitle="Receive alerts and emergency updates"
-              value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
-            />
-
-            <SwitchRow
-              title="Location Services"
-              subtitle="Enable for local emergency guidance"
-              value={locationEnabled}
-              onValueChange={setLocationEnabled}
-            />
-          </View>
-        </View> */}
-
-        {/* Account & Support Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Account & Support</Text>
@@ -289,7 +220,6 @@ export default function Profile() {
           </View>
         </View>
 
-        {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>Aftershock v1.0.0</Text>
           <Text style={styles.footerSubtext}>Emergency Preparedness App</Text>
@@ -300,33 +230,21 @@ export default function Profile() {
 }
 
 const styles = StyleSheet.create({
-  // Layout containers
   safeArea: {
     flex: 1,
     backgroundColor: colors.light,
   },
-
   scrollContainer: {
     flexGrow: 1,
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
 
-  // Header styles
   header: {
     marginBottom: 10,
     paddingVertical: 16,
     alignItems: "center",
   },
-
-  heading: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: colors.primary,
-    marginBottom: 8,
-    textAlign: "center",
-  },
-
   subtitle: {
     fontSize: 16,
     color: colors.muted,
@@ -335,7 +253,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  // Section styles
   section: {
     marginBottom: 24,
     backgroundColor: "#ffffff",
@@ -350,19 +267,16 @@ const styles = StyleSheet.create({
     elevation: 2,
     overflow: "hidden",
   },
-
   sectionHeader: {
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 12,
   },
-
   sectionTitle: {
     fontSize: 20,
     fontWeight: "700",
     color: colors.dark,
   },
-
   sectionDescription: {
     fontSize: 14,
     color: colors.primary,
@@ -370,12 +284,10 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     lineHeight: 18,
   },
-
   sectionContent: {
     paddingHorizontal: 12,
   },
 
-  // Option row styles
   optionRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -386,56 +298,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#f5f5f5",
   },
-
   optionContent: {
     flex: 1,
     marginRight: 16,
   },
-
   optionTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: colors.dark,
     marginBottom: 4,
   },
-
   optionSubtitle: {
     fontSize: 14,
     color: colors.muted,
     lineHeight: 18,
   },
 
-  // Switch row styles
-  switchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    marginHorizontal: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f5f5f5",
-  },
-
-  switchContent: {
-    flex: 1,
-    marginRight: 16,
-  },
-
-  switchTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.dark,
-    marginBottom: 4,
-  },
-
-  switchSubtitle: {
-    fontSize: 14,
-    color: colors.muted,
-    lineHeight: 18,
-  },
-
-  // Visual elements
   chevron: {
     width: 8,
     height: 8,
@@ -444,7 +322,6 @@ const styles = StyleSheet.create({
     borderColor: colors.muted,
     transform: [{ rotate: "45deg" }],
   },
-
   divider: {
     height: 1,
     backgroundColor: "#f0f0f0",
@@ -452,30 +329,25 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
   },
 
-  // Destructive actions
   destructiveText: {
     color: "#dc2626",
   },
-
   destructiveSubtitle: {
     color: "#dc2626",
     opacity: 0.8,
   },
 
-  // Footer
   footer: {
     alignItems: "center",
     paddingVertical: 32,
     paddingHorizontal: 20,
   },
-
   footerText: {
     fontSize: 14,
     fontWeight: "600",
     color: colors.muted,
     marginBottom: 6,
   },
-
   footerSubtext: {
     fontSize: 12,
     color: colors.muted,

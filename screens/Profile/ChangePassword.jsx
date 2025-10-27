@@ -13,7 +13,6 @@ export default function ChangePassword() {
   const navigation = useNavigation();
 
   const handleSave = async () => {
-    // Verify current password before allowing change
     if (!currentPassword || currentPassword.length === 0) {
       Alert.alert('Error', 'Enter your current password to confirm.');
       return;
@@ -43,8 +42,6 @@ export default function ChangePassword() {
       Alert.alert('Error', 'User record not found.');
       return;
     }
-
-    // Verify current password before allowing username change
     if (!currentPassword || currentPassword.length === 0) {
       Alert.alert('Error', 'Please enter your current password to confirm.');
       return;
@@ -124,6 +121,9 @@ const styles = StyleSheet.create({
     elevation: 4,
     marginBottom: 12,
   },
-  heading: { marginBottom: 8 },
-  infoText: { marginBottom: 12, color: colors.secondary, lineHeight: 20 },
+  infoText: { 
+    marginBottom: 12, 
+    color: colors.secondary, 
+    lineHeight: 20 
+  },
 });

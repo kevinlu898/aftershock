@@ -1,23 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
-import {
-  collection,
-  getDocs,
-  query,
-  updateDoc,
-  where,
-} from "firebase/firestore";
+import { collection, getDocs, query, updateDoc, where, } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, } from "react-native";
 import { colors, globalStyles } from "../../css";
 import { db } from "../../db/firebaseConfig";
 import { backendHash } from "../../requests";
@@ -81,7 +65,6 @@ export default function ChangeDetails() {
       const docRef = res.docs[0].ref;
       const userData = res.docs[0].data();
 
-      // verify password
       const ch = await backendHash(currentPassword);
       if (!ch || userData.password_hash !== ch) {
         Alert.alert("Error", "Current password is incorrect.");
@@ -89,7 +72,6 @@ export default function ChangeDetails() {
         return;
       }
 
-      // update firestore
       await updateDoc(docRef, {
         first_name: firstName,
         last_name: lastName,
@@ -97,8 +79,6 @@ export default function ChangeDetails() {
         phone_number: phone,
         email: email,
       });
-
-      // update AsyncStorage copies
       await storeData("firstname", firstName);
       await storeData("postalcode", zipcode);
       await storeData("email", email);
@@ -174,7 +154,6 @@ export default function ChangeDetails() {
               autoCapitalize="none"
             />
 
-            {/* Confirm password in a separate clearly-marked box */}
             <View style={styles.confirmBox}>
               <Text style={styles.confirmHeading}>Enter password</Text>
               <Text style={globalStyles.inputLabel}>
@@ -229,7 +208,7 @@ const styles = StyleSheet.create({
     elevation: 4,
     marginBottom: 12,
   },
-  
+
   confirmBox: {
     borderWidth: 1,
     borderColor: "#E5E7EB",
