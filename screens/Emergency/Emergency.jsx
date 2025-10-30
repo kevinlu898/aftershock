@@ -10,7 +10,9 @@ import {
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View
+  View,
+  Alert,
+  Vibration,
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { colors, globalStyles } from "../../css";
@@ -57,6 +59,7 @@ export default function Emergency() {
   const [emergencyContacts, setEmergencyContacts] = useState([]);
   const [medicalList, setMedicalList] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const alertedRef = useRef(false);
 
   const EmergencyContactsList = ({ contacts }) => {
     let list = contacts ?? emergencyContacts;
@@ -726,9 +729,6 @@ export default function Emergency() {
 
       {emergencyActive && (
         <View style={localStyles.emergencyBanner}>
-          <View style={localStyles.bannerIcon}>
-            <MaterialCommunityIcons name="alert-octagon" size={28} color="#fff" />
-          </View>
           <View style={localStyles.bannerContent}>
             <Text style={localStyles.bannerTitle}>
               EARTHQUAKE — DROP, COVER, HOLD ON
