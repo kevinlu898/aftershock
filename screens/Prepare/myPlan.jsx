@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { addDoc, collection, query as fsQuery, getDocs, where } from 'firebase/firestore';
 import { useEffect, useRef, useState } from "react";
-import { InputAccessoryView, Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
+import { ActivityIndicator, InputAccessoryView, Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
 import Markdown from "react-native-markdown-display";
 import { RichEditor, RichToolbar, actions } from 'react-native-pell-rich-editor';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -9,6 +9,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { WebView } from 'react-native-webview';
 import { colors } from "../../css";
 import { db } from '../../db/firebaseConfig';
+import { sendGemini } from "../../requests";
 import { getData } from '../../storage/storageUtils';
 
 const STORAGE_KEY = "my_plan";
@@ -119,9 +120,14 @@ export default function MyPlan({ navigation }) {
     <View style={styles.sectionCard}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Text style={styles.sectionTitle}>{title}</Text>
-        <TouchableOpacity onPress={() => toggleEdit(keyName)} style={styles.smallButton} accessibilityLabel={editing[keyName] ? 'Close editor' : 'Edit section'}>
-          <MaterialCommunityIcons name={editing[keyName] ? 'content-save' : 'pencil'} size={18} color={colors.primary} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <TouchableOpacity onPress={() => toggleEdit(keyName)} style={styles.smallButton} accessibilityLabel={editing[keyName] ? 'Close editor' : 'Edit section'}>
+            <MaterialCommunityIcons name={editing[keyName] ? 'content-save' : 'pencil'} size={18} color={colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => openAiModal(title, keyName)} style={[styles.smallButton, { marginLeft: 8 }]} accessibilityLabel={`Ask AI about ${title}`}>
+            <MaterialCommunityIcons name="map-marker-radius" size={18} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {editing[keyName] ? (
@@ -234,6 +240,96 @@ export default function MyPlan({ navigation }) {
 
   const [showFull, setShowFull] = useState(false);
 
+  // AI modal state
+  const [aiVisible, setAiVisible] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResponse, setAiResponse] = useState(null);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiTarget, setAiTarget] = useState(null); // null = full plan, or keyName for section
+
+  const openAiModal = (title, keyName = null) => {
+    const defaultPrompt = keyName
+      ? `Please evaluate and suggest improvements for the following section titled "${title}". Be concise and propose actionable items.`
+      : `Please evaluate my full emergency plan and suggest improvements (clarity, missing items, prioritization).`;
+    setAiPrompt(defaultPrompt);
+    setAiTarget(keyName);
+    setAiResponse(null);
+    setAiVisible(true);
+  };
+
+  const submitAi = async () => {
+    setAiLoading(true);
+    setAiResponse(null);
+    try {
+      // Prepare payload: include either specific section content or full plan
+      const payload = {
+        prompt: aiPrompt,
+        plan: {
+          evacuateRoute: plan.evacuateRoute,
+          meetUpPoints: plan.meetUpPoints,
+          aftermathProcedures: plan.aftermathProcedures,
+          other: plan.other,
+        },
+        target: aiTarget, // null or keyName
+      };
+
+      // include the plan text inside the prompt for clearer context
+      const fullPrompt = `${aiPrompt}\n\nCurrent plan content:\nEvacuation Route:\n${payload.plan.evacuateRoute || '(none)'}\n\nMeet-up Points:\n${payload.plan.meetUpPoints || '(none)'}\n\nAftermath Procedures:\n${payload.plan.aftermathProcedures || '(none)'}\n\nOther:\n${payload.plan.other || '(none)'}\n`;
+
+      const json = await sendGemini({
+        model: "gemini-pro",
+        prompt: fullPrompt,
+        maxTokens: 800,
+        temperature: 0.2,
+        metadata: { target: aiTarget },
+        plan: payload.plan,
+      });
+
+      const result = json?.result || json?.output || json?.text || (typeof json === "string" ? json : null);
+      if (!result) {
+        // If server returned unexpected shape, show debug info
+        const debug = JSON.stringify(json).slice(0, 200);
+        console.warn('submitAi: unexpected response shape from Gemini helper', debug);
+        setAiResponse(`AI returned unexpected format: ${debug}`);
+      } else {
+        setAiResponse(result);
+      }
+    } catch (e) {
+      // Show error details so you can see why the request failed
+      console.warn('submitAi: sendGemini error', e);
+      setAiResponse(`AI request failed: ${e?.message || e}`);
+      // also keep fallback heuristic appended so user still gets guidance
+      const content = aiTarget ? (plan[aiTarget] || "") : `${plan.evacuateRoute || ""} ${plan.meetUpPoints || ""} ${plan.aftermathProcedures || ""} ${plan.other || ""}`;
+      if (!content || content.trim().length < 50) {
+        setAiResponse((prev) => (prev ? prev + "\n\n" : "") + "Fallback: The content is sparse. Consider adding specific steps, exact meet-up coordinates, contact details, and responsibilities for each family member.");
+      } else {
+        setAiResponse((prev) => (prev ? prev + "\n\n" : "") + "Fallback: High-level review: consider adding explicit actions, estimated timings, responsible persons, and alternative routes. Verify utility shutoff steps and special-needs provisions.");
+      }
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const applyAiSuggestion = async () => {
+    if (!aiResponse) return;
+    const next = { ...plan };
+    if (aiTarget && typeof aiTarget === "string") {
+      next[aiTarget] = (next[aiTarget] || "") + "\n\n" + aiResponse;
+      const meta = { ...(next._meta || {}) };
+      meta[aiTarget] = new Date().toISOString();
+      next._meta = meta;
+      await savePlan(next);
+    } else {
+      // Append to 'other' for full plan suggestions
+      next.other = (next.other || "") + "\n\n" + aiResponse;
+      const meta = { ...(next._meta || {}) };
+      meta.other = new Date().toISOString();
+      next._meta = meta;
+      await savePlan(next);
+    }
+    setAiVisible(false);
+  };
+
   const FullModal = () => {
     const lastSaved = getLastSaved();
     const combinedRaw = `${plan.evacuateRoute || ''}${plan.meetUpPoints || ''}${plan.aftermathProcedures || ''}${plan.other || ''}`;
@@ -309,9 +405,19 @@ ${plan.other || ''}
 
         <Text style={styles.title}>My Emergency Plan</Text>
         <Text style={styles.subtitle}>Create and save a plan for emergency situations. Use the editor to format text (Markdown supported).</Text>
-        <TouchableOpacity onPress={() => setShowFull(true)} style={[styles.smallButton, { backgroundColor: '#fff', marginTop: 8, marginBottom: 10, alignSelf: 'flex-start' }]}>
-          <Text style={styles.smallButtonText}>View Full Plan</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => setShowFull(true)} style={[styles.smallButton, { backgroundColor: '#fff', marginTop: 8, marginBottom: 10, alignSelf: 'flex-start' }]}>
+            <Text style={styles.smallButtonText}>View Full Plan</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => openAiModal('Full Plan', null)}
+            style={[styles.smallButton, { backgroundColor: '#fff', marginTop: 8, marginBottom: 10, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center' }]}
+            accessibilityLabel="Ask AI to review full plan"
+          >
+            <MaterialCommunityIcons name="map-marker-radius" size={16} color={colors.primary} />
+            <Text style={[styles.smallButtonText, { marginLeft: 6 }]}>Ask AI</Text>
+          </TouchableOpacity>
+        </View>
 
         <Section title="Evacuation Route" keyName="evacuateRoute" />
         <Section title="Meet-up Points" keyName="meetUpPoints" />
@@ -337,6 +443,43 @@ ${plan.other || ''}
           </View>
         </InputAccessoryView>
       )}
+
+      {/* AI Modal */}
+      <Modal visible={aiVisible} animationType="slide" onRequestClose={() => setAiVisible(false)}>
+        <View style={{ flex: 1, backgroundColor: colors.light, paddingTop: topPadding }}>
+          <StatusBar barStyle="dark-content" backgroundColor={colors.light} translucent={false} />
+          <View style={{ flex: 1, padding: 18 }}>
+            <Text style={styles.title}>AI Review</Text>
+            <Text style={styles.subtitle}>Ask the AI to evaluate or improve your plan. Edit the prompt or submit as-is.</Text>
+            <TextInput
+              value={aiPrompt}
+              onChangeText={setAiPrompt}
+              style={styles.aiInput}
+              multiline
+              placeholder="Enter instructions for the AI..."
+            />
+
+            <View style={{ flex: 1, marginTop: 12 }}>
+              {aiLoading ? <ActivityIndicator size="large" color={colors.primary} /> : (
+                aiResponse ? <ScrollView contentContainerStyle={{ padding: 8 }}><Text style={styles.aiResponseText}>{aiResponse}</Text></ScrollView> : <Text style={styles.metaText}>No response yet. Press "Ask AI" to send your prompt.</Text>
+              )}
+            </View>
+
+            <View style={{ flexDirection: 'row', marginTop: 12 }}>
+              <TouchableOpacity onPress={submitAi} style={[styles.saveButton, { flex: 1, marginRight: 8, backgroundColor: colors.primary }]}>
+                <Text style={styles.saveButtonText}>{aiLoading ? 'Asking...' : 'Ask AI'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={applyAiSuggestion} style={[styles.smallButton, { flex: 1, alignItems: 'center' }]}>
+                <Text style={styles.smallButtonText}>Apply Suggestion</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity onPress={() => setAiVisible(false)} style={[styles.smallButton, { marginTop: 12, alignSelf: 'flex-end' }]}>
+              <Text style={styles.smallButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -403,6 +546,9 @@ const styles = StyleSheet.create({
   accessoryText: { color: "#fff", fontWeight: "700" },
 
   metaText: { fontSize: 12, color: colors.muted, marginTop: 4 },
+
+  aiInput: { minHeight: 80, borderWidth: 1, borderColor: '#E5E7EB', padding: 10, borderRadius: 8, backgroundColor: '#fff', marginTop: 8 },
+  aiResponseText: { color: '#111', fontSize: 15, lineHeight: 22 },
 });
 
 const markdownStyles = {

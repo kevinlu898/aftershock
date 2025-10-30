@@ -1,4 +1,19 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from 'react-native';
+
+/*
+  sendGemini(payload)
+
+  - In development:
+    - Android emulator: 10.0.2.2 -> your local machine
+    - iOS simulator: localhost
+    - Physical devices: replace DEFAULT_HOST with your machine LAN IP (e.g. http://192.168.x.y:3000)
+  - In production, set DEFAULT_HOST to your production server (https).
+  - The server endpoint this expects: POST {HOST}/api/gemini which proxies to Gemini.
+*/
+const DEFAULT_HOST =
+  Platform.OS === 'android' ? 'http://10.0.2.2:3000' : 'http://localhost:3000';
+const GEMINI_ENDPOINT = `${DEFAULT_HOST}/api/gemini`;
 
 export const backendHash = async (message) => {
   try {
@@ -238,3 +253,32 @@ export const exportData = async () => {
     throw err;
   }
 };
+
+export async function sendGemini(payload = {}) {
+  try {
+    const res = await fetch(GEMINI_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const text = await res.text();
+
+    if (!res.ok) {
+      console.warn('sendGemini: non-OK response', res.status, text);
+      throw new Error(`Gemini proxy error ${res.status}: ${text}`);
+    }
+
+    // Try parse JSON; if server returns plain text, return as { result: text }
+    try {
+      const json = JSON.parse(text);
+      return json;
+    } catch {
+      return { result: text };
+    }
+  } catch (err) {
+    console.warn('sendGemini failed', err);
+    // Normalize thrown error so caller can display useful message
+    throw new Error(err?.message || 'sendGemini: unknown error');
+  }
+}
