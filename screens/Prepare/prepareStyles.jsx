@@ -5,7 +5,7 @@ const prepareStyles = StyleSheet.create({
   // Text
   subtitle: {
     fontSize: fontSizes.medium,
-    color: colors.secondary,
+    color: colors.muted,
     textAlign: "center",
     marginBottom: 25,
   },

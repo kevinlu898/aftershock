@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, } from "react-native";
+import { Animated, AppState, Dimensions, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { colors, fontSizes, globalStyles } from "../css";
 import { getData } from "../storage/storageUtils";
@@ -17,6 +17,7 @@ export default function Dashboard() {
   const navigation = useNavigation();
   const scrollX = useRef(new Animated.Value(0)).current;
   const { width: screenWidth } = Dimensions.get("window");
+  const appStateRef = useRef(AppState.currentState);
 
   useEffect(() => {
     let isMounted = true;
@@ -60,6 +61,40 @@ export default function Dashboard() {
       off && off();
     };
   }, [navigation]);
+
+  // Update Async Storage with data from database on load
+  const syncModulesToStorage = async () => {
+    try {
+      const ms = await getPrepareModules();
+      if (ms && Array.isArray(ms)) {
+        setModules(ms);
+        const avg =
+          ms.reduce((acc, m) => acc + (Number(m.progress) || 0), 0) /
+          Math.max(1, ms.length);
+        setOverallProgress(avg);
+        try {
+          await AsyncStorage.setItem("prepare_modules_cache", JSON.stringify(ms));
+        } catch (_e) {
+          // ignore local persist errors
+        }
+      }
+    } catch (e) {
+      console.warn("Dashboard: syncModulesToStorage failed", e);
+    }
+  };
+  useEffect(() => {
+    const handleAppState = (nextState) => {
+      if (appStateRef.current.match(/inactive|background/) && nextState === "active") {
+        syncModulesToStorage();
+      }
+      appStateRef.current = nextState;
+    };
+    const sub = AppState.addEventListener ? AppState.addEventListener("change", handleAppState) : null;
+    syncModulesToStorage();
+    return () => {
+      sub && sub.remove && sub.remove();
+    };
+  }, []);
 
   // Quick action cards
   const cards = [
@@ -345,7 +380,7 @@ const styles = StyleSheet.create({
   horizontalCard: {
     backgroundColor: "#fff",
     borderRadius: 16,
-    padding: 12, // Reduced from 14
+    padding: 12,
     width: 240,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },

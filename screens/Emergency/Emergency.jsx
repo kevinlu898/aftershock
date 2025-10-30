@@ -6,19 +6,48 @@ import {
   Easing,
   Image,
   Modal,
-  Platform,
   ScrollView,
-  StyleSheet,
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View,
+  View
 } from "react-native";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import { colors, fontSizes, globalStyles } from "../../css";
+import { colors, globalStyles } from "../../css";
 import { getData } from "../../storage/storageUtils";
 import prepareStyles from "../Prepare/prepareStyles";
-import { PREPARE_MODULES as EMERGENCY_MODULES } from "./prepareModules";
+import emergencyStyles from "./EmergencyStyles";
+
+// alias so existing references to localStyles keep working
+const localStyles = emergencyStyles;
+
+// Renders dropdown content (Important Documents moved before Post-shaking Checklist)
+const EMERGENCY_MODULES = [
+  {
+    id: "2",
+    title: "Important Documents",
+    description: "Keep copies of vital documents accessible. View saved images and file metadata here.",
+    checklistItems: [],
+    icon: "file-document",
+  },
+  {
+    id: "1",
+    title: "Post-shaking Checklist",
+    description: "Keep yourself safe after an earthquake.",
+    checklistItems: [
+      { id: 1, text: "Check yourself and others for injuries.", completed: false },
+      { id: 2, text: "Be prepared for aftershocks.", completed: false },
+      { id: 3, text: "Inspect your home for structural damage and hazards (gas, water, electric).", completed: false },
+      { id: 4, text: "Turn off utilities if you suspect leaks or damage.", completed: false },
+      { id: 5, text: "Listen to emergency broadcasts for updates and instructions.", completed: false },
+      { id: 6, text: "Limit phone use to emergencies only.", completed: false },
+      { id: 7, text: "Stay away from damaged buildings and areas.", completed: false },
+      { id: 8, text: "Wear sturdy shoes and protective clothing if you must go outside.", completed: false },
+      { id: 9, text: "Check for fires and extinguish if safe to do so.", completed: false },
+      { id: 10, text: "Help neighbors who may require special assistance.", completed: false },
+    ],
+  },
+];
 
 export default function Emergency() {
   const navigation = useNavigation();
@@ -35,32 +64,38 @@ export default function Emergency() {
     console.log("the list is here" + count);
     if (!list || (Array.isArray(list) && list.length === 0)) {
       return (
-        <View>
-          <Text style={localStyles.itemTextMuted}>
+        <View style={localStyles.emptyState}>
+          <MaterialCommunityIcons name="account-alert" size={48} color={colors.muted} />
+          <Text style={localStyles.emptyStateText}>
             No emergency contacts saved.
           </Text>
         </View>
       );
     }
 
-    // normalize to array
     if (!Array.isArray(list)) list = [list];
 
     return (
-      <View>
+      <View style={localStyles.contactsContainer}>
         {list.map((c, idx) => {
           const name = c.name || c.raw?.name || "Unnamed";
           const phone =
             c.phone || c.contact || c.raw?.phone || c.raw?.contact || "-";
           const relation = c.relation || c.raw?.relation || c.raw?.rel || "";
           return (
-            <View key={idx} style={localStyles.contactRow}>
+            <View key={idx} style={localStyles.contactCard}>
+              <View style={localStyles.contactIcon}>
+                <MaterialCommunityIcons name="account" size={20} color={colors.primary} />
+              </View>
               <View style={localStyles.contactText}>
                 <Text style={localStyles.contactName}>{name}</Text>
                 <Text style={localStyles.contactDetail}>
                   {relation ? `${relation} • ${phone}` : `${phone}`}
                 </Text>
               </View>
+              <TouchableOpacity style={localStyles.contactAction}>
+                <MaterialCommunityIcons name="phone" size={18} color={colors.primary} />
+              </TouchableOpacity>
             </View>
           );
         })}
@@ -68,9 +103,7 @@ export default function Emergency() {
     );
   };
 
-  // Small render component that displays medical info. It accepts an
-  // optional `medicalList` prop so callers can pass fresh data; otherwise
-  // it falls back to the parent `medicalList` state.
+  // Renders medical info
   const MedicalInfoList = ({ medicalList: medicalListProp }) => {
     let list = medicalListProp ?? medicalList;
     if (typeof list === "string") {
@@ -78,42 +111,46 @@ export default function Emergency() {
         <View>
           {list.map((m, idx) => {
             const title = m.name || m.raw?.name || "Medical Record";
-            // If notes contains a JSON-encoded array of medical records, parse & render them
             let nested = null;
             if (typeof m.notes === "string") {
               try {
                 const parsed = JSON.parse(m.notes);
                 if (Array.isArray(parsed)) nested = parsed;
               } catch (_e) {
-                // not JSON — leave nested as null
               }
             }
 
             return (
-              <View key={idx} style={localStyles.medRow}>
-                <View style={localStyles.medText}>
+              <View key={idx} style={localStyles.medCard}>
+                <View style={localStyles.medHeader}>
+                  <MaterialCommunityIcons name="medical-bag" size={20} color={colors.danger} />
                   <Text style={localStyles.medTitle}>{title}</Text>
+                </View>
+                <View style={localStyles.medContent}>
                   {m.medications && (
-                    <Text style={localStyles.medDetail}>
-                      Medications: {m.medications}
-                    </Text>
+                    <View style={localStyles.medField}>
+                      <Text style={localStyles.medLabel}>Medications</Text>
+                      <Text style={localStyles.medValue}>{m.medications}</Text>
+                    </View>
                   )}
                   {m.allergies && (
-                    <Text style={localStyles.medDetail}>
-                      Allergies: {m.allergies}
-                    </Text>
+                    <View style={localStyles.medField}>
+                      <Text style={localStyles.medLabel}>Allergies</Text>
+                      <Text style={localStyles.medValue}>{m.allergies}</Text>
+                    </View>
                   )}
                   {m.bloodType && (
-                    <Text style={localStyles.medDetail}>
-                      Blood Type: {m.bloodType}
-                    </Text>
+                    <View style={localStyles.medField}>
+                      <Text style={localStyles.medLabel}>Blood Type</Text>
+                      <Text style={localStyles.medValue}>{m.bloodType}</Text>
+                    </View>
                   )}
 
                   {nested ? (
-                    <View style={{ marginTop: 8 }}>
+                    <View style={{ marginTop: 12 }}>
                       {nested.map((n, i) => (
-                        <View key={i} style={{ marginBottom: 8 }}>
-                          <Text style={localStyles.medTitle}>
+                        <View key={i} style={localStyles.nestedMed}>
+                          <Text style={localStyles.medSubtitle}>
                             {n.name || "Medical Record"}
                           </Text>
                           {n.medications && (
@@ -139,7 +176,10 @@ export default function Emergency() {
                     </View>
                   ) : (
                     m.notes && (
-                      <Text style={localStyles.medDetail}>{m.notes}</Text>
+                      <View style={localStyles.medField}>
+                        <Text style={localStyles.medLabel}>Notes</Text>
+                        <Text style={localStyles.medValue}>{m.notes}</Text>
+                      </View>
                     )
                   )}
                 </View>
@@ -152,30 +192,52 @@ export default function Emergency() {
 
     if (!Array.isArray(list)) list = [list];
 
+    if (list.length === 0) {
+      return (
+        <View style={localStyles.emptyState}>
+          <MaterialCommunityIcons name="medical-bag" size={48} color={colors.muted} />
+          <Text style={localStyles.emptyStateText}>
+            No medical information saved.
+          </Text>
+        </View>
+      );
+    }
+
     return (
-      <View>
+      <View style={localStyles.medicalContainer}>
         {list.map((m, idx) => (
-          <View key={idx} style={localStyles.medRow}>
-            <View style={localStyles.medText}>
+          <View key={idx} style={localStyles.medCard}>
+            <View style={localStyles.medHeader}>
+              <MaterialCommunityIcons name="medical-bag" size={20} color={colors.danger} />
               <Text style={localStyles.medTitle}>
                 {m.name || m.raw?.name || "Medical Record"}
               </Text>
+            </View>
+            <View style={localStyles.medContent}>
               {m.medications && (
-                <Text style={localStyles.medDetail}>
-                  Medications: {m.medications}
-                </Text>
+                <View style={localStyles.medField}>
+                  <Text style={localStyles.medLabel}>Medications</Text>
+                  <Text style={localStyles.medValue}>{m.medications}</Text>
+                </View>
               )}
               {m.allergies && (
-                <Text style={localStyles.medDetail}>
-                  Allergies: {m.allergies}
-                </Text>
+                <View style={localStyles.medField}>
+                  <Text style={localStyles.medLabel}>Allergies</Text>
+                  <Text style={localStyles.medValue}>{m.allergies}</Text>
+                </View>
               )}
               {m.bloodType && (
-                <Text style={localStyles.medDetail}>
-                  Blood Type: {m.bloodType}
-                </Text>
+                <View style={localStyles.medField}>
+                  <Text style={localStyles.medLabel}>Blood Type</Text>
+                  <Text style={localStyles.medValue}>{m.bloodType}</Text>
+                </View>
               )}
-              {m.notes && <Text style={localStyles.medDetail}>{m.notes}</Text>}
+              {m.notes && (
+                <View style={localStyles.medField}>
+                  <Text style={localStyles.medLabel}>Notes</Text>
+                  <Text style={localStyles.medValue}>{m.notes}</Text>
+                </View>
+              )}
             </View>
           </View>
         ))}
@@ -183,81 +245,7 @@ export default function Emergency() {
     );
   };
 
-  const modalContainerStyle = {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  };
-  const modalContentStyle = {
-    backgroundColor: "#fff",
-    borderRadius: 24,
-    padding: 24,
-    minWidth: 280,
-    width: "90%",
-    maxWidth: 420,
-    alignItems: "center",
-    position: "relative",
-  };
-
-  const checklistStyles = {
-    lessonChecklistContainer: {
-      marginBottom: 5,
-      backgroundColor: "#f8faf8",
-      borderRadius: 8,
-    },
-    lessonChecklistItem: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingVertical: 13,
-      paddingHorizontal: 12,
-      backgroundColor: "#fff",
-      borderRadius: 6,
-      marginBottom: 4,
-      borderWidth: 1,
-      borderColor: "#e5e7eb",
-    },
-    lessonChecklistItemCompleted: {
-      backgroundColor: "#f0f7f0",
-      borderColor: colors.primary,
-    },
-    lessonChecklistLeft: {
-      flexDirection: "row",
-      alignItems: "center",
-      flex: 1,
-    },
-    lessonCheckbox: {
-      width: 22,
-      height: 22,
-      borderRadius: 4,
-      borderWidth: 2,
-      borderColor: colors.muted,
-      justifyContent: "center",
-      alignItems: "center",
-      marginRight: 14,
-      backgroundColor: "#fff",
-    },
-    lessonCheckboxCompleted: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-    },
-    lessonChecklistText: {
-      fontSize: 14,
-      color: colors.secondary,
-      flex: 1,
-      lineHeight: 20,
-    },
-    lessonChecklistTextCompleted: {
-      color: "#666",
-    },
-    moduleDescription: {
-      fontSize: fontSizes.small,
-      color: colors.muted,
-      marginBottom: 0,
-    },
-  };
-
-  // Load emergency data from AsyncStorage (extracted so we can call it on focus)
+  // Load data from async storage
   const loadEmergencyData = async () => {
     try {
       const stateRaw =
@@ -267,7 +255,6 @@ export default function Emergency() {
       setEmergencyActive(String(stateRaw).toLowerCase() === "yes");
 
       let contacts = [];
-      // support multiple storage key variants and helper getter
       let contactsRaw = null;
       try {
         contactsRaw = await AsyncStorage.getItem("emergency_contacts");
@@ -292,7 +279,6 @@ export default function Emergency() {
       }
 
       if (contactsRaw) {
-        // contactsRaw may already be an object/array (from getData) or a JSON string
         if (typeof contactsRaw === "string") {
           try {
             const parsed = JSON.parse(contactsRaw);
@@ -309,7 +295,6 @@ export default function Emergency() {
       console.log(contacts.length);
       setEmergencyContacts(contacts);
 
-      // Always read the freshest medical_info directly from AsyncStorage
       let med = [];
       try {
         const medRaw = await AsyncStorage.getItem("medical_info");
@@ -375,152 +360,68 @@ export default function Emergency() {
     }
   };
 
-  // initial load on mount
+ 
   useEffect(() => {
     loadEmergencyData();
   }, []);
 
-  // reload whenever the screen gains focus (user navigates back)
   useFocusEffect(
     useCallback(() => {
       loadEmergencyData();
     }, [])
   );
 
+  const FoodWater = () => (
+    <ScrollView style={localStyles.infoContainer}>
+      <View style={localStyles.infoSection}>
+        <Text style={localStyles.infoDescription}>• Store 1 gallon of water per person per day (for at least 3 days).</Text>
+        <Text style={localStyles.infoDescription}>• Keep non-perishable food like canned goods, protein bars, and dried fruit.</Text>
+        <Text style={localStyles.infoDescription}>• Have a manual can opener and disposable utensils.</Text>
+        <Text style={localStyles.infoDescription}>• Replace food and water every 6 months.</Text>
+        <Text style={localStyles.infoDescription}>• If tap water is unsafe, boil it or use purification tablets.</Text>
+      </View>
+    </ScrollView>
+  );
+
+  const Aftershocks = () => (
+    <ScrollView style={localStyles.infoContainer}>
+      <View style={localStyles.infoSection}>
+        <Text style={localStyles.infoDescription}>• Expect more shaking after the main earthquake.</Text>
+        <Text style={localStyles.infoDescription}>• Drop, Cover, and Hold On during each aftershock.</Text>
+        <Text style={localStyles.infoDescription}>• Stay away from damaged buildings, walls, and power lines.</Text>
+        <Text style={localStyles.infoDescription}>• Check for gas leaks or fires before re-entering any area.</Text>
+        <Text style={localStyles.infoDescription}>• Listen to local alerts and contact family when safe.</Text>
+      </View>
+    </ScrollView>
+  );  
+
+  // Render contact info
   useEffect(() => {
     const dataFetch = async () => {
-      // Prepare cards; the Emergency Contacts card will render the
-      // live `emergencyContacts` state via `EmergencyContactsList`.
       setEmergencyCards([
         {
           id: "1",
           title: "Emergency Contacts",
           icon: "phone",
-          // store the component *type* (function) so it is rendered fresh
           component: EmergencyContactsList,
         },
         {
           id: "2",
           title: "Medical Info",
-          icon: "clipboard-list",
+          icon: "clipboard-pulse",
           component: MedicalInfoList,
         },
         {
           id: "3",
-          title: "Finding Food and Water",
+          title: "Food & Water",
           icon: "water",
-          component: (
-            <ScrollView>
-              <View>
-                <Text>- Use your emergency water supply FIRST.</Text>
-                <Text>
-                  - Drain your water heater for drinking water (40+ gallons).
-                </Text>
-                <Text>
-                  - Eat refrigerated food FIRST (use within 4 hours if power is
-                  out).
-                </Text>
-                <Text>
-                  - Then eat freezer food (may last 24-48 hours without power).
-                </Text>
-                <Text>
-                  - Listen to a battery-powered radio for official help
-                  locations.
-                </Text>
-                <Text>
-                  - Text (don&apos;t call) family to check status and pool
-                  resources.
-                </Text>
-                <Text>
-                  - Check local churches, schools, or fire stations for aid
-                  centers.
-                </Text>
-              </View>
-            </ScrollView>
-          ),
+          component: FoodWater,
         },
         {
           id: "4",
           title: "Aftershocks",
           icon: "home-alert",
-          component: (
-            <ScrollView>
-              <View style={{ paddingVertical: 6 }}>
-                <Text style={{ marginBottom: 8 }}>
-                  Aftershocks are common after an earthquake. They can be strong
-                  enough to cause additional damage — here is what to do and
-                  check in the hours and days after the main event:
-                </Text>
-
-                <Text style={{ fontWeight: "700", marginTop: 6 }}>
-                  Quick safety checks
-                </Text>
-                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
-                  • If you are inside, stay away from damaged walls, windows,
-                  and shelves.
-                </Text>
-                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
-                  • If you are outside, move to an open area clear of power
-                  lines and buildings.
-                </Text>
-
-                <Text style={{ fontWeight: "700", marginTop: 6 }}>
-                  Home & utilities
-                </Text>
-                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
-                  • Check for gas leaks (smell or hissing). If you suspect a
-                  leak, shut off the gas and leave immediately.
-                </Text>
-                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
-                  • Inspect your water, sewage, and electrical systems before
-                  using them — avoid using devices that spark if you suspect
-                  gas.
-                </Text>
-
-                <Text style={{ fontWeight: "700", marginTop: 6 }}>
-                  Food & water
-                </Text>
-                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
-                  • Use your emergency water supply first. If unsure, boil or
-                  treat water before drinking.
-                </Text>
-                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
-                  • Throw out refrigerated food that has been above 40°F (4°C)
-                  for more than 4 hours.
-                </Text>
-
-                <Text style={{ fontWeight: "700", marginTop: 6 }}>
-                  Communication & planning
-                </Text>
-                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
-                  • Text (do not call) family to conserve phone networks. Use
-                  pre-written messages if needed.
-                </Text>
-                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
-                  • Stay tuned to battery-powered or phone-based official
-                  channels for updates and evacuation orders.
-                </Text>
-
-                <Text style={{ fontWeight: "700", marginTop: 6 }}>
-                  When to seek help
-                </Text>
-                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
-                  • If you or someone is injured, get first aid and call
-                  emergency services if the situation is life-threatening.
-                </Text>
-                <Text style={{ marginLeft: 8, marginBottom: 6 }}>
-                  • If your home is severely damaged or unsafe, follow official
-                  evacuation guidance and move to a shelter.
-                </Text>
-
-                <Text style={{ marginTop: 10, fontStyle: "italic" }}>
-                  Tip: Aftershocks may continue for days — keep your emergency
-                  kit accessible and avoid re-entering unstable structures until
-                  they are inspected.
-                </Text>
-              </View>
-            </ScrollView>
-          ),
+          component: Aftershocks,
         },
       ]);
     };
@@ -543,16 +444,18 @@ export default function Emergency() {
       setChecklist(updatedChecklist);
     };
     return (
-      <View style={prepareStyles.card}>
+      <View style={[prepareStyles.card, localStyles.moduleCard]}>
         <TouchableOpacity
-          style={prepareStyles.cardHeader}
+          style={[prepareStyles.cardHeader, localStyles.cardHeader]}
           onPress={() => toggleModule(module.id)}
           activeOpacity={0.7}
         >
           <View style={prepareStyles.headerLeft}>
             <View style={prepareStyles.headerText}>
-              <Text style={prepareStyles.moduleTitle}>{module.title}</Text>
-              <Text style={checklistStyles.moduleDescription}>
+              <Text style={[prepareStyles.moduleTitle, localStyles.moduleTitle]}>
+                {module.title}
+              </Text>
+              <Text style={[localStyles.moduleDescription]}>
                 {module.description}
               </Text>
             </View>
@@ -561,17 +464,15 @@ export default function Emergency() {
             <MaterialCommunityIcons
               name={isExpanded ? "chevron-up" : "chevron-down"}
               size={24}
-              color={colors.secondary}
+              color={colors.primary}
             />
           </View>
         </TouchableOpacity>
 
         {isExpanded && (
           <View style={prepareStyles.lessonsContainer}>
-            {/* If this module is the Important Documents module, render the documents list instead of the checklist */}
-            {module.title &&
-            module.title.toLowerCase().includes("important") ? (
-              <View style={{ padding: 8 }}>
+            {module.title && module.title.toLowerCase().includes("important") ? (
+              <View style={localStyles.documentsContainer}>
                 {documents && documents.length > 0 ? (
                   documents.map((d, i) => {
                     const uri = d.uri || d.path || d.raw?.uri;
@@ -579,7 +480,7 @@ export default function Emergency() {
                       typeof uri === "string" &&
                       /\.(jpe?g|png|gif|bmp|webp|heic|heif)$/i.test(uri);
                     return (
-                      <View key={d.id || uri || i} style={localStyles.docRow}>
+                      <View key={d.id || uri || i} style={localStyles.docCard}>
                         {isImage && (
                           <Image
                             source={{ uri }}
@@ -594,116 +495,42 @@ export default function Emergency() {
                             {d.fileName || uri}
                           </Text>
                         </View>
+                        <TouchableOpacity style={localStyles.docAction}>
+                          <MaterialCommunityIcons name="download" size={18} color={colors.primary} />
+                        </TouchableOpacity>
                       </View>
                     );
                   })
                 ) : (
-                  <Text style={localStyles.itemTextMuted}>
-                    No important documents saved.
-                  </Text>
+                  <View style={localStyles.emptyState}>
+                    <MaterialCommunityIcons name="file-document" size={48} color={colors.muted} />
+                    <Text style={localStyles.emptyStateText}>
+                      No important documents saved.
+                    </Text>
+                  </View>
                 )}
               </View>
-            ) : module.title &&
-              module.title.toLowerCase().includes("medical") ? (
-              <View style={{ padding: 8 }}>
-                {medicalList && medicalList.length > 0 ? (
-                  medicalList.map((m, idx) => {
-                    const title = m.name || m.raw?.name || "Medical Record";
-                    // parse nested notes if JSON array
-                    let nested = null;
-                    if (typeof m.notes === "string") {
-                      try {
-                        const parsed = JSON.parse(m.notes);
-                        if (Array.isArray(parsed)) nested = parsed;
-                      } catch (_e) {
-                        // not JSON
-                      }
-                    }
-                    return (
-                      <View key={m.id || idx} style={localStyles.medRow}>
-                        <View style={localStyles.medText}>
-                          <Text style={localStyles.medTitle}>{title}</Text>
-                          {m.medications && (
-                            <Text style={localStyles.medDetail}>
-                              Medications: {m.medications}
-                            </Text>
-                          )}
-                          {m.allergies && (
-                            <Text style={localStyles.medDetail}>
-                              Allergies: {m.allergies}
-                            </Text>
-                          )}
-                          {m.bloodType && (
-                            <Text style={localStyles.medDetail}>
-                              Blood Type: {m.bloodType}
-                            </Text>
-                          )}
-
-                          {nested ? (
-                            <View style={{ marginTop: 8 }}>
-                              {nested.map((n, i) => (
-                                <View key={i} style={{ marginBottom: 8 }}>
-                                  <Text style={localStyles.medTitle}>
-                                    {n.name || "Medical Record"}
-                                  </Text>
-                                  {n.medications && (
-                                    <Text style={localStyles.medDetail}>
-                                      Medications: {n.medications}
-                                    </Text>
-                                  )}
-                                  {n.allergies && (
-                                    <Text style={localStyles.medDetail}>
-                                      Allergies: {n.allergies}
-                                    </Text>
-                                  )}
-                                  {n.bloodType && (
-                                    <Text style={localStyles.medDetail}>
-                                      Blood Type: {n.bloodType}
-                                    </Text>
-                                  )}
-                                  {n.notes && (
-                                    <Text style={localStyles.medDetail}>
-                                      {n.notes}
-                                    </Text>
-                                  )}
-                                </View>
-                              ))}
-                            </View>
-                          ) : (
-                            m.notes && (
-                              <Text style={localStyles.medDetail}>
-                                {m.notes}
-                              </Text>
-                            )
-                          )}
-                        </View>
-                      </View>
-                    );
-                  })
-                ) : (
-                  <Text style={localStyles.itemTextMuted}>
-                    No medical information saved.
-                  </Text>
-                )}
+            ) : module.title && module.title.toLowerCase().includes("medical") ? (
+              <View style={localStyles.medicalContainer}>
+                <MedicalInfoList />
               </View>
             ) : (
-              <View style={checklistStyles.lessonChecklistContainer}>
+              <View style={localStyles.lessonChecklistContainer}>
                 {checklist.map((item) => (
                   <TouchableOpacity
                     key={item.id}
                     style={[
-                      checklistStyles.lessonChecklistItem,
-                      item.completed &&
-                        checklistStyles.lessonChecklistItemCompleted,
+                      localStyles.lessonChecklistItem,
+                      item.completed && localStyles.lessonChecklistItemCompleted,
                     ]}
                     onPress={() => toggleItem(item.id)}
+                    activeOpacity={0.7}
                   >
-                    <View style={checklistStyles.lessonChecklistLeft}>
+                    <View style={localStyles.lessonChecklistLeft}>
                       <View
                         style={[
-                          checklistStyles.lessonCheckbox,
-                          item.completed &&
-                            checklistStyles.lessonCheckboxCompleted,
+                          localStyles.lessonCheckbox,
+                          item.completed && localStyles.lessonCheckboxCompleted,
                         ]}
                       >
                         {item.completed && (
@@ -716,9 +543,8 @@ export default function Emergency() {
                       </View>
                       <Text
                         style={[
-                          checklistStyles.lessonChecklistText,
-                          item.completed &&
-                            checklistStyles.lessonChecklistTextCompleted,
+                          localStyles.lessonChecklistText,
+                          item.completed && localStyles.lessonChecklistTextCompleted,
                         ]}
                       >
                         {item.text}
@@ -736,7 +562,7 @@ export default function Emergency() {
 
   const ModuleCardSquare = ({ module }) => {
     const [visible, setVisible] = useState(false);
-    const statusColor = "#3B5249";
+    const statusColor = colors.primary;
     const backdropOpacity = useRef(new Animated.Value(0)).current;
     const contentScale = useRef(new Animated.Value(0.9)).current;
     const contentOpacity = useRef(new Animated.Value(0)).current;
@@ -790,32 +616,24 @@ export default function Emergency() {
     return (
       <>
         <TouchableOpacity
-          style={[
-            prepareStyles.card,
-            { flex: 1, justifyContent: "center", alignItems: "center" },
-          ]}
+          style={[localStyles.quickActionCard]}
           activeOpacity={0.85}
           onPress={openModal}
         >
-          <View style={{ alignItems: "center", marginTop: 16 }}>
+          <View style={localStyles.quickActionContent}>
             <View
               style={[
-                prepareStyles.iconContainer,
-                { backgroundColor: `${statusColor}20` },
+                localStyles.quickActionIcon,
+                { backgroundColor: `${statusColor}15` },
               ]}
             >
               <MaterialCommunityIcons
                 name={module.icon}
-                size={32}
+                size={36} // increased icon size
                 color={statusColor}
               />
             </View>
-            <Text
-              style={[
-                prepareStyles.moduleTitle,
-                { textAlign: "center", marginTop: 8 },
-              ]}
-            >
+            <Text style={localStyles.quickActionTitle}>
               {module.title}
             </Text>
           </View>
@@ -825,74 +643,63 @@ export default function Emergency() {
           animationType="none"
           transparent={true}
           onRequestClose={closeModal}
+          statusBarTranslucent={true}
         >
           <TouchableWithoutFeedback onPress={closeModal}>
             <Animated.View
-              style={[modalContainerStyle, { opacity: backdropOpacity }]}
+              style={[localStyles.modalBackdrop, { opacity: backdropOpacity }]}
             >
               <TouchableWithoutFeedback>
                 <Animated.View
                   style={[
-                    modalContentStyle,
+                    localStyles.modalCard,
                     {
                       transform: [{ scale: contentScale }],
                       opacity: contentOpacity,
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 6 },
-                      shadowOpacity: 0.12,
-                      shadowRadius: 12,
-                      elevation: Platform.OS === "android" ? 8 : 0,
                     },
                   ]}
                 >
                   <TouchableOpacity
-                    style={{
-                      position: "absolute",
-                      top: 12,
-                      right: 12,
-                      zIndex: 2,
-                    }}
+                    style={localStyles.modalCloseButton}
                     onPress={closeModal}
                   >
                     <MaterialCommunityIcons
                       name="close"
-                      size={30}
-                      color="#D90429"
+                      size={24}
+                      color={colors.muted}
                     />
                   </TouchableOpacity>
-                  <View style={{ alignItems: "center", marginBottom: 12 }}>
-                    <MaterialCommunityIcons
-                      name={module.icon}
-                      size={56}
-                      color={statusColor}
-                    />
+                  <View style={localStyles.modalHeader}>
+                    <View style={localStyles.modalIcon}>
+                      <MaterialCommunityIcons
+                        name={module.icon}
+                        size={40} // increased modal/header icon size
+                        color={statusColor}
+                      />
+                    </View>
+                    <Text style={localStyles.modalTitle}>
+                      {module.title}
+                    </Text>
                   </View>
-                  <Text
-                    style={{
-                      fontWeight: "700",
-                      fontSize: 22,
-                      color: "#3B5249",
-                      textAlign: "center",
-                      marginBottom: 8,
-                    }}
-                  >
-                    {module.title}
-                  </Text>
-                  <View style={{ width: "100%", maxHeight: 420 }}>
+                  <View style={localStyles.modalContent}>
                     {(() => {
                       const Comp = module.component;
-                      // if the card stores a component function, render it fresh
                       if (typeof Comp === "function") {
                         return (
-                          <Comp
-                            contacts={emergencyContacts}
-                            medicalList={medicalList}
-                            documents={documents}
-                          />
+                          <ScrollView
+                            style={localStyles.modalScroll}
+                            contentContainerStyle={{ paddingBottom: 12 }}
+                            showsVerticalScrollIndicator
+                          >
+                            <Comp
+                              contacts={emergencyContacts}
+                              medicalList={medicalList}
+                              documents={documents}
+                            />
+                          </ScrollView>
                         );
                       }
-                      // otherwise assume it's already a React element
-                      return Comp || null;
+                      return <View style={localStyles.modalScroll}>{Comp || null}</View>;
                     })()}
                   </View>
                 </Animated.View>
@@ -904,58 +711,52 @@ export default function Emergency() {
     );
   };
 
-  const MiniCard = ({ title, children }) => (
-    <View style={localStyles.miniCard}>
-      <Text style={localStyles.miniCardTitle}>{title}</Text>
-      <View>{children}</View>
-    </View>
-  );
-
-  // Always render the standard Emergency Hub UI. If an earthquake is active,
-  // show the prominent banner directly under the page title.
   return (
     <ScrollView
       style={globalStyles.container}
-      contentContainerStyle={{
-        ...prepareStyles.contentContainer,
-        paddingBottom: 64,
-      }}
+      contentContainerStyle={localStyles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={globalStyles.heading}>Emergency Hub</Text>
+      <View style={localStyles.header}>
+        <Text style={globalStyles.heading}>Emergency Hub</Text>
+        <Text style={localStyles.subtitle}>
+          Your safety resources and emergency checklist
+        </Text>
+      </View>
 
       {emergencyActive && (
-        <View style={localStyles.largeBanner}>
-          <Text style={localStyles.bannerTitle}>
-            EARTHQUAKE — DROP, COVER, HOLD
-          </Text>
-          <Text style={localStyles.bannerSubtitle}>
-            An earthquake has been detected near you. Move to safe cover now.
-          </Text>
+        <View style={localStyles.emergencyBanner}>
+          <View style={localStyles.bannerIcon}>
+            <MaterialCommunityIcons name="alert-octagon" size={28} color="#fff" />
+          </View>
+          <View style={localStyles.bannerContent}>
+            <Text style={localStyles.bannerTitle}>
+              EARTHQUAKE — DROP, COVER, HOLD ON
+            </Text>
+            <Text style={localStyles.bannerSubtitle}>
+              An earthquake has been detected near you. Move to safe cover now.
+            </Text>
+          </View>
           <TouchableOpacity
             style={localStyles.localRiskButton}
             onPress={() => navigation.navigate("LocalRisk")}
           >
             <Text style={localStyles.localRiskButtonText}>
-              View current earthquakes
+              View Current Earthquakes
             </Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {/* default grid of quick cards */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+      {/* Quick Actions Grid */}
+      <View style={localStyles.quickActionsGrid}>
         {emergencyCards.map((module) => (
-          <View
-            key={module.id}
-            style={{ width: "50%", aspectRatio: 1, padding: 8 }}
-          >
-            <ModuleCardSquare module={module} />
-          </View>
+          <ModuleCardSquare key={module.id} module={module} />
         ))}
       </View>
 
-      <View style={{ ...prepareStyles.modulesList, marginTop: 16 }}>
+      {/* Emergency Checklists */}
+      <View style={localStyles.checklistsSection}>
         {EMERGENCY_MODULES.map((module) => (
           <ModuleCard key={module.id} module={module} />
         ))}
@@ -963,122 +764,3 @@ export default function Emergency() {
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  alertBanner: {
-    backgroundColor: "#D90429",
-    paddingVertical: 24,
-    alignItems: "center",
-    padding: 5,
-    marginBottom: 20,
-    borderRadius: 12,
-  },
-  alertText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 22,
-    textAlign: "center",
-    padding: 1,
-    letterSpacing: 1,
-  },
-});
-
-const localStyles = StyleSheet.create({
-  emergencyContainer: {
-    padding: 20,
-    alignItems: "center",
-    backgroundColor: colors.light,
-  },
-  largeBanner: {
-    backgroundColor: "#D90429",
-    padding: 20,
-    borderRadius: 14,
-    width: "100%",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  bannerTitle: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "800",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  bannerSubtitle: {
-    color: "#fff",
-    fontSize: 14,
-    textAlign: "center",
-    marginBottom: 12,
-  },
-  localRiskButton: {
-    backgroundColor: "#fff",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-  },
-  localRiskButtonText: {
-    color: "#D90429",
-    fontWeight: "700",
-  },
-  miniCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-    width: "100%",
-    shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  miniCardTitle: {
-    fontWeight: "700",
-    color: colors.secondary,
-    marginBottom: 8,
-  },
-  itemText: { color: colors.secondary, marginBottom: 6 },
-  itemTextMuted: { color: colors.muted, fontStyle: "italic" },
-
-  rowIcon: { marginRight: 10 },
-
-  contactRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  contactText: { flex: 1 },
-  contactName: { fontWeight: "700", color: colors.secondary },
-  contactDetail: { color: colors.muted, marginTop: 2, fontSize: 13 },
-
-  medRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  medText: { flex: 1 },
-  medTitle: { fontWeight: "700", color: colors.secondary },
-  medDetail: { color: colors.muted, marginTop: 2, fontSize: 13 },
-
-  docRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  docThumb: {
-    width: 64,
-    height: 64,
-    borderRadius: 8,
-    marginRight: 12,
-    backgroundColor: "#F3F4F6",
-  },
-  docText: { flex: 1 },
-  docTitle: { fontWeight: "700", color: colors.secondary },
-  docMeta: { color: colors.muted, marginTop: 2, fontSize: 13 },
-});
