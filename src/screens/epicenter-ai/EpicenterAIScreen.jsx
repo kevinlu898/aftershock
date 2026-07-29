@@ -1,478 +1,283 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
+import Markdown from "react-native-markdown-display";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AppIcon } from "../../components/app-icon";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { AppIcon } from "../../components/app-icon";
-import {
-  SkeletonList,
-  useDelayedSkeleton,
-} from "../../components/ui/skeleton";
-import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
-import Markdown from "react-native-markdown-display";
+import { SkeletonList, useDelayedSkeleton } from "../../components/ui/skeleton";
 import { aiResponse } from "../../lib/api";
 import { useTheme } from "../../lib/theme";
+
+const QUICK_PROMPTS = [
+  "Build an earthquake kit for my home",
+  "What should I do during an earthquake?",
+  "Help me secure my home",
+  "Make a family emergency plan",
+  "What emergency contacts should I add?",
+  "Teach me basic earthquake first aid",
+];
+
+const chatNameFromPrompt = (prompt) => {
+  const cleaned = prompt.replace(/\s+/g, " ").trim();
+  if (!cleaned) return "New conversation";
+  const words = cleaned.split(" ");
+  return words.slice(0, 6).join(" ") + (words.length > 6 ? "…" : "");
+};
+
+const isGenericChatName = (name) => !name || name === "New conversation" || /^Chat\s*\d+$/i.test(name);
+
 export default function EpicenterAI() {
-  const {
-    palette
-  } = useTheme();
-  const markdownStyles = {
-    body: {
-      color: palette.foreground,
-      fontSize: 15,
-      lineHeight: 20
-    },
-    strong: {
-      color: palette.foreground,
-      fontWeight: "700"
-    },
-    paragraph: {
-      marginBottom: 8
-    }
-  };
+  const { palette } = useTheme();
+  const insets = useSafeAreaInsets();
   const [inputValue, setInputValue] = useState("");
   const [drafts, setDrafts] = useState({});
-  const [messages, setMessages] = useState([{
-    from: "bot",
-    text: "Hello! I'm Epicenter AI, your earthquake safety assistant. I can help you with earthquake preparedness, safety procedures, and emergency planning, as well as assisting with app features.",
-    time: new Date().toISOString()
-  }]);
+  const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
-  const [inputHeight, setInputHeight] = useState(40);
+  const [inputHeight, setInputHeight] = useState(44);
   const [requestCount, setRequestCount] = useState(0);
   const [requestDate, setRequestDate] = useState(null);
-  const scrollViewRef = useRef(null);
-  const preventAutoScrollRef = useRef(false);
   const [chats, setChats] = useState([]);
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [chatLoading, setChatLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const scrollViewRef = useRef(null);
   const showChatSkeleton = useDelayedSkeleton(chatLoading);
-  const quickPrompts = ["Create earthquake kit", "How to stay safe during an earthquake", "Secure my home", "Emergency contacts", "Make a family plan", "Learn first aid basics"];
 
-  // Auto scroll 
-  useEffect(() => {
-    if (!scrollViewRef.current) return;
-    if (preventAutoScrollRef.current) {
-      setTimeout(() => {
-        preventAutoScrollRef.current = false;
-      }, 50);
-      return;
-    }
-    setTimeout(() => {
-      try {
-        scrollViewRef.current.scrollToEnd({
-          animated: true
-        });
-      } catch (_e) {}
-    }, 100);
-  }, [messages]);
-  const toggleStar = index => {
-    preventAutoScrollRef.current = true;
-    setMessages(prev => {
-      const next = prev.map((m, i) => i === index ? {
-        ...m,
-        starred: !m.starred
-      } : m);
-      return next;
-    });
+  const markdownStyles = {
+    body: { color: palette.foreground, fontSize: 15, lineHeight: 22 },
+    strong: { color: palette.foreground, fontWeight: "700" },
+    paragraph: { marginBottom: 8 },
   };
-  const copyToClipboard = async text => {
-    if (!text) return false;
-    if (preventAutoScrollRef) preventAutoScrollRef.current = true;
+
+  const saveChats = async (nextChats) => {
     try {
-      try {
-        const ExpoClipboard = require("expo-clipboard");
-        if (ExpoClipboard && ExpoClipboard.setStringAsync) {
-          await ExpoClipboard.setStringAsync(text);
-          return true;
-        }
-      } catch (_e) {
-        // ignore
-      }
-      try {
-        const RNClipboard = require("@react-native-clipboard/clipboard");
-        if (RNClipboard && RNClipboard.setString) {
-          RNClipboard.setString(text);
-          return true;
-        }
-      } catch (_e) {
-        // ignore
-      }
-      Alert.alert("Copy not available", "Copying to clipboard is currently not supported on this device.");
-      return false;
-    } catch (_err) {
-      console.warn("Copy failed", _err);
-      Alert.alert("Copy failed", "Unable to copy message to clipboard.");
-      return false;
-    }
+      await AsyncStorage.setItem("epicenter_ai_chats", JSON.stringify(nextChats));
+    } catch (_error) {}
   };
 
-  // Daily request count
   useEffect(() => {
-    const loadCount = async () => {
-      try {
-        const raw = await AsyncStorage.getItem("epicenter_ai_request_count");
+    AsyncStorage.getItem("epicenter_ai_request_count")
+      .then((raw) => {
         if (!raw) return;
-        const parsed = JSON.parse(raw);
+        const stored = JSON.parse(raw);
         const today = new Date().toISOString().slice(0, 10);
-        if (parsed?.date === today) {
-          setRequestCount(parsed.count || 0);
-          setRequestDate(parsed.date);
+        if (stored?.date === today) {
+          setRequestCount(stored.count || 0);
+          setRequestDate(stored.date);
         } else {
-          setRequestCount(0);
           setRequestDate(today);
         }
-      } catch (_err) {
-        // ignore
-      }
-    };
-    loadCount();
+      })
+      .catch(() => {});
   }, []);
 
-  // Load chats from async storage
   useEffect(() => {
     const loadChats = async () => {
       try {
         const raw = await AsyncStorage.getItem("epicenter_ai_chats");
-        if (!raw) {
-          const defaultChat = {
-            id: `chat_1`,
-            name: "Chat 1",
-            createdAt: new Date().toISOString(),
-            messages: [{
-              from: "bot",
-              text: "Hello! I'm Epicenter AI, your earthquake safety assistant. I can help you with earthquake preparedness, safety procedures, and emergency planning, as well as assisting with app features.",
-              time: new Date().toISOString()
-            }]
-          };
-          setChats([defaultChat]);
-          setSelectedChatId(defaultChat.id);
-          await AsyncStorage.setItem("epicenter_ai_chats", JSON.stringify([defaultChat]));
-          return;
-        }
-        const parsed = JSON.parse(raw);
-        setChats(parsed || []);
-        try {
-          const storedSelected = await AsyncStorage.getItem("epicenter_ai_selected_chat");
-          if (storedSelected) {
-            const found = (parsed || []).find(c => c.id === storedSelected);
-            if (found) {
-              setSelectedChatId(found.id);
-              setMessages(found.messages || []);
-              return;
-            }
-          }
-        } catch (_err) {}
-        if (parsed && parsed.length) {
-          setSelectedChatId(parsed[0].id);
-          setMessages(parsed[0].messages || []);
-        }
-      } catch (_err) {
-        // ignore
+        let storedChats = raw ? JSON.parse(raw) : [];
+        storedChats = storedChats.filter((chat) =>
+          chat.messages?.some((message) => message.from === "user")
+        );
+        const namedChats = storedChats.map((chat) => {
+          const firstPrompt = chat.messages?.find((message) => message.from === "user")?.text;
+          return isGenericChatName(chat.name) && firstPrompt
+            ? { ...chat, name: chatNameFromPrompt(firstPrompt) }
+            : chat;
+        });
+        storedChats = namedChats;
+        setChats(storedChats);
+        const storedSelected = await AsyncStorage.getItem("epicenter_ai_selected_chat");
+        const selected = storedChats.find((chat) => chat.id === storedSelected) || storedChats[0];
+        setSelectedChatId(selected?.id || null);
+        setMessages(selected?.messages || []);
+        if (JSON.stringify(namedChats) !== raw) await saveChats(storedChats);
+      } catch (_error) {
+        setChats([]);
+        setSelectedChatId(null);
+        setMessages([]);
       } finally {
         setChatLoading(false);
       }
     };
     loadChats();
   }, []);
-  const saveChats = async nextChats => {
-    try {
-      await AsyncStorage.setItem("epicenter_ai_chats", JSON.stringify(nextChats));
-    } catch (_err) {
-      // ignore
-    }
-  };
+
   useEffect(() => {
-    if (!selectedChatId) return;
-    setChats(prev => {
-      const next = prev.map(c => c.id === selectedChatId ? {
-        ...c,
-        messages
-      } : c);
+    if (!selectedChatId || chatLoading) return;
+    setChats((current) => {
+      const next = current.map((chat) =>
+        chat.id === selectedChatId ? { ...chat, messages } : chat
+      );
       saveChats(next);
       return next;
     });
-  }, [messages, selectedChatId]);
-  const createNewChat = async () => {
-    const nextIndex = (() => {
-      try {
-        const nums = (chats || []).map(c => {
-          const m = c?.name && c.name.match(/Chat\s*(\d+)$/);
-          return m ? parseInt(m[1], 10) : 0;
-        });
-        const max = nums.length ? Math.max(...nums) : 0;
-        return max + 1;
-      } catch (_err) {
-        return chats && chats.length ? chats.length + 1 : 1;
-      }
-    })();
-    const newChat = {
-      id: `chat_${Date.now()}`,
-      name: `Chat ${nextIndex}`,
-      createdAt: new Date().toISOString(),
-      messages: [{
-        from: "bot",
-        text: "Hello! I'm Epicenter AI, your earthquake safety assistant. I can help you with earthquake preparedness, safety procedures, and emergency planning.",
-        time: new Date().toISOString()
-      }]
-    };
-    const next = [newChat, ...(chats || [])];
-    setChats(next);
-    setSelectedChatId(newChat.id);
-    try {
-      AsyncStorage.setItem("epicenter_ai_selected_chat", newChat.id);
-    } catch (_err) {
-      // ignore
-    }
-    setMessages(newChat.messages);
-    setDrafts(prev => ({
-      ...prev,
-      [newChat.id]: ""
-    }));
-    await saveChats(next);
+  }, [messages, selectedChatId, chatLoading]);
+
+  useEffect(() => {
+    if (!scrollViewRef.current) return;
+    const timer = setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 80);
+    return () => clearTimeout(timer);
+  }, [messages, isThinking]);
+
+  const persistSelectedChat = (chatId) => {
+    AsyncStorage.setItem("epicenter_ai_selected_chat", chatId).catch(() => {});
   };
-  const selectChat = chatId => {
-    const chat = (chats || []).find(c => c.id === chatId);
+
+  const createNewChat = () => {
+    setSelectedChatId(null);
+    setMessages([]);
+    setInputValue("");
+    setSidebarOpen(false);
+  };
+
+  const selectChat = (chatId) => {
+    const chat = chats.find((item) => item.id === chatId);
     if (!chat) return;
     setSelectedChatId(chatId);
-    try {
-      AsyncStorage.setItem("epicenter_ai_selected_chat", chatId);
-    } catch (_err) {}
     setMessages(chat.messages || []);
     setInputValue(drafts[chatId] || "");
+    setSidebarOpen(false);
+    persistSelectedChat(chatId);
   };
-  const saveRequestCount = async (date, count) => {
+
+  const saveRequestCount = (date, count) =>
+    AsyncStorage.setItem("epicenter_ai_request_count", JSON.stringify({ date, count })).catch(() => {});
+
+  const formatTime = (iso) => {
     try {
-      await AsyncStorage.setItem("epicenter_ai_request_count", JSON.stringify({
-        date,
-        count
-      }));
-    } catch (_err) {
-      // ignore
-    }
-  };
-  const formatTime = iso => {
-    try {
-      const d = new Date(iso);
-      return d.toLocaleTimeString([], {
-        hour: "numeric",
-        minute: "2-digit"
-      });
-    } catch {
+      return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    } catch (_error) {
       return "";
     }
   };
-  const handleQuickPrompt = prompt => {
-    setInputValue(prompt);
-    if (selectedChatId) setDrafts(p => ({
-      ...p,
-      [selectedChatId]: prompt
-    }));
-  };
 
-  // Generate response
-  const regenerateResponse = async msgIndex => {
+  const formatChatDate = (iso) => {
+    if (!iso) return "";
     try {
-      if (preventAutoScrollRef) preventAutoScrollRef.current = true;
-      if (!selectedChatId) return;
-      const today = new Date().toISOString().slice(0, 10);
-      let currentCount = requestCount || 0;
-      if (requestDate !== today) {
-        currentCount = 0;
-        setRequestDate(today);
-        setRequestCount(0);
-      }
-      if (currentCount >= 10) {
-        Alert.alert("Daily limit reached", "You have reached your daily limit of 10 AI prompts. Please try again tomorrow.");
-        return;
-      }
-      const chat = (chats || []).find(c => c.id === selectedChatId);
-      if (!chat) return;
-      const msgs = chat.messages || [];
-      let userMsg = null;
-      for (let i = msgIndex - 1; i >= 0; i--) {
-        if (msgs[i] && msgs[i].from === "user") {
-          userMsg = msgs[i];
-          break;
-        }
-      }
-      if (!userMsg) {
-        Alert.alert("Cannot regenerate", "No user prompt found to regenerate from.");
-        return;
-      }
-      const allUserMessages = [...(msgs || []).filter(m => m.from === "user")];
-      const priorUserMessages = allUserMessages.slice(-8).map(m => `User: ${m.text.replace(/\n/g, " ")}`).join("\n");
-      const promptWithContext = priorUserMessages ? `Conversation history:\n${priorUserMessages}\n\nCurrent question: ${userMsg.text}` : userMsg.text;
-      const tempMsg = {
-        from: "bot",
-        text: "Thinking...",
-        time: new Date().toISOString(),
-        temp: true
-      };
-      setMessages(prev => {
-        const next = [...prev];
-        if (next[msgIndex]) next[msgIndex] = tempMsg;
-        return next;
-      });
-      // update chats array
-      setChats(prev => {
-        const next = (prev || []).map(c => c.id === selectedChatId ? {
-          ...c,
-          messages: (c.messages || []).map((m, i) => i === msgIndex ? tempMsg : m)
-        } : c);
-        saveChats(next);
-        return next;
-      });
-      setIsThinking(true);
-      const newCount = (currentCount || 0) + 1;
-      setRequestCount(newCount);
-      setRequestDate(today);
-      saveRequestCount(today, newCount);
-      try {
-        const resp = await aiResponse(promptWithContext);
-        if (preventAutoScrollRef) preventAutoScrollRef.current = true;
-        setMessages(prev => {
-          const next = [...prev];
-          if (next[msgIndex] && next[msgIndex].temp) {
-            next[msgIndex] = {
-              from: "bot",
-              text: resp || "(no response)",
-              time: new Date().toISOString()
-            };
-          } else if (next[msgIndex]) {
-            next[msgIndex] = {
-              ...next[msgIndex],
-              text: resp || next[msgIndex].text
-            };
-          }
-          return next;
-        });
-        setChats(prev => {
-          const next = (prev || []).map(c => c.id === selectedChatId ? {
-            ...c,
-            messages: (c.messages || []).map((m, i) => i === msgIndex ? {
-              from: "bot",
-              text: resp || "(no response)",
-              time: new Date().toISOString()
-            } : m)
-          } : c);
-          saveChats(next);
-          return next;
-        });
-      } catch (_e) {
-        if (preventAutoScrollRef) preventAutoScrollRef.current = true;
-        setMessages(prev => {
-          const next = [...prev];
-          if (next[msgIndex] && next[msgIndex].temp) {
-            next[msgIndex] = {
-              from: "bot",
-              text: "⚠️ **Connection Issue**\n\nI'm having trouble connecting. Please check your internet connection and try again.",
-              time: new Date().toISOString()
-            };
-          }
-          return next;
-        });
-      } finally {
-        setIsThinking(false);
-      }
-    } catch (_err) {
-      console.warn("regenerateResponse error", _err);
+      const date = new Date(iso);
+      const today = new Date();
+      if (date.toDateString() === today.toDateString()) return "Today";
+      return date.toLocaleDateString([], { month: "short", day: "numeric" });
+    } catch (_error) {
+      return "";
     }
   };
 
-  // Send response
+  const copyToClipboard = async (text) => {
+    try {
+      const ExpoClipboard = require("expo-clipboard");
+      await ExpoClipboard?.setStringAsync?.(text);
+    } catch (_error) {
+      Alert.alert("Copy not available", "Copying is not supported on this device.");
+    }
+  };
+
+  const toggleStar = (index) => {
+    setMessages((current) => current.map((message, i) => (i === index ? { ...message, starred: !message.starred } : message)));
+  };
+
+  const handleQuickPrompt = (prompt) => {
+    setInputValue(prompt);
+    if (selectedChatId) setDrafts((current) => ({ ...current, [selectedChatId]: prompt }));
+  };
+
+  const canMakeRequest = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const currentCount = requestDate === today ? requestCount : 0;
+    if (currentCount >= 10) {
+      Alert.alert("Daily limit reached", "You have reached your daily limit of 10 AI prompts. Please try again tomorrow.");
+      return null;
+    }
+    const nextCount = currentCount + 1;
+    setRequestCount(nextCount);
+    setRequestDate(today);
+    saveRequestCount(today, nextCount);
+    return true;
+  };
+
+  const regenerateResponse = async (messageIndex) => {
+    const userMessage = [...messages.slice(0, messageIndex)].reverse().find((message) => message.from === "user");
+    if (!userMessage || !selectedChatId || !canMakeRequest()) return;
+    const thinking = { from: "bot", text: "Thinking…", time: new Date().toISOString(), temp: true };
+    setMessages((current) => current.map((message, index) => (index === messageIndex ? thinking : message)));
+    setIsThinking(true);
+    try {
+      const context = messages.filter((message) => message.from === "user").slice(-8)
+        .map((message) => `User: ${message.text.replace(/\n/g, " ")}`).join("\n");
+      const response = await aiResponse(`Conversation history:\n${context}\n\nCurrent question: ${userMessage.text}`);
+      setMessages((current) => current.map((message, index) => (
+        index === messageIndex ? { from: "bot", text: response || "I couldn’t generate a response. Please try again.", time: new Date().toISOString() } : message
+      )));
+      setIsOnline(true);
+    } catch (_error) {
+      setMessages((current) => current.map((message, index) => (
+        index === messageIndex ? { from: "bot", text: "⚠️ **Connection issue**\n\nI’m having trouble connecting. Please check your internet connection and try again.", time: new Date().toISOString() } : message
+      )));
+      setIsOnline(false);
+    } finally {
+      setIsThinking(false);
+    }
+  };
+
   const handleSubmission = async () => {
-    const text = (inputValue || "").trim();
-    if (!text) return;
+    const text = inputValue.trim();
+    if (!text || isThinking) return;
     if (!isOnline) {
       Alert.alert("Offline", "Please check your internet connection and try again.");
       return;
     }
-    const today = new Date().toISOString().slice(0, 10);
-    let currentCount = requestCount || 0;
-    if (requestDate !== today) {
-      currentCount = 0;
-      setRequestDate(today);
-      setRequestCount(0);
-    }
-    if (currentCount >= 10) {
-      Alert.alert("Daily limit reached", "You have reached your daily limit of 10 AI prompts. Please try again tomorrow.");
-      return;
-    }
-    const chatId = selectedChatId;
-    if (!chatId) return;
-    const userMsg = {
-      from: "user",
-      text,
-      time: new Date().toISOString()
-    };
-    const tempBotMsg = {
-      from: "bot",
-      text: "Thinking...",
-      time: new Date().toISOString(),
-      temp: true
-    };
-    setChats(prev => {
-      const next = (prev || []).map(c => c.id === chatId ? {
-        ...c,
-        messages: [...(c.messages || []), userMsg, tempBotMsg]
-      } : c);
+    if (!canMakeRequest()) return;
+    const userMessage = { from: "user", text, time: new Date().toISOString() };
+    const thinking = { from: "bot", text: "Thinking…", time: new Date().toISOString(), temp: true };
+    const chatId = selectedChatId || `chat_${Date.now()}`;
+    const chatAtSend = chats.find((chat) => chat.id === chatId);
+    const nextMessages = [...(chatAtSend?.messages || []), userMessage, thinking];
+    const nextChat = chatAtSend
+      ? { ...chatAtSend, name: isGenericChatName(chatAtSend.name) ? chatNameFromPrompt(text) : chatAtSend.name, messages: nextMessages }
+      : { id: chatId, name: chatNameFromPrompt(text), createdAt: new Date().toISOString(), messages: nextMessages };
+    setChats((current) => {
+      const next = chatAtSend ? current.map((chat) => (chat.id === chatId ? nextChat : chat)) : [nextChat, ...current];
       saveChats(next);
       return next;
     });
-    if (selectedChatId === chatId) setMessages(prev => [...prev, userMsg, tempBotMsg]);
+    setSelectedChatId(chatId);
+    persistSelectedChat(chatId);
+    setMessages(nextMessages);
     setInputValue("");
-    setInputHeight(40);
+    setInputHeight(44);
+    setDrafts((current) => ({ ...current, [chatId]: "" }));
     setIsThinking(true);
-    const newCount = (currentCount || 0) + 1;
-    setRequestCount(newCount);
-    setRequestDate(today);
-    saveRequestCount(today, newCount);
     try {
-      const chat = (chats || []).find(c => c.id === chatId) || {
-        messages: []
-      };
-      const allUserMessages = [...(chat.messages || []).filter(m => m.from === "user"), userMsg];
-      const priorUserMessages = allUserMessages.slice(-8).map(m => `User: ${m.text.replace(/\n/g, " ")}`).join("\n");
-      const promptWithContext = priorUserMessages ? `Conversation history:\n${priorUserMessages}\n\nCurrent question: ${text}` : text;
-      const resp = await aiResponse(promptWithContext);
-      setMessages(prev => {
-        const next = [...prev];
-        for (let i = next.length - 1; i >= 0; i--) {
-          if (next[i].from === "bot" && next[i].temp) {
-            next[i] = {
-              from: "bot",
-              text: resp || "Sorry, I could not fetch a response at this time. Please try again.",
-              time: new Date().toISOString()
-            };
-            break;
-          }
-        }
+      const allUserMessages = [...(chatAtSend?.messages || []).filter((message) => message.from === "user"), userMessage];
+      const context = allUserMessages.slice(-8).map((message) => `User: ${message.text.replace(/\n/g, " ")}`).join("\n");
+      const response = await aiResponse(`Conversation history:\n${context}\n\nCurrent question: ${text}`);
+      setMessages((current) => {
+        const next = [...current];
+        const index = next.map((message) => message.temp).lastIndexOf(true);
+        if (index >= 0) next[index] = { from: "bot", text: response || "I couldn’t generate a response. Please try again.", time: new Date().toISOString() };
         return next;
       });
       setIsOnline(true);
-      if (chatId) {
-        setDrafts(prev => {
-          const next = {
-            ...prev
-          };
-          delete next[chatId];
-          return next;
-        });
-      }
-    } catch (_e) {
-      setMessages(prev => {
-        const next = [...prev];
-        for (let i = next.length - 1; i >= 0; i--) {
-          if (next[i].from === "bot" && next[i].temp) {
-            next[i] = {
-              from: "bot",
-              text: "⚠️ **Connection Issue**\n\nI'm having trouble connecting. Please check your internet connection and try again.",
-              time: new Date().toISOString()
-            };
-            break;
-          }
-        }
+    } catch (_error) {
+      setMessages((current) => {
+        const next = [...current];
+        const index = next.map((message) => message.temp).lastIndexOf(true);
+        if (index >= 0) next[index] = { from: "bot", text: "⚠️ **Connection issue**\n\nI’m having trouble connecting. Please check your internet connection and try again.", time: new Date().toISOString() };
         return next;
       });
       setIsOnline(false);
@@ -481,193 +286,138 @@ export default function EpicenterAI() {
     }
   };
 
-  // Delete  chat
   const deleteChat = () => {
-    if (!selectedChatId) return;
-    const chat = (chats || []).find(c => c.id === selectedChatId);
-    if (!chat) return;
-    Alert.alert("Delete Chat", `Are you sure you want to delete '${chat.name}'? This will remove the entire conversation.`, [{
-      text: "Cancel",
-      style: "cancel"
-    }, {
-      text: "Delete",
-      style: "destructive",
-      onPress: async () => {
-        try {
-          const next = (chats || []).filter(c => c.id !== selectedChatId);
-          if (!next || next.length === 0) {
-            const defaultChat = {
-              id: `chat_1`,
-              name: "Chat 1",
-              createdAt: new Date().toISOString(),
-              messages: [{
-                from: "bot",
-                text: "Hello! I'm Epicenter AI, your earthquake safety assistant. I can help you with earthquake preparedness, safety procedures, and emergency planning.",
-                time: new Date().toISOString()
-              }]
-            };
-            setChats([defaultChat]);
-            setSelectedChatId(defaultChat.id);
-            try {
-              AsyncStorage.setItem("epicenter_ai_selected_chat", defaultChat.id);
-            } catch (_err) {}
-            setMessages(defaultChat.messages);
-            await saveChats([defaultChat]);
-            return;
-          }
+    const chat = chats.find((item) => item.id === selectedChatId);
+    if (!chat || chats.length < 2) return;
+    Alert.alert("Delete conversation", `Delete “${chat.name}”? This can’t be undone.`, [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          const next = chats.filter((item) => item.id !== selectedChatId);
           setChats(next);
           setSelectedChatId(next[0].id);
-          try {
-            AsyncStorage.setItem("epicenter_ai_selected_chat", next[0].id);
-          } catch (_err) {}
           setMessages(next[0].messages || []);
-          await saveChats(next);
-        } catch (_err) {
-          // ignore
-        }
-      }
-    }]);
+          persistSelectedChat(next[0].id);
+          saveChats(next);
+        },
+      },
+    ]);
   };
-  const handleInputContentSizeChange = event => {
-    const height = event?.nativeEvent?.contentSize?.height || 40;
-    setInputHeight(Math.min(100, Math.max(40, height)));
-  };
-  const otherHasDraft = (() => {
-    try {
-      const keys = Object.keys(drafts || {});
-      for (let k of keys) {
-        if (k !== selectedChatId && drafts[k] && drafts[k].trim()) return true;
-      }
-      return false;
-    } catch {
-      return false;
-    }
-  })();
-  return <View className="flex-1 bg-background">
-    <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <View className="flex-1">
-        <View className="border-b border-border bg-background px-4 pb-3 pt-2">
-          <View className="flex-row items-center gap-3">
-            <View className="h-10 w-10 items-center justify-center rounded-full bg-secondary">
-              <Image source={isOnline ? require("../../../assets/images/filledEpicenter.png") : require("../../../assets/images/outlineEpicenter.png")} className="h-6 w-6 object-contain" />
-            </View>
-            <View className="min-w-0 flex-1">
-              <Text className="text-[17px] font-bold text-foreground">Epicenter AI</Text>
-              <Text className="text-[12px] text-muted-foreground">
-                {isOnline ? `${requestCount} of 10 prompts used today` : "Offline"}
-              </Text>
-            </View>
-            <Button unstyled className="h-10 w-10 items-center justify-center rounded-full active:bg-muted" onPress={deleteChat} disabled={!(chats && chats.length > 1)} accessibilityLabel="Delete current chat" style={!(chats && chats.length > 1) ? { opacity: 0.35 } : undefined}>
-              <AppIcon name="trash-can-outline" size={20} color={palette.mutedForeground} />
+
+  const selectedChat = chats.find((chat) => chat.id === selectedChatId);
+  const inputDisabled = isThinking || !isOnline;
+
+  return (
+    <View className="flex-1 bg-background">
+      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <View className="flex-1">
+          <View className="flex-row items-center gap-3 border-b border-border bg-background px-4 py-3">
+            <Button unstyled onPress={() => setSidebarOpen(true)} className="h-10 w-10 items-center justify-center rounded-full active:bg-secondary" accessibilityLabel="Open conversations">
+              <AppIcon name="menu" size={22} color={palette.foreground} />
             </Button>
-            <Button unstyled className="h-10 w-10 items-center justify-center rounded-full bg-primary" onPress={createNewChat} accessibilityLabel="New chat">
+            <View className="min-w-0 flex-1">
+              <Text numberOfLines={1} className="text-[16px] font-bold text-foreground">{selectedChat?.name || "New chat"}</Text>
+              <Text className="text-[12px] text-muted-foreground">{isOnline ? "Earthquake safety assistant" : "Offline"}</Text>
+            </View>
+            <Button unstyled onPress={createNewChat} className="h-10 w-10 items-center justify-center rounded-full bg-primary" accessibilityLabel="Start a new conversation">
               <AppIcon name="plus" size={20} color={palette.primaryForeground} />
             </Button>
           </View>
 
-          {chats.length > 1 ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2 pt-3">
-            {chats.map(c => <Button unstyled key={c.id} onPress={() => selectChat(c.id)} className={[
-              "min-h-8 rounded-full border px-3 py-1.5",
-              c.id === selectedChatId ? "border-primary bg-secondary" : "border-border bg-background"
-            ].join(" ")}>
-              <Text className={c.id === selectedChatId ? "text-[13px] font-semibold text-primary" : "text-[13px] text-muted-foreground"}>
-                {c.name}
-              </Text>
-            </Button>)}
-          </ScrollView> : null}
-        </View>
-
-        <ScrollView
-          className="flex-1 bg-background"
-          contentContainerClassName="gap-6 px-4 py-5"
-          keyboardDismissMode="interactive"
-          ref={scrollViewRef}
-          showsVerticalScrollIndicator={false}
-        >
-          {chatLoading ? showChatSkeleton ? <SkeletonList count={4} /> : <View className="h-64" /> : messages.map((msg, idx) => {
-            const isUser = msg.from === "user";
-            const isFirstMessage = idx === 0;
-            if (isUser) {
-              return <View key={idx} className="items-end">
-                <View className={["max-w-[84%] rounded-[20px] rounded-br-[6px] bg-secondary px-4 py-3", msg.starred && "border border-warning/40 bg-warning/10"].filter(Boolean).join(" ")}>
-                  <Text className="text-[15px] leading-[22px] text-foreground">{msg.text}</Text>
+          <ScrollView ref={scrollViewRef} className="flex-1 bg-background" contentContainerClassName="gap-6 px-4 py-5" contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive" showsVerticalScrollIndicator={false}>
+            {chatLoading ? (showChatSkeleton ? <SkeletonList count={4} /> : <View className="h-64" />) : messages.length === 0 ? (
+              <View className="gap-2 pt-2">
+                <View className="mb-5 items-center gap-2 px-5 pt-2">
+                  <View className="h-14 w-14 items-center justify-center rounded-2xl bg-secondary"><Image source={require("../../../assets/images/filledEpicenter.png")} className="h-9 w-9 object-contain" /></View>
+                  <Text className="text-center text-[22px] font-bold text-foreground">Epicenter AI</Text>
+                  <Text className="text-center text-[14px] leading-5 text-muted-foreground">Your earthquake safety guide for plans, preparation, and quick answers.</Text>
                 </View>
-                <View className="mt-1 flex-row items-center gap-2 pr-1">
-                  <Text className="text-[11px] text-muted-foreground">{formatTime(msg.time)}</Text>
-                  <Button unstyled className="h-8 w-8 items-center justify-center" onPress={() => toggleStar(idx)} accessibilityLabel={msg.starred ? "Unstar message" : "Star message"}>
-                    <AppIcon name={msg.starred ? "star" : "star-outline"} size={16} color={msg.starred ? palette.warning : palette.mutedForeground} fill={msg.starred ? palette.warning : "none"} />
+                <View className="flex-row items-center gap-2"><View className="h-8 w-8 items-center justify-center rounded-full bg-secondary"><AppIcon name="lightbulb" size={16} color={palette.primary} /></View><Text className="text-[13px] font-semibold text-muted-foreground">Try asking</Text></View>
+                {QUICK_PROMPTS.map((prompt) => (
+                  <Button key={prompt} unstyled onPress={() => handleQuickPrompt(prompt)} disabled={inputDisabled} className="flex-row items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 active:bg-secondary" style={{ borderCurve: "continuous" }}>
+                    <Text className="flex-1 text-left text-[14px] font-medium leading-5 text-foreground">{prompt}</Text>
+                    <AppIcon name="chevron-right" size={17} color={palette.mutedForeground} />
                   </Button>
-                </View>
-              </View>;
-            }
-
-            return <View key={idx} className="flex-row items-start gap-3">
-              <View className="mt-0.5 h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary">
-                <Image source={isOnline ? require("../../../assets/images/filledEpicenter.png") : require("../../../assets/images/outlineEpicenter.png")} className="h-5 w-5 object-contain" />
+                ))}
               </View>
-              <View className={["min-w-0 flex-1", msg.starred && "rounded-2xl bg-warning/10 p-3"].filter(Boolean).join(" ")}>
-                <View className="mb-1 flex-row items-center gap-2">
-                  <Text className="text-[13px] font-bold text-foreground">Epicenter AI</Text>
-                  <Text className="text-[11px] text-muted-foreground">{formatTime(msg.time)}</Text>
+            ) : messages.map((message, index) => {
+              const isUser = message.from === "user";
+              if (isUser) return (
+                <View key={`${message.time}-${index}`} className="items-end">
+                  <View className={["max-w-[86%] rounded-[22px] rounded-br-md bg-primary px-4 py-3", message.starred && "border border-warning/50"].filter(Boolean).join(" ")} style={{ borderCurve: "continuous" }}>
+                    <Text selectable className="text-[15px] leading-[22px] text-primary-foreground">{message.text}</Text>
+                  </View>
+                  <View className="mt-1 flex-row items-center gap-1 pr-1">
+                    <Text className="text-[11px] text-muted-foreground">{formatTime(message.time)}</Text>
+                    <Button unstyled className="h-7 w-7 items-center justify-center rounded-full active:bg-secondary" onPress={() => toggleStar(index)} accessibilityLabel="Save message">
+                      <AppIcon name={message.starred ? "star" : "star-outline"} size={15} color={message.starred ? palette.warning : palette.mutedForeground} fill={message.starred ? palette.warning : "none"} />
+                    </Button>
+                  </View>
                 </View>
-                {msg.text === "Thinking..." ? <View className="flex-row items-center gap-2 py-2">
-                  <ActivityIndicator size="small" color={palette.primary} />
-                  <Text className="text-[15px] text-muted-foreground">Thinking...</Text>
-                </View> : <>
-                  <Markdown style={markdownStyles}>{msg.text || ""}</Markdown>
-                  {isFirstMessage && messages.length === 1 ? <View className="mt-3 gap-2">
-                    <Text className="text-[13px] font-semibold text-muted-foreground">Try asking</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2 pr-4">
-                      {quickPrompts.map(prompt => <Button unstyled key={prompt} className="min-h-10 max-w-[220px] rounded-full border border-border bg-card px-4 py-2" onPress={() => handleQuickPrompt(prompt)} disabled={isThinking}>
-                        <Text numberOfLines={1} className="text-[13px] font-medium text-foreground">{prompt}</Text>
-                      </Button>)}
-                    </ScrollView>
-                  </View> : null}
-                </>}
-                {!msg.temp && msg.text !== "Thinking..." ? <View className="mt-2 flex-row items-center gap-1">
-                  <Button unstyled className="h-9 w-9 items-center justify-center rounded-full active:bg-muted" onPress={() => copyToClipboard(msg.text || "")} accessibilityLabel="Copy response">
-                    <AppIcon name="content-copy" size={17} color={palette.mutedForeground} />
-                  </Button>
-                  <Button unstyled className="h-9 w-9 items-center justify-center rounded-full active:bg-muted" onPress={() => regenerateResponse(idx)} accessibilityLabel="Regenerate response">
-                    <AppIcon name="autorenew" size={17} color={palette.mutedForeground} />
-                  </Button>
-                  <Button unstyled className="h-9 w-9 items-center justify-center rounded-full active:bg-muted" onPress={() => toggleStar(idx)} accessibilityLabel={msg.starred ? "Unstar response" : "Star response"}>
-                    <AppIcon name={msg.starred ? "star" : "star-outline"} size={17} color={msg.starred ? palette.warning : palette.mutedForeground} fill={msg.starred ? palette.warning : "none"} />
-                  </Button>
-                </View> : null}
-              </View>
-            </View>;
-          })}
-        </ScrollView>
+              );
 
-        <View className="bg-background px-3 pb-3 pt-2">
-          {!isOnline ? <View className="mb-2 flex-row items-center justify-center gap-2">
-            <AppIcon name="wifi-off" size={14} color={palette.destructive} />
-            <Text className="text-[12px] font-medium text-destructive">Offline. Check your connection.</Text>
-          </View> : null}
-          <View className="flex-row items-end gap-2 rounded-[26px] border border-border bg-card p-1.5">
-            <Input
-              value={inputValue}
-              onChangeText={t => {
-                setInputValue(t);
-                if (selectedChatId) setDrafts(p => ({ ...p, [selectedChatId]: t }));
-              }}
-              placeholder="Message Epicenter AI"
-              className="min-h-11 flex-1 border-0 bg-transparent px-3 py-2 text-[15px] shadow-none"
-              style={{ height: inputHeight }}
-              onSubmitEditing={handleSubmission}
-              onContentSizeChange={handleInputContentSizeChange}
-              returnKeyType="send"
-              multiline
-              maxLength={500}
-              editable={!isThinking && isOnline && !otherHasDraft}
-            />
-            <Button unstyled onPress={handleSubmission} className={["h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary", (!inputValue.trim() || isThinking || !isOnline) && "opacity-40"].filter(Boolean).join(" ")} disabled={!inputValue.trim() || isThinking || !isOnline} accessibilityLabel="Send message">
-              {isThinking ? <ActivityIndicator color={palette.primaryForeground} size="small" /> : <AppIcon name="send" size={18} color={palette.primaryForeground} />}
-            </Button>
+              return (
+                <View key={`${message.time}-${index}`} className={message.starred ? "rounded-2xl bg-warning/10 p-3" : ""}>
+                  <View className="flex-row items-center gap-2">
+                    <View className="h-9 w-9 items-center justify-center rounded-xl bg-secondary" style={{ borderCurve: "continuous" }}>
+                      <Image source={isOnline ? require("../../../assets/images/filledEpicenter.png") : require("../../../assets/images/outlineEpicenter.png")} className="h-6 w-6 object-contain" />
+                    </View>
+                    <Text className="text-[13px] font-bold text-foreground">Epicenter AI</Text>
+                    <Text className="text-[11px] text-muted-foreground">{formatTime(message.time)}</Text>
+                  </View>
+                  {message.temp ? (
+                    <View className="flex-row items-center gap-2 py-3"><ActivityIndicator size="small" color={palette.primary} /><Text className="text-[15px] text-muted-foreground">Thinking…</Text></View>
+                  ) : (
+                    <Markdown style={markdownStyles}>{message.text || ""}</Markdown>
+                  )}
+                  {!message.temp ? (
+                    <View className="mt-2 flex-row items-center gap-1">
+                      <Button unstyled className="h-9 w-9 items-center justify-center rounded-full active:bg-secondary" onPress={() => copyToClipboard(message.text || "")} accessibilityLabel="Copy response"><AppIcon name="content-copy" size={17} color={palette.mutedForeground} /></Button>
+                      <Button unstyled className="h-9 w-9 items-center justify-center rounded-full active:bg-secondary" onPress={() => regenerateResponse(index)} disabled={isThinking} accessibilityLabel="Regenerate response"><AppIcon name="autorenew" size={17} color={palette.mutedForeground} /></Button>
+                      <Button unstyled className="h-9 w-9 items-center justify-center rounded-full active:bg-secondary" onPress={() => toggleStar(index)} accessibilityLabel="Save response"><AppIcon name={message.starred ? "star" : "star-outline"} size={17} color={message.starred ? palette.warning : palette.mutedForeground} fill={message.starred ? palette.warning : "none"} /></Button>
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })}
+          </ScrollView>
+
+          <View className="border-t border-border bg-background px-4 pb-3 pt-3">
+            {!isOnline ? <View className="mb-2 flex-row items-center justify-center gap-2"><AppIcon name="wifi-off" size={14} color={palette.destructive} /><Text className="text-[12px] font-medium text-destructive">Offline. Check your connection.</Text></View> : null}
+            <View className="flex-row items-end gap-2 rounded-[24px] border border-border bg-card p-2" style={{ borderCurve: "continuous" }}>
+              <Input value={inputValue} onChangeText={(value) => { setInputValue(value); if (selectedChatId) setDrafts((current) => ({ ...current, [selectedChatId]: value })); }} placeholder="Ask about earthquake safety" className="max-h-28 min-h-11 flex-1 border-0 bg-transparent px-2 py-2 text-[15px] shadow-none" style={{ height: inputHeight }} onContentSizeChange={(event) => setInputHeight(Math.min(112, Math.max(44, event.nativeEvent.contentSize.height)))} multiline returnKeyType="send" blurOnSubmit={false} maxLength={500} editable={!inputDisabled} />
+              <View className="pb-0.5">
+                <Button unstyled onPress={handleSubmission} disabled={!inputValue.trim() || inputDisabled} className={["h-10 w-10 items-center justify-center rounded-full bg-primary", (!inputValue.trim() || inputDisabled) && "opacity-40"].filter(Boolean).join(" ")} accessibilityLabel="Send message">
+                  {isThinking ? <ActivityIndicator color={palette.primaryForeground} size="small" /> : <AppIcon name="send" size={18} color={palette.primaryForeground} />}
+                </Button>
+              </View>
+            </View>
+            <Text className="px-2 pt-2 text-center text-[11px] text-muted-foreground">Epicenter AI can make mistakes. Check official guidance in an emergency.</Text>
           </View>
         </View>
-      </View>
-    </KeyboardAvoidingView>
-  </View>;
+      </KeyboardAvoidingView>
+
+      <Modal visible={sidebarOpen} transparent animationType="fade" onRequestClose={() => setSidebarOpen(false)}>
+        <View className="flex-1 flex-row bg-black/35" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+          <View className="w-[86%] max-w-[360px] border-r border-border bg-background pt-3" style={{ boxShadow: "2px 0 12px rgba(0, 0, 0, 0.12)" }}>
+            <View className="flex-row items-center justify-between px-4 pb-4">
+              <View className="flex-row items-center gap-3"><View className="h-10 w-10 items-center justify-center rounded-xl bg-secondary"><Image source={require("../../../assets/images/filledEpicenter.png")} className="h-6 w-6 object-contain" /></View><Text className="text-[19px] font-bold text-foreground">Epicenter AI</Text></View>
+              <Button unstyled onPress={() => setSidebarOpen(false)} className="h-10 w-10 items-center justify-center rounded-full active:bg-secondary" accessibilityLabel="Close conversations"><AppIcon name="close" size={20} color={palette.foreground} /></Button>
+            </View>
+            <View className="px-4 pb-4"><Button onPress={createNewChat} className="min-h-12 rounded-xl"><AppIcon name="plus" size={18} color={palette.primaryForeground} /><Text className="font-semibold text-primary-foreground">New chat</Text></Button></View>
+            <Text className="mt-5 px-5 pb-2 text-[12px] font-bold text-muted-foreground">RECENT CHATS</Text>
+            <ScrollView className="flex-1" contentContainerClassName="gap-1 px-3 pb-6" showsVerticalScrollIndicator={false}>
+              {chats.map((chat) => <Button key={chat.id} unstyled onPress={() => selectChat(chat.id)} className={["w-full items-start justify-start rounded-xl px-3 py-3", chat.id === selectedChatId ? "bg-secondary" : "active:bg-secondary"].join(" ")}>
+                <View className="min-w-0 gap-0.5"><Text numberOfLines={1} className={["text-[14px] font-semibold", chat.id === selectedChatId ? "text-primary" : "text-foreground"].join(" ")}>{chat.name}</Text><Text className="text-[12px] text-muted-foreground">{formatChatDate(chat.messages?.[chat.messages.length - 1]?.time || chat.createdAt)}</Text></View>
+              </Button>)}
+            </ScrollView>
+            <View className="border-t border-border p-3"><Button unstyled onPress={deleteChat} disabled={chats.length < 2} className="flex-row items-center gap-3 rounded-xl px-3 py-3 active:bg-secondary"><AppIcon name="trash-can-outline" size={18} color={chats.length < 2 ? palette.border : palette.destructive} /><Text className={chats.length < 2 ? "text-[14px] font-semibold text-muted-foreground" : "text-[14px] font-semibold text-destructive"}>Delete current chat</Text></Button></View>
+          </View>
+          <Pressable className="flex-1" onPress={() => setSidebarOpen(false)} accessibilityLabel="Close conversations" />
+        </View>
+      </Modal>
+    </View>
+  );
 }
