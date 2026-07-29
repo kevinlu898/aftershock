@@ -1,9 +1,14 @@
 import { Button } from "../../components/ui/button";
+import { AppIcon } from "../../components/app-icon";
+import { EmptyState, StatusCard } from "../../components/app-ui";
 import { Input } from "../../components/ui/input";
+import {
+  SkeletonList,
+  useDelayedSkeleton,
+} from "../../components/ui/skeleton";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useRef, useState } from "react";
-import { Alert, Dimensions, Keyboard, Modal, Platform, SafeAreaView, ScrollView, StatusBar, Text, TouchableWithoutFeedback, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Alert, Keyboard, Modal, ScrollView, Text, TouchableWithoutFeedback, useWindowDimensions, View } from "react-native";
 import { addDoc, collection, deleteDoc, doc, query as fsQuery, getDocs, updateDoc, where } from 'firebase/firestore';
 import { db } from '../../lib/firebaseConfig';
 import { getData } from '../../lib/storage/storageUtils';
@@ -11,15 +16,15 @@ const MED_KEY = 'medical_info';
 export default function MedicalInfo({
   navigation
 }) {
-  const insets = useSafeAreaInsets();
-  const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 24 : insets.top || 20;
-  const screenHeight = typeof Dimensions !== 'undefined' && Dimensions.get && typeof Dimensions.get === 'function' ? Dimensions.get('window').height : 800;
+  const { height: screenHeight } = useWindowDimensions();
   const MODAL_MAX = Math.min(screenHeight * 0.85, 760);
   const MODAL_HEADER_H = 56;
   const MODAL_FOOTER_H = 64;
   const modalContentMaxHeight = MODAL_MAX - MODAL_HEADER_H - MODAL_FOOTER_H;
   const [medicalList, setMedicalList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const showSkeleton = useDelayedSkeleton(loading);
   const [showMedForm, setShowMedForm] = useState(false);
   const [medForm, setMedForm] = useState({
     name: '',
@@ -100,7 +105,7 @@ export default function MedicalInfo({
           }
         }
       } catch (_error) {
-        // ignore
+        setLoadError("Your medical information could not be loaded.");
       } finally {
         setLoading(false);
       }
@@ -250,30 +255,25 @@ export default function MedicalInfo({
     setEditingMedId(null);
     setActiveInputRef(null);
   };
-  return <SafeAreaView className="flex-1 bg-background">
-      <View className={["absolute top-0 left-0 right-0 bg-background z-[1000]"].filter(Boolean).join(" ")} style={{
-      height: statusBarHeight
-    }} />
+  return <View className="flex-1 bg-background">
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View className="flex-1">
           
 
           <ScrollView contentContainerClassName="p-[18px]" keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
-            <Button unstyled onPress={() => navigation?.goBack?.()} className={"mb-[12px] self-start py-[8px] px-[12px] rounded-[10px] bg-card"}>
-              <Text className={"text-primary font-bold"}>{'← Back'}</Text>
-            </Button>
-
-            <View className={"bg-card p-[16px] rounded-[12px] mb-[12px] shadow-sm"}>
-              <Text className={"text-[20px] font-extrabold text-primary"}>Medical Info</Text>
+            <View className={"bg-card p-[20px] rounded-[16px] mb-[12px] shadow-sm border border-border"}>
               <Text className={"text-muted-foreground mt-[6px]"}>
                 Manage one or more medical records to share in an emergency. These are stored locally on this device.
               </Text>
 
               <Button unstyled className={["mt-[12px] py-[10px] px-[12px] bg-secondary rounded-[8px] self-start", "mt-[12px]"].filter(Boolean).join(" ")} onPress={() => openMedicalEdit()}>
-                <Text className={"text-primary font-bold"}>{'+ Add Medical Info'}</Text>
+                <View className="flex-row items-center gap-2">
+                  <AppIcon name="plus" size={17} className="text-primary" />
+                  <Text className={"text-primary font-bold"}>Add Medical Info</Text>
+                </View>
               </Button>
 
-              {loading ? <Text className="mt-[12px] text-muted-foreground">Loading…</Text> : medicalList.length === 0 ? <Text className="mt-[12px] text-muted-foreground">No medical information saved.</Text> : <View className="mt-[12px]">
+              {loading ? showSkeleton ? <SkeletonList count={3} className="mt-4" /> : <View className="h-40" /> : loadError ? <StatusCard className="mt-4" tone="danger" title="Medical information unavailable" description={loadError} /> : medicalList.length === 0 ? <EmptyState className="mt-4 bg-muted/40" title="No medical information saved" description="Add medications, allergies, blood type, or notes for emergency access." /> : <View className="mt-[12px]">
                   <ScrollView style={{
                 maxHeight: Math.round(screenHeight * 0.55)
               }} nestedScrollEnabled contentContainerClassName="pb-[8px]">
@@ -359,5 +359,5 @@ export default function MedicalInfo({
           </Modal>
         </View>
       </TouchableWithoutFeedback>
-    </SafeAreaView>;
+    </View>;
 }

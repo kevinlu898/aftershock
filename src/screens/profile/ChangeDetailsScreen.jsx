@@ -1,5 +1,11 @@
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
+import { FormField, StatusCard } from "../../components/app-ui";
+import { Card } from "../../components/ui/card";
+import {
+  ScreenSkeleton,
+  useDelayedSkeleton,
+} from "../../components/ui/skeleton";
 import { useNavigation } from "@react-navigation/native";
 import { collection, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
@@ -16,19 +22,27 @@ export default function ChangeDetails() {
   const [email, setEmail] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const showSkeleton = useDelayedSkeleton(initialLoading);
   useEffect(() => {
     (async () => {
-      const username = await getData("username");
-      if (!username) return;
-      const q = query(collection(db, "user"), where("username", "==", username));
-      const res = await getDocs(q);
-      if (res.empty) return;
-      const data = res.docs[0].data();
-      setFirstName(data.first_name || "");
-      setLastName(data.last_name || "");
-      setZipcode(data.zip_code || "");
-      setPhone(data.phone || "");
-      setEmail(data.email || "");
+      try {
+        const username = await getData("username");
+        if (!username) return;
+        const q = query(collection(db, "user"), where("username", "==", username));
+        const res = await getDocs(q);
+        if (res.empty) return;
+        const data = res.docs[0].data();
+        setFirstName(data.first_name || "");
+        setLastName(data.last_name || "");
+        setZipcode(data.zip_code || "");
+        setPhone(data.phone || "");
+        setEmail(data.email || "");
+      } catch (error) {
+        console.warn("Failed to load account details", error);
+      } finally {
+        setInitialLoading(false);
+      }
     })();
   }, []);
   const handleSave = async () => {
@@ -79,40 +93,36 @@ export default function ChangeDetails() {
       setLoading(false);
     }
   };
+  if (initialLoading) {
+    return showSkeleton ? <ScreenSkeleton cards={3} /> : <View className="flex-1 bg-background" />;
+  }
   return <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView className="flex-1" contentContainerClassName="grow pb-[60px]" keyboardShouldPersistTaps="handled">
-        <View className={"flex-1 p-[20px] pt-[32px] bg-background"}>
-          <Button unstyled onPress={() => navigation?.goBack?.()} className={"mt-[20px] mb-[15px] self-start py-[8px] px-[12px] rounded-[12px] bg-card border border-border"}>
-            <Text className={"text-primary font-bold"}>{"← Back"}</Text>
-          </Button>
+        <View className={"flex-1 p-[20px] bg-background"}>
+          <Card className="gap-5">
+            <Text className="text-sm leading-5 text-muted-foreground">Keep your contact details current so local guidance and exports remain useful.</Text>
+            <FormField label="First name">
+              <Input placeholder="First name" value={firstName} onChangeText={setFirstName} />
+            </FormField>
+            <FormField label="Last name">
+              <Input placeholder="Last name" value={lastName} onChangeText={setLastName} />
+            </FormField>
+            <FormField label="Zip code">
+              <Input placeholder="Zip code" value={zipcode} onChangeText={setZipcode} keyboardType="number-pad" />
+            </FormField>
+            <FormField label="Phone">
+              <Input placeholder="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+            </FormField>
+            <FormField label="Email">
+              <Input placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+            </FormField>
 
-          <View className={"bg-card p-[18px] rounded-[14px] shadow-sm mb-[12px]"}>
-            <Text className={"text-[30px] font-extrabold text-primary text-center mb-[8px] mt-0"}>Change Details</Text>
-            <Text className={"text-foreground mb-[8px] font-semibold"}>First Name</Text>
-            <Input placeholder="First name" value={firstName} onChangeText={setFirstName} className={"border border-border rounded-[12px] py-[13px] px-[14px] mb-[12px] bg-card text-foreground"} />
-            <Text className={"text-foreground mb-[8px] font-semibold"}>Last Name</Text>
-            <Input placeholder="Last name" value={lastName} onChangeText={setLastName} className={"border border-border rounded-[12px] py-[13px] px-[14px] mb-[12px] bg-card text-foreground"} />
-            <Text className={"text-foreground mb-[8px] font-semibold"}>Zip Code</Text>
-            <Input placeholder="Zip code" value={zipcode} onChangeText={setZipcode} className={"border border-border rounded-[12px] py-[13px] px-[14px] mb-[12px] bg-card text-foreground"} keyboardType="number-pad" />
-            <Text className={"text-foreground mb-[8px] font-semibold"}>Phone</Text>
-            <Input placeholder="Phone" value={phone} onChangeText={setPhone} className={"border border-border rounded-[12px] py-[13px] px-[14px] mb-[12px] bg-card text-foreground"} keyboardType="phone-pad" />
-            <Text className={"text-foreground mb-[8px] font-semibold"}>Email</Text>
-            <Input placeholder="Email" value={email} onChangeText={setEmail} className={"border border-border rounded-[12px] py-[13px] px-[14px] mb-[12px] bg-card text-foreground"} keyboardType="email-address" autoCapitalize="none" />
+            <StatusCard title="Confirm changes" description="Enter your current password before saving.">
+              <Input placeholder="Current password" value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry accessibilityLabel="Confirm current password" />
+            </StatusCard>
 
-            <View className={"border border-border bg-muted p-[12px] rounded-[10px] mb-[12px]"}>
-              <Text className={"font-bold text-secondary-foreground mb-[6px]"}>Enter password</Text>
-              <Text className={"text-foreground mb-[8px] font-semibold"}>
-                Enter your password to confirm your changes
-              </Text>
-              <Input placeholder="Current password" value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry className={"min-h-[44px] border border-border rounded-[8px] px-[10px] bg-card mt-[6px]"} accessibilityLabel="Confirm current password" />
-            </View>
-
-            <Button unstyled onPress={handleSave} className="bg-primary rounded-[12px] p-[14px]" disabled={loading}>
-              <Text className="text-primary-foreground text-center">
-                {loading ? "Saving..." : "Save"}
-              </Text>
-            </Button>
-          </View>
+            <Button onPress={handleSave} loading={loading}>Save Changes</Button>
+          </Card>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>;

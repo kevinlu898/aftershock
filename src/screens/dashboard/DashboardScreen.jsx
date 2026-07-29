@@ -1,10 +1,20 @@
 import { Button } from "../../components/ui/button";
 import { Progress } from "../../components/ui/progress";
+import {
+  ScreenSkeleton,
+  useDelayedSkeleton,
+} from "../../components/ui/skeleton";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useRef, useState } from "react";
-import { Animated, AppState, Dimensions, Image, ScrollView, Text, View } from "react-native";
+import { Animated, AppState, Image, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import { APP_ICONS, AppIcon } from "../../components/app-icon";
+import {
+  ListRow,
+  PageHeader,
+  SectionHeader,
+  StatusCard,
+} from "../../components/app-ui";
 import { getData } from "../../lib/storage/storageUtils";
 import { getPrepareModules } from "../../lib/prepareModules";
 import { useTheme } from "../../lib/theme";
@@ -14,12 +24,13 @@ export default function Dashboard() {
   const [activeDot, setActiveDot] = useState(0);
   const [, setModules] = useState([]);
   const [overallProgress, setOverallProgress] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const showSkeleton = useDelayedSkeleton(loading);
   const navigation = useNavigation();
   const { palette } = useTheme();
   const scrollX = useRef(new Animated.Value(0)).current;
-  const {
-    width: screenWidth
-  } = Dimensions.get("window");
+  const { width: screenWidth } = useWindowDimensions();
   const appStateRef = useRef(AppState.currentState);
   useEffect(() => {
     let isMounted = true;
@@ -42,6 +53,7 @@ export default function Dashboard() {
     let mounted = true;
     const fetchModules = async () => {
       try {
+        setLoadError(null);
         const ms = await getPrepareModules();
         if (!mounted) return;
         setModules(ms || []);
@@ -51,6 +63,9 @@ export default function Dashboard() {
         } else setOverallProgress(0);
       } catch (e) {
         console.warn("Dashboard: failed to load modules", e);
+        setLoadError("Preparedness progress could not be loaded.");
+      } finally {
+        if (mounted) setLoading(false);
       }
     };
     fetchModules();
@@ -132,10 +147,10 @@ export default function Dashboard() {
     color: palette.primary,
     onPress: () => navigation.navigate("News")
   }];
-  const CARD_WIDTH = 280;
-  const CARD_GAP = 8;
+  const CARD_WIDTH = Math.min(320, Math.max(260, screenWidth - 56));
+  const CARD_GAP = 12;
   const SNAP_INTERVAL = CARD_WIDTH + CARD_GAP;
-  const HORIZONTAL_PADDING = Math.max(0, Math.round((screenWidth - CARD_WIDTH) / 2));
+  const HORIZONTAL_PADDING = 0;
   const handleScroll = Animated.event([{
     nativeEvent: {
       contentOffset: {
@@ -166,41 +181,54 @@ export default function Dashboard() {
     if (progress < 1) return "Almost there! Just a few steps to complete safety.";
     return "Excellent! You're fully prepared for earthquakes!";
   };
+  if (loading) {
+    return showSkeleton ? <ScreenSkeleton cards={4} /> : <View className="flex-1 bg-background" />;
+  }
+  if (loadError) {
+    return (
+      <View className="flex-1 justify-center bg-background p-5">
+        <StatusCard tone="danger" title="Dashboard unavailable" description={loadError} />
+      </View>
+    );
+  }
   return <View className="flex-1 bg-background">
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerClassName={"grow"}>
-        <View className={"flex-1 p-[16px] pt-[28px] pb-[28px]"}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerClassName={"grow"}>
+        <View className={"flex-1 gap-[24px] px-[20px] py-[24px]"}>
           {/* Header */}
-          <View className={"items-center mb-[22px]"}>
-            <Text className={"text-[30px] font-extrabold text-primary text-center mb-[8px] mt-0"}>
-              {firstVisit && username ? `Welcome to Aftershock, ${username}!` : username ? `Welcome back, ${username}!` : "Welcome back!"}
-            </Text>
-            <View className={["rounded-[18px] p-[18px] mt-[10px] mb-[4px] shadow-sm border border-border w-[100%]", "bg-card"].filter(Boolean).join(" ")}>
+          <View className={"gap-[16px]"}>
+            <PageHeader
+              title={firstVisit && username ? `Welcome, ${username}` : username ? `Welcome back, ${username}` : "Welcome back"}
+              description="A clear view of your plan, resources, and local earthquake information."
+            />
+            <View className={"w-[100%] gap-[12px] rounded-[18px] border border-border bg-card p-[20px] shadow-sm"}>
               <View className={"flex-row justify-between items-center mb-[12px]"}>
-                <Text className={"text-base font-semibold text-secondary-foreground"}>
-                  Prepare Progress
+                <Text className={"text-base font-bold text-secondary-foreground"}>
+                  Preparedness progress
                 </Text>
-                <Text className={"text-base font-bold text-primary"}>
+                <Text className={"text-lg font-extrabold text-primary"} style={{ fontVariant: ["tabular-nums"] }}>
                   {Math.round(overallProgress * 100)}%
                 </Text>
               </View>
               <Progress value={overallProgress} className="h-2" />
-              <Text className={"text-[14px] text-muted-foreground text-center mt-[12px] leading-[18px]"}>
+              <Text className={"text-[14px] text-muted-foreground leading-[20px]"}>
                 {getProgressMessage(overallProgress)}
               </Text>
             </View>
           </View>
 
           {/* Quick action cards */}
-          <View className={"mb-[16px]"}>
-            <Text className={"text-[19px] font-bold text-secondary-foreground mb-[12px]"}>Quick Actions</Text>
+          <View className={"gap-[12px]"}>
+            <SectionHeader title="Quick actions" description="Continue where you left off." />
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName={["gap-[8px]", "bg-[transparent]"].filter(Boolean).join(" ")} contentContainerStyle={{
             paddingHorizontal: HORIZONTAL_PADDING
           }} onScroll={handleScroll} scrollEventThrottle={16} decelerationRate="fast" snapToInterval={SNAP_INTERVAL} snapToAlignment="start" bounces={false} overScrollMode="never">
-              {cards.map((item, idx) => <View key={item.title} className={["bg-card rounded-[16px] p-[18px] w-[280px] shadow-sm min-h-[210px] border border-border"].filter(Boolean).join(" ")} style={{
-              marginRight: idx === cards.length - 1 ? 0 : CARD_GAP
+              {cards.map((item, idx) => <View key={item.title} className={["bg-card rounded-[16px] p-[20px] shadow-sm min-h-[220px] border border-border"].filter(Boolean).join(" ")} style={{
+              width: CARD_WIDTH,
+              marginRight: idx === cards.length - 1 ? 0 : CARD_GAP,
+              borderCurve: "continuous"
             }}>
-                  {item.iconImage ? <Image source={item.iconImage} className={["mb-[12px] self-center", "w-[46px] h-[46px]"].filter(Boolean).join(" ")} /> : <MaterialCommunityIcons name={item.icon} size={44} color={palette.primary} className={"mb-[12px] self-center"} />}
+                  {item.iconImage ? <Image source={item.iconImage} className={["mb-[12px] self-center", "w-[46px] h-[46px]"].filter(Boolean).join(" ")} /> : <AppIcon name={item.icon} size={40} color={palette.primary} className={"mb-[12px] self-center"} />}
                   <Text className={"text-[18px] text-secondary-foreground font-bold text-center mb-[8px] leading-[22px]"}>{item.title}</Text>
                   <Text className={"text-[14px] text-muted-foreground text-center mb-[20px] leading-[20px] flex-1"}>{item.text}</Text>
                   <Button unstyled onPress={item.onPress} className={"bg-primary rounded-[12px] py-[14px] items-center"}>
@@ -218,15 +246,19 @@ export default function Dashboard() {
           </View>
 
           {/* Your Feed */}
-          <View className={"mb-[24px]"}>
-            <Text className={"text-[19px] font-bold text-secondary-foreground mb-[12px]"}>Your Feed</Text>
-            <View className={"flex-col w-[100%]"}>
-              {feedItems.map((item, index) => <View key={item.text} className={"flex-row items-center bg-card p-[16px] rounded-[16px] w-[100%] mb-[12px] shadow-sm border border-border"}>
-                  <MaterialCommunityIcons name={item.icon} size={24} color={item.color} />
-                  <Button unstyled className={"text-[14px] text-secondary-foreground font-semibold ml-[8px] flex-1"} onPress={item.onPress}>
-                    <Text>{item.text}</Text>
-                  </Button>
-                </View>)}
+          <View className={"gap-[12px]"}>
+            <SectionHeader title="Local updates" description="Risk and news for informed decisions." />
+            <View className={"w-[100%] overflow-hidden rounded-[16px] border border-border bg-card shadow-sm"}>
+              {feedItems.map((item, index) => (
+                <ListRow
+                  key={item.text}
+                  icon={APP_ICONS[item.icon]}
+                  title={item.text}
+                  subtitle={item.text === "Local Risk" ? "Recent activity and your area risk" : "Current earthquake reporting"}
+                  onPress={item.onPress}
+                  className={index > 0 ? "border-t border-border" : undefined}
+                />
+              ))}
             </View>
           </View>
         </View>

@@ -2,6 +2,7 @@ import { Text, TextClassContext } from './text';
 import { cn } from '../../lib/utils';
 import { cva } from 'class-variance-authority';
 import { ActivityIndicator, Platform, Pressable } from 'react-native';
+import { useTheme } from '../../lib/theme';
 
 const buttonVariants = cva(cn(
   'group min-h-12 shrink-0 flex-row items-center justify-center gap-2 rounded-xl shadow-none active:opacity-90',
@@ -102,6 +103,7 @@ function Button({
   activeOpacity: _activeOpacity,
   ...props
 }) {
+  const { palette } = useTheme();
   const disabled = props.disabled || loading;
   const label = typeof children === 'string' ? children : null;
   const resolvedVariant = unstyled ? 'unstyled' : variant;
@@ -131,7 +133,11 @@ function Button({
         disabled={disabled}>
         {loading ? (
           <ActivityIndicator
-            color={resolvedVariant === 'default' ? '#FFFFFF' : '#25745A'}
+            color={
+              resolvedVariant === 'default'
+                ? palette.primaryForeground
+                : palette.primary
+            }
           />
         ) : label ? (
           <Text>{label}</Text>

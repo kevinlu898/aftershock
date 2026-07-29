@@ -1,7 +1,9 @@
 import { Button } from "../../components/ui/button";
+import { StatusCard } from "../../components/app-ui";
+import { Card } from "../../components/ui/card";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
+import { Alert, ScrollView, Text, View } from "react-native";
 import { exportData } from "../../lib/api";
 export default function ExportData({
   navigation
@@ -65,26 +67,21 @@ export default function ExportData({
       setLoading(false);
     }
   };
-  return <ScrollView className={"flex-1 p-[20px] pt-[32px] bg-background"} contentContainerClassName="p-0">
+  return <ScrollView className={"flex-1 bg-background"} contentContainerClassName="p-[20px]" contentInsetAdjustmentBehavior="automatic">
       <View>
-        <Button unstyled onPress={() => navigation?.goBack?.()} className="mb-[12px] self-start py-[8px] px-[12px] rounded-[10px] bg-card">
-          <Text className="text-primary font-bold">
-            {"← Back"}
-          </Text>
-        </Button>
 
-        <View className={"bg-card p-[18px] rounded-[14px] shadow-sm mb-[12px]"}>
-          <Text className={"text-[30px] font-extrabold text-primary text-center mb-[8px] mt-0"}>Export Data</Text>
-          <Text className="text-muted-foreground mt-[8px] text-base">
+        <Card>
+          <Text className="text-muted-foreground text-base leading-6">
             Send a copy of all your emergency data to your email. This will take a few moments to prepare your export. 
           </Text>
 
-          <Button unstyled className="mt-[20px] bg-primary py-[14px] rounded-[8px] items-center" onPress={handleExport} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text className="text-primary-foreground text-base font-bold">
-                Export Data
-              </Text>}
-          </Button>
-        </View>
+          <StatusCard
+            title="Privacy note"
+            description="Your export contains preparedness and account information. Store it somewhere secure."
+          />
+
+          <Button onPress={handleExport} loading={loading}>Request Export</Button>
+        </Card>
       </View>
     </ScrollView>;
 }

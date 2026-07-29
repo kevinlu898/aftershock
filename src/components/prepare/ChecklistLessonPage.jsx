@@ -1,6 +1,6 @@
 import { Button } from "../ui/button";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { AppIcon } from "../app-icon";
 import { useEffect, useMemo, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { useTheme } from "../../lib/theme";
@@ -67,7 +67,7 @@ export default function ChecklistLessonPage({
             {checklist.map(item => <Button unstyled key={item.id} className={["flex-row items-center py-[14px] px-[12px] bg-card rounded-[6px] mb-[4px] border border-border", item.completed && "bg-secondary border-primary"].filter(Boolean).join(" ")} onPress={() => toggleItem(item.id)}>
                 <View className={"flex-row items-center flex-1"}>
                   <View className={["w-[22px] h-[22px] rounded-[4px] border-[2px] border-muted-foreground justify-center items-center mr-[14px] bg-card", item.completed && "bg-primary border-primary"].filter(Boolean).join(" ")}>
-                    {item.completed && <MaterialCommunityIcons name="check" size={16} color={palette.primaryForeground} />}
+                    {item.completed && <AppIcon name="check" size={16} color={palette.primaryForeground} />}
                   </View>
                   <Text className={["text-[15px] text-secondary-foreground flex-1 leading-[20px]", item.completed && "text-muted-foreground line-through"].filter(Boolean).join(" ")}>
                     {item.text}
@@ -76,7 +76,7 @@ export default function ChecklistLessonPage({
               </Button>)}
           </View>
           {allCompleted && <View className={"flex-row items-center justify-center bg-secondary p-[12px] rounded-[8px] gap-[8px] border border-primary"}>
-              <MaterialCommunityIcons name="check-circle" size={20} color={palette.primary} />
+              <AppIcon name="check-circle" size={20} color={palette.primary} />
               <Text className={"text-base text-primary font-semibold"}>
                 All items completed!
               </Text>
@@ -87,7 +87,7 @@ export default function ChecklistLessonPage({
         <Text className={"text-primary-foreground text-base font-bold"}>
           {allCompleted ? "Continue" : "Complete All Items to Continue"}
         </Text>
-        {allCompleted && <MaterialCommunityIcons name="chevron-right" size={20} color={palette.primaryForeground} />}
+        {allCompleted && <AppIcon name="chevron-right" size={20} color={palette.primaryForeground} />}
       </Button>
     </View>;
 }

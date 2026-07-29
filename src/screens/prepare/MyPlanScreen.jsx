@@ -1,7 +1,12 @@
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { AppIcon } from "../../components/app-icon";
+import { StatusCard } from "../../components/app-ui";
+import {
+  ScreenSkeleton,
+  useDelayedSkeleton,
+} from "../../components/ui/skeleton";
 import { addDoc, collection, query as fsQuery, getDocs, where } from "firebase/firestore";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, InputAccessoryView, Keyboard, Modal, Platform, ScrollView, StatusBar, Text, View } from "react-native";
@@ -38,7 +43,9 @@ export default function MyPlan({
     aftermathProcedures: "",
     other: ""
   });
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const showSkeleton = useDelayedSkeleton(loading);
   const [editing, setEditing] = useState({});
   const editorsApi = useRef({});
   const [currentFocusedKey, setCurrentFocusedKey] = useState(null);
@@ -84,6 +91,7 @@ export default function MyPlan({
         }
       } catch (e) {
         console.warn("Failed to load plan", e);
+        setLoadError("Your emergency plan could not be loaded.");
       } finally {
         setLoading(false);
       }
@@ -140,10 +148,10 @@ export default function MyPlan({
         <Text className={"font-extrabold text-[16px] text-secondary-foreground"}>{title}</Text>
         <View className="flex-row gap-[8px]">
           <Button unstyled onPress={() => toggleEdit(keyName)} className={"bg-card border border-border px-[10px] py-[6px] rounded-[8px]"} accessibilityLabel={editing[keyName] ? "Close editor" : "Edit section"}>
-            <MaterialCommunityIcons name={editing[keyName] ? "content-save" : "pencil"} size={18} color={palette.primary} />
+            <AppIcon name={editing[keyName] ? "content-save" : "pencil"} size={18} color={palette.primary} />
           </Button>
           <Button unstyled onPress={() => openAiModal(title, keyName)} className={["bg-card border border-border px-[10px] py-[6px] rounded-[8px]", "ml-[8px]"].filter(Boolean).join(" ")} accessibilityLabel={`Ask AI about ${title}`}>
-            <MaterialCommunityIcons name="map-marker-radius" size={18} color={palette.primary} />
+            <AppIcon name="map-marker-radius" size={18} color={palette.primary} />
           </Button>
         </View>
       </View>
@@ -373,16 +381,20 @@ ${plan.other || ""}
         </View>
       </Modal>;
   };
-  return <View className="flex-1 bg-background" style={{
-    paddingTop: topPadding
-  }}>
+  if (loading) {
+    return showSkeleton ? <ScreenSkeleton cards={4} /> : <View className="flex-1 bg-background" />;
+  }
+  if (loadError) {
+    return (
+      <View className="flex-1 justify-center bg-background p-5">
+        <StatusCard tone="danger" title="Plan unavailable" description={loadError} />
+      </View>
+    );
+  }
+  return <View className="flex-1 bg-background">
       
-      <ScrollView contentContainerClassName="p-[18px]" keyboardShouldPersistTaps="handled">
-        <Button unstyled onPress={() => navigation?.goBack?.()} className={"mb-[12px] self-start py-[8px] px-[12px] rounded-[10px] bg-card"}>
-          <Text className={"text-primary font-bold"}>{"← Back"}</Text>
-        </Button>
+      <ScrollView contentContainerClassName="p-[20px]" contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled">
 
-        <Text className={"text-[22px] font-extrabold text-primary mb-[6px]"}>My Emergency Plan</Text>
         <Text className={"text-muted-foreground mb-[12px]"}>
           Create and save a plan for emergency situations. Use the editor to
           format text (Markdown supported).
@@ -392,7 +404,7 @@ ${plan.other || ""}
             <Text className={"text-primary font-bold"}>View Full Plan</Text>
           </Button>
           <Button unstyled onPress={() => openAiModal("Full Plan", null)} className={["bg-card border border-border px-[10px] py-[6px] rounded-[8px]", "bg-card mt-[8px] mb-[10px] self-start flex-row items-center"].filter(Boolean).join(" ")} accessibilityLabel="Ask AI to review full plan">
-            <MaterialCommunityIcons name="map-marker-radius" size={16} color={palette.primary} />
+            <AppIcon name="map-marker-radius" size={16} color={palette.primary} />
             <Text className={["text-primary font-bold", "ml-[6px]"].filter(Boolean).join(" ")}>
               Ask AI
             </Text>

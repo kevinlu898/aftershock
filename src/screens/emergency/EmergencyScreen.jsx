@@ -1,6 +1,11 @@
 import { Button } from "../../components/ui/button";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { AppIcon } from "../../components/app-icon";
+import {
+  ScreenSkeleton,
+  useDelayedSkeleton,
+} from "../../components/ui/skeleton";
+import { PageHeader, SectionHeader, StatusCard } from "../../components/app-ui";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Easing, Image, Modal, ScrollView, Text, TouchableWithoutFeedback, View } from "react-native";
@@ -70,13 +75,16 @@ export default function Emergency() {
   const [emergencyContacts, setEmergencyContacts] = useState([]);
   const [medicalList, setMedicalList] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const showSkeleton = useDelayedSkeleton(loading);
   const EmergencyContactsList = ({
     contacts
   }) => {
     let list = contacts ?? emergencyContacts;
     if (!list || Array.isArray(list) && list.length === 0) {
       return <View className={"items-center p-[40px]"}>
-          <MaterialCommunityIcons name="account-alert" size={48} color={palette.mutedForeground} />
+          <AppIcon name="account-alert" size={48} color={palette.mutedForeground} />
           <Text className={"text-muted-foreground text-[16px] text-center mt-[12px]"}>
             No emergency contacts saved.
           </Text>
@@ -90,7 +98,7 @@ export default function Emergency() {
         const relation = c.relation || c.raw?.relation || c.raw?.rel || "";
         return <View key={idx} className={"flex-row items-center bg-muted rounded-[12px] p-[16px] border border-border"}>
               <View className={"w-[40px] h-[40px] rounded-[20px] justify-center items-center mr-[12px]"}>
-                <MaterialCommunityIcons name="account" size={20} color={palette.primary} />
+                <AppIcon name="account" size={20} color={palette.primary} />
               </View>
               <View className={"flex-1"}>
                 <Text className={"font-semibold text-[16px] text-secondary-foreground mb-[2px]"}>{name}</Text>
@@ -99,7 +107,7 @@ export default function Emergency() {
                 </Text>
               </View>
               <Button unstyled className={"p-[8px]"}>
-                <MaterialCommunityIcons name="phone" size={18} color={palette.primary} />
+                <AppIcon name="phone" size={18} color={palette.primary} />
               </Button>
             </View>;
       })}
@@ -124,7 +132,7 @@ export default function Emergency() {
           }
           return <View key={idx} className={"bg-muted rounded-[12px] p-[16px] border border-border"}>
                 <View className={"flex-row items-center mb-[12px]"}>
-                  <MaterialCommunityIcons name="medical-bag" size={20} color={palette.destructive} />
+                  <AppIcon name="medical-bag" size={20} color={palette.destructive} />
                   <Text className={"font-semibold text-[16px] text-secondary-foreground ml-[8px]"}>{title}</Text>
                 </View>
                 <View className={"gap-[8px]"}>
@@ -169,7 +177,7 @@ export default function Emergency() {
     if (!Array.isArray(list)) list = [list];
     if (list.length === 0) {
       return <View className={"items-center p-[40px]"}>
-          <MaterialCommunityIcons name="medical-bag" size={48} color={palette.mutedForeground} />
+          <AppIcon name="medical-bag" size={48} color={palette.mutedForeground} />
           <Text className={"text-muted-foreground text-[16px] text-center mt-[12px]"}>
             No medical information saved.
           </Text>
@@ -178,7 +186,7 @@ export default function Emergency() {
     return <View className={"gap-[16px]"}>
         {list.map((m, idx) => <View key={idx} className={"bg-muted rounded-[12px] p-[16px] border border-border"}>
             <View className={"flex-row items-center mb-[12px]"}>
-              <MaterialCommunityIcons name="medical-bag" size={20} color={palette.destructive} />
+              <AppIcon name="medical-bag" size={20} color={palette.destructive} />
               <Text className={"font-semibold text-[16px] text-secondary-foreground ml-[8px]"}>
                 {m.name || m.raw?.name || "Medical Record"}
               </Text>
@@ -208,6 +216,7 @@ export default function Emergency() {
   // Load data from async storage
   const loadEmergencyData = async () => {
     try {
+      setLoadError(null);
       const stateRaw = (await AsyncStorage.getItem("emergencyState")) || (await getData("emergencyState")) || "no";
       setEmergencyActive(String(stateRaw).toLowerCase() === "yes");
       let contacts = [];
@@ -303,6 +312,9 @@ export default function Emergency() {
       setDocuments(docs);
     } catch (e) {
       console.warn("Emergency: failed to load emergency data", e);
+      setLoadError("Saved emergency information could not be loaded.");
+    } finally {
+      setLoading(false);
     }
   };
   useEffect(() => {
@@ -378,7 +390,7 @@ export default function Emergency() {
             </View>
           </View>
           <View className={"items-end gap-[4px]"}>
-            <MaterialCommunityIcons name={isExpanded ? "chevron-up" : "chevron-down"} size={24} color={palette.primary} />
+            <AppIcon name={isExpanded ? "chevron-up" : "chevron-down"} size={24} color={palette.primary} />
           </View>
         </Button>
 
@@ -400,11 +412,11 @@ export default function Emergency() {
                           </Text>
                         </View>
                         <Button unstyled className={"p-[8px]"}>
-                          <MaterialCommunityIcons name="download" size={18} color={palette.primary} />
+                          <AppIcon name="download" size={18} color={palette.primary} />
                         </Button>
                       </View>;
           }) : <View className={"items-center p-[40px]"}>
-                    <MaterialCommunityIcons name="file-document" size={48} color={palette.mutedForeground} />
+                    <AppIcon name="file-document" size={48} color={palette.mutedForeground} />
                     <Text className={"text-muted-foreground text-[16px] text-center mt-[12px]"}>
                       No important documents saved.
                     </Text>
@@ -415,7 +427,7 @@ export default function Emergency() {
                 {checklist.map(item => <Button unstyled key={item.id} className={["flex-row items-start py-[16px] px-[16px] bg-card rounded-[12px] mb-[8px] border-[1.5px] border-border shadow-sm", item.completed && "bg-secondary"].filter(Boolean).join(" ")} onPress={() => toggleItem(item.id)} activeOpacity={0.7}>
                     <View className={"flex-row items-start flex-1"}>
                       <View className={["w-[24px] h-[24px] rounded-[6px] border-[2px] border-muted-foreground justify-center items-center mr-[16px] bg-card", item.completed && "bg-primary border-primary"].filter(Boolean).join(" ")}>
-                        {item.completed && <MaterialCommunityIcons name="check" size={16} color={palette.primaryForeground} />}
+                        {item.completed && <AppIcon name="check" size={16} color={palette.primaryForeground} />}
                       </View>
                       <Text className={["text-[15px] text-secondary-foreground flex-1 leading-[22px] font-medium", item.completed && "text-muted-foreground line-through"].filter(Boolean).join(" ")}>
                         {item.text}
@@ -476,7 +488,7 @@ export default function Emergency() {
             <View className={["w-[60px] h-[60px] rounded-[18px] justify-center items-center mb-[12px]"].filter(Boolean).join(" ")} style={{
             backgroundColor: `${statusColor}15`
           }}>
-              <MaterialCommunityIcons name={module.icon} size={36} // increased icon size
+              <AppIcon name={module.icon} size={36}
             color={statusColor} />
             </View>
             <Text className={"text-[14px] font-semibold text-secondary-foreground text-center leading-[18px]"}>
@@ -497,11 +509,11 @@ export default function Emergency() {
                 }]
               }}>
                   <Button unstyled className={"absolute top-[16px] right-[16px] z-[10] p-[4px]"} onPress={closeModal}>
-                    <MaterialCommunityIcons name="close" size={24} color={palette.mutedForeground} />
+                    <AppIcon name="close" size={24} color={palette.mutedForeground} />
                   </Button>
                   <View className={"items-center mb-[20px] pt-[8px]"}>
                     <View className={"w-[64px] h-[64px] rounded-[20px] justify-center items-center mb-[12px]"}>
-                      <MaterialCommunityIcons name={module.icon} size={40} // increased modal/header icon size
+                      <AppIcon name={module.icon} size={40}
                     color={statusColor} />
                     </View>
                     <Text className={"font-bold text-[24px] text-secondary-foreground text-center"}>
@@ -526,13 +538,21 @@ export default function Emergency() {
         </Modal>
       </>;
   };
-  return <ScrollView className={"flex-1 p-[20px] pt-[32px] bg-background"} contentContainerClassName={"px-[16px] pb-[32px] pt-0"} showsVerticalScrollIndicator={false}>
-      <View className={"mb-[18px] mt-0"}>
-        <Text className={"text-[30px] font-extrabold text-primary text-center mb-[8px] mt-0"}>Emergency Hub</Text>
-        <Text className={"text-[16px] text-muted-foreground mt-[4px] text-center"}>
-          Your safety resources and emergency checklist
-        </Text>
+  if (loading) {
+    return showSkeleton ? <ScreenSkeleton cards={4} /> : <View className="flex-1 bg-background" />;
+  }
+  if (loadError) {
+    return (
+      <View className="flex-1 justify-center bg-background p-5">
+        <StatusCard tone="danger" title="Emergency information unavailable" description={loadError} />
       </View>
+    );
+  }
+  return <ScrollView className={"flex-1 bg-background"} contentContainerClassName={"gap-[24px] px-[20px] pb-[32px] pt-[24px]"} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
+      <PageHeader
+        title="Emergency hub"
+        description="Critical contacts, medical details, supplies, and post-shaking guidance in one place."
+      />
 
       {emergencyActive && <View className={"bg-destructive rounded-[18px] py-[16px] px-[16px] mb-[20px] gap-[10px] shadow-sm"}>
           <View className={"flex-1 min-w-0 pr-[12px] items-start"}>
@@ -551,12 +571,16 @@ export default function Emergency() {
         </View>}
 
       {/* Quick Actions Grid */}
-      <View className={"flex-row flex-wrap mb-[24px]"}>
+      <View className={"gap-[12px]"}>
+        <SectionHeader title="Quick access" description="Open essential information without leaving this screen." />
+        <View className="flex-row flex-wrap">
         {emergencyCards.map(module => <ModuleCardSquare key={module.id} module={module} />)}
+        </View>
       </View>
 
       {/* Emergency Checklists */}
-      <View className={"mb-[24px]"}>
+      <View className={"gap-[12px]"}>
+        <SectionHeader title="After an earthquake" description="Follow these steps once the shaking stops." />
         {EMERGENCY_MODULES.map(module => <ModuleCard key={module.id} module={module} />)}
       </View>
     </ScrollView>;

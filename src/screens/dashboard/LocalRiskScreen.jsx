@@ -1,9 +1,16 @@
-import { Button } from "../../components/ui/button";
+import {
+  ScreenSkeleton,
+  useDelayedSkeleton,
+} from "../../components/ui/skeleton";
+import {
+  PageHeader,
+  StatusCard,
+} from "../../components/app-ui";
+import { Card } from "../../components/ui/card";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Platform, ScrollView, StatusBar, Text, View } from "react-native";
+import { Platform, ScrollView, Text, View } from "react-native";
 import Markdown from "react-native-markdown-display";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../lib/theme";
 import { fetchEarthquakeData } from "../../lib/api";
 import { getRisk } from "../../lib/storage/storageUtils";
@@ -17,7 +24,7 @@ export default function LocalRisk({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [riskData, setRiskData] = useState(null);
-  const insets = useSafeAreaInsets();
+  const showSkeleton = useDelayedSkeleton(loading);
   const formatRiskData = data => {
     try {
       if (typeof data === "string") {
@@ -54,51 +61,50 @@ export default function LocalRisk({
     getData();
   }, []);
   if (loading) {
-    return <View className={"flex-1 justify-center items-center p-[16px]"}>
-        <ActivityIndicator size="large" color={"#25745A"} />
-        <Text className={"mt-[12px] text-primary"}>Loading local earthquake info…</Text>
-      </View>;
+    return showSkeleton ? <ScreenSkeleton cards={2} /> : <View className="flex-1 bg-background" />;
   }
   if (error) {
-    return <View className={"flex-1 justify-center items-center p-[16px]"}>
-        <Text className={"text-destructive font-bold mb-[10px]"}>Failed to load earthquake data</Text>
-        <Text className={"text-foreground bg-muted p-[10px] rounded-[8px]"}>{error}</Text>
+    return <View className={"flex-1 justify-center bg-background p-[20px]"}>
+        <StatusCard
+          tone="danger"
+          title="Local risk is unavailable"
+          description="We could not load current earthquake information. Check your connection and try again."
+        >
+          <Text selectable className="text-[13px] text-destructive">{error}</Text>
+        </StatusCard>
       </View>;
   }
   const place = earthquakeData?.place;
   const mag = earthquakeData?.mag;
   const time = earthquakeData?.timeISO;
   const depth = earthquakeData?.depth;
-  const topPadding = Platform.OS === "android" ? StatusBar.currentHeight || 0 : insets.top || 20;
-  return <View className="flex-1 bg-background" style={{
-    paddingTop: topPadding
-  }}>
+  return <View className="flex-1 bg-background">
       
-      <ScrollView contentContainerClassName={"grow"}>
-        <View className={["flex-1 p-[18px] pt-[28px]", "pt-[8px]"].filter(Boolean).join(" ")}>
-          <Button unstyled onPress={() => navigation?.goBack?.()} className={"mb-[12px] self-start py-[8px] px-[12px] rounded-[12px] bg-card border border-border"}>
-            <Text className={"text-primary font-bold"}>{"← Back"}</Text>
-          </Button>
-          <View className={"bg-card p-[18px] rounded-[18px] mb-[14px] shadow-sm border border-border"}>
-            <Text className={"text-[20px] font-extrabold mb-[8px] text-primary"}>Local Earthquake Risk</Text>
-            <Text className={"text-[16px] text-secondary-foreground mb-[12px]"}>{place ?? "No recent events"}</Text>
+      <ScrollView contentContainerClassName={"grow"} contentInsetAdjustmentBehavior="automatic">
+        <View className="flex-1 gap-[20px] p-[20px]">
+          <PageHeader
+            title="Local risk snapshot"
+            description="Recent earthquake data and preparedness context for your saved area."
+          />
+          <Card>
+            <Text className={"text-[18px] font-bold text-foreground"}>{place ?? "No recent events"}</Text>
             <View className={"flex-row justify-between mb-[10px] items-center"}>
-              <Text className={"text-muted-foreground text-[14px]"}>Magnitude:</Text>
-              <Text className={"font-bold text-secondary-foreground text-[15px]"}>{mag ?? "—"}</Text>
+              <Text className={"text-muted-foreground text-[14px]"}>Magnitude</Text>
+              <Text selectable className={"font-bold text-secondary-foreground text-[15px]"} style={{ fontVariant: ["tabular-nums"] }}>{mag ?? "Not available"}</Text>
             </View>
             <View className={"flex-row justify-between mb-[10px] items-center"}>
-              <Text className={"text-muted-foreground text-[14px]"}>Depth:</Text>
-              <Text className={"font-bold text-secondary-foreground text-[15px]"}>{depth ?? "—"} km</Text>
+              <Text className={"text-muted-foreground text-[14px]"}>Depth</Text>
+              <Text selectable className={"font-bold text-secondary-foreground text-[15px]"}>{depth != null ? `${depth} km` : "Not available"}</Text>
             </View>
             <View className={"flex-row justify-between mb-[10px] items-center"}>
-              <Text className={"text-muted-foreground text-[14px]"}>Time:</Text>
-              <Text className={"font-bold text-secondary-foreground text-[15px]"}>
-                {time ? new Date(time).toLocaleString() : "—"}
+              <Text className={"text-muted-foreground text-[14px]"}>Time</Text>
+              <Text selectable className={"font-bold text-secondary-foreground text-[15px]"}>
+                {time ? new Date(time).toLocaleString() : "Not available"}
               </Text>
             </View>
-          </View>
+          </Card>
 
-          {riskData && <View className={["bg-card p-[14px] rounded-[18px] mb-[12px] shadow-sm border border-border", "mt-[16px]"].filter(Boolean).join(" ")}>
+          {riskData && <Card>
               <Text className={"font-bold mb-[8px] text-secondary-foreground"}>Local Risk Data</Text>
               <ScrollView className="max-h-[300px]">
                 <Markdown style={{
@@ -111,7 +117,7 @@ export default function LocalRisk({
                   {formatRiskData(riskData)}
                 </Markdown>
               </ScrollView>
-            </View>}
+            </Card>}
         </View>
       </ScrollView>
     </View>;

@@ -1,8 +1,6 @@
 import { Button } from "../../components/ui/button";
-import { useNavigation } from '@react-navigation/native';
 import { Linking, ScrollView, Text, View } from 'react-native';
 export default function TermsOfService() {
-  const navigation = useNavigation();
   const openLink = async url => {
     try {
       await Linking.openURL(url);
@@ -10,14 +8,9 @@ export default function TermsOfService() {
       // ignore
     }
   };
-  return <View className={"flex-1 p-[20px] pt-[32px] bg-background"}>
-      <Button unstyled onPress={() => navigation?.goBack?.()} className={[["mt-[10px] mb-[20px]"].filter(Boolean).join(" "), "mt-[20px] mb-[15px] self-start py-[8px] px-[12px] rounded-[12px] bg-card border border-border"].filter(Boolean).join(" ")}>
-        <Text className={"text-primary font-bold"}>{"← Back"}</Text>
-      </Button>
-
-      <ScrollView>
+  return <View className={"flex-1 p-[20px] bg-background"}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
         <View className={["bg-card p-[18px] rounded-[14px] border border-border shadow-sm", "mx-[6px]"].filter(Boolean).join(" ")}>
-          <Text className={"text-[30px] font-extrabold text-primary text-center mb-[8px] mt-0"}>Terms of Service</Text>
           <Text className={"text-muted-foreground text-[13px] mt-[6px] mb-[12px]"}>Last updated: October 20, 2025</Text>
 
           <Text className={"text-secondary-foreground text-[14px] leading-[20px] mt-[8px]"}>

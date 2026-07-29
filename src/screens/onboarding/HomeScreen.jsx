@@ -1,7 +1,10 @@
 import { Button } from "../../components/ui/button";
+import { AppIcon } from "../../components/app-icon";
+import { PageHeader } from "../../components/app-ui";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect } from 'react';
-import { Image, SafeAreaView, Text, useWindowDimensions, View } from "react-native";
+import { Image, Text, useWindowDimensions, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { getData } from "../../lib/storage/storageUtils";
 export default function Landing() {
   const navigation = useNavigation();
@@ -24,41 +27,49 @@ export default function Landing() {
     navigation.replace("AccountCreation");
   };
   const imageSize = Math.min(300, Math.max(120, width * 0.5));
-  return <SafeAreaView className={"flex-1 bg-background"}>
-      <View className={"flex-1 px-[24px] py-[20px] justify-between"}>
-        <View className={"items-center mt-[18px]"}>
-          <Text className={"text-[42px] font-extrabold text-primary text-center mb-[6px]"}>Aftershock</Text>
-          <Text className={"text-[16px] text-secondary-foreground font-medium text-center"}>Earthquake Preparedness App</Text>
-        </View>
+  const benefits = [
+    "Emergency planning",
+    "Epicenter AI assistance",
+    "Contact management",
+    "Secure document access",
+  ];
+  return <SafeAreaView className={"flex-1 bg-background"} edges={["top", "bottom"]}>
+      <View className={"flex-1 justify-between gap-[24px] px-[24px] py-[24px]"}>
+        <PageHeader
+          align="center"
+          title="Ready starts here"
+          description="Build a practical plan and keep critical information close when every second matters."
+        />
 
-        <View className={"flex-1 justify-center items-center"}>
-          <View className={"items-center mb-[24px]"}>
-            <Image source={require('../../../assets/images/favicon.png')} className={"shadow-sm"} style={{
+        <View className={"flex-1 items-center justify-center gap-[24px]"}>
+          <View className={"items-center"}>
+            <Image source={require('../../../assets/images/favicon.png')} style={{
             width: imageSize,
-            height: imageSize
+            height: imageSize,
+            borderRadius: 36
           }} resizeMode="cover" />
           </View>
 
-          <View className={"mt-[4px] items-start bg-[rgba(255,255,255,0.72)] border border-border rounded-[18px] p-[16px] w-[100%] max-w-[320px]"}>
-            <Text className={"text-[15px] text-secondary-foreground font-medium mb-[7px]"}>• Emergency Planning</Text>
-            <Text className={"text-[15px] text-secondary-foreground font-medium mb-[7px]"}>• Epicenter AI Assistance</Text>
-            <Text className={"text-[15px] text-secondary-foreground font-medium mb-[7px]"}>• Contact Management</Text>
-            <Text className={"text-[15px] text-secondary-foreground font-medium mb-[7px]"}>• Document Storage</Text>
+          <View className={"w-[100%] max-w-[360px] gap-[12px] rounded-[18px] border border-border bg-card p-[20px] shadow-sm"}>
+            {benefits.map((benefit) => (
+              <View key={benefit} className="flex-row items-center gap-3">
+                <View className="h-8 w-8 items-center justify-center rounded-full bg-secondary">
+                  <AppIcon name="check" size={17} className="text-primary" />
+                </View>
+                <Text className={"flex-1 text-[15px] font-semibold text-secondary-foreground"}>{benefit}</Text>
+              </View>
+            ))}
           </View>
         </View>
 
-        <View className={"items-center pb-[8px]"}>
-          <Text className={"text-[14px] text-secondary-foreground text-center mb-[20px] leading-[20px] font-medium"}>
-            Your comprehensive earthquake preparedness companion
-          </Text>
-          
-          <Button unstyled onPress={onPress} className={"bg-primary py-[14px] px-[28px] rounded-[14px] w-[100%] max-w-[260px] shadow-sm mb-[14px]"} activeOpacity={0.8}>
-              <Text className={"text-primary-foreground text-[16px] font-bold text-center"}>Get Started</Text>
+        <View className={"items-center gap-[12px] pb-[4px]"}>
+          <Button onPress={onPress} className={"w-[100%] max-w-[360px]"} activeOpacity={0.8}>
+            Get Started
           </Button>
 
-          <Button unstyled onPress={() => navigation.navigate('Login')} className={"p-[6px]"}>
-            <Text className={"text-[13px] text-muted-foreground text-center"}>
-              Already have an account? <Text className={"text-primary font-semibold"}>Log In</Text>
+          <Button variant="ghost" onPress={() => navigation.navigate('Login')} className="w-[100%] max-w-[360px]">
+            <Text className={"text-sm text-muted-foreground text-center"}>
+              Already have an account? <Text className={"text-primary font-bold"}>Log in</Text>
             </Text>
           </Button>
         </View>

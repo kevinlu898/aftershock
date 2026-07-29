@@ -1,5 +1,7 @@
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
+import { FormField } from "../../components/app-ui";
+import { Card } from "../../components/ui/card";
 import { useNavigation } from '@react-navigation/native';
 import { collection, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { useState } from 'react';
@@ -60,22 +62,18 @@ export default function ChangeUsername() {
       Alert.alert('Error', 'Failed to update username.');
     }
   };
-  return <View className={"flex-1 bg-background p-[18px] pt-[24px] justify-start"}>
-      <Button unstyled onPress={() => navigation?.goBack?.()} className={"mt-[20px] mb-[15px] self-start py-[8px] px-[12px] rounded-[12px] bg-card border border-border"}>
-        <Text className={"text-primary font-bold"}>{"← Back"}</Text>
-      </Button>
-      <View className={"bg-card p-[18px] rounded-[14px] shadow-sm mb-[12px]"}>
-        <Text className="text-center text-3xl font-extrabold text-primary">Change Username</Text>
+  return <View className={"flex-1 bg-background p-[20px] justify-start"}>
+      <Card>
         <Text className={"mb-[12px] text-secondary-foreground leading-[20px]"}>
           Choose a new username. It must be at least 3 characters and unique.
         </Text>
-        <Text className={"text-foreground mb-[8px] font-semibold"}>New Username</Text>
-        <Input placeholder="New username" value={newUsername} onChangeText={setNewUsername} className={"border border-border rounded-[12px] py-[13px] px-[14px] mb-[12px] bg-card text-foreground"} autoCapitalize="none" autoCorrect={false} textContentType="username" />
-        <Text className={"text-foreground mb-[8px] font-semibold"}>Confirm Password</Text>
-        <Input placeholder="Current password" value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry className={"border border-border rounded-[12px] py-[13px] px-[14px] mb-[12px] bg-card text-foreground"} autoCapitalize="none" autoCorrect={false} textContentType="password" />
-        <Button unstyled onPress={handleSave} className={["bg-primary rounded-[12px] mt-[8px] py-[14px] items-center justify-center"].filter(Boolean).join(" ")}>
-          <Text className={"text-primary-foreground font-bold"}>Save</Text>
-        </Button>
-      </View>
+        <FormField label="New username">
+          <Input placeholder="New username" value={newUsername} onChangeText={setNewUsername} autoCapitalize="none" autoCorrect={false} textContentType="username" />
+        </FormField>
+        <FormField label="Confirm password">
+          <Input placeholder="Current password" value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry autoCapitalize="none" autoCorrect={false} textContentType="password" />
+        </FormField>
+        <Button onPress={handleSave}>Save Username</Button>
+      </Card>
     </View>;
 }

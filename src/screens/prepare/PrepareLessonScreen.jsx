@@ -1,7 +1,8 @@
 import { Button } from "../../components/ui/button";
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { AppIcon } from "../../components/app-icon";
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Dimensions, ScrollView as HScrollView, Linking, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView as HScrollView, Linking, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { SafeAreaView } from "react-native-safe-area-context";
 import YoutubePlayer from 'react-native-youtube-iframe';
 import ChecklistLessonPage from '../../components/prepare/ChecklistLessonPage';
 import { getLessonById, getLessonCurrentPageIndex, getLessonPages, getModuleById } from '../../lib/prepareModules';
@@ -175,9 +176,7 @@ const PrepareLessons = ({
   const [currentModule, setCurrentModule] = useState(null);
   const [screens, setScreens] = useState([]);
   const [showCompletedView, setShowCompletedView] = useState(false);
-  const {
-    width: screenWidth
-  } = Dimensions.get('window');
+  const { width: screenWidth } = useWindowDimensions();
   const htmlConfig = {
     tagsStyles: {
       h3: {
@@ -265,7 +264,6 @@ const PrepareLessons = ({
   const menuRef = useRef(null);
   useEffect(() => {
     if (!menuRef.current) return;
-    const screenWidth = Dimensions.get('window').width;
     const total = screens.length;
     const itemFull = 110 + 12;
     const compact = 44 + 12;
@@ -300,11 +298,11 @@ const PrepareLessons = ({
         animated: true
       });
     } catch (_error) {}
-  }, [currentScreenIndex, screens.length]);
+  }, [currentScreenIndex, screenWidth, screens.length]);
   const progress = screens.length > 0 ? (currentScreenIndex + 1) / screens.length : 0;
   if (!currentLesson) {
     return <View className={"flex-1 justify-center items-center bg-background"}>
-        <MaterialCommunityIcons name="loading" size={40} color={palette.primary} />
+        <AppIcon name="loading" size={40} color={palette.primary} />
         <Text className={"mt-[16px] text-base text-muted-foreground"}>Loading lesson...</Text>
       </View>;
   }
@@ -373,7 +371,7 @@ const PrepareLessons = ({
         <Button unstyled className={"flex-row items-center justify-center bg-primary px-[24px] py-[14px] rounded-[8px] gap-[8px]"} onPress={markScreenComplete}>
           <View className="flex-row items-center justify-center">
             <Text className={"text-primary-foreground text-base font-bold"}>Continue</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={palette.primaryForeground} className="ml-[8px]" />
+            <AppIcon name="chevron-right" size={20} color={palette.primaryForeground} className="ml-[8px]" />
           </View>
         </Button>
       </View>;
@@ -386,9 +384,6 @@ const PrepareLessons = ({
     const videoUrl = content?.url || '';
     const caption = content?.caption || '';
     const videoId = extractYouTubeId(videoUrl);
-    const {
-      width: screenWidth
-    } = Dimensions.get('window');
     const sideMargin = 16;
     const playerWidth = Math.max(0, screenWidth - sideMargin * 2);
     const playerHeight = Math.round(playerWidth * 9 / 16);
@@ -408,7 +403,7 @@ const PrepareLessons = ({
                     width: playerWidth,
                     height: playerHeight
                   }}>
-                        <MaterialCommunityIcons name="play" size={48} color={palette.primaryForeground} />
+                        <AppIcon name="play" size={48} color={palette.primaryForeground} />
                       </View>
                     </Button>}
                 </View>
@@ -428,7 +423,7 @@ const PrepareLessons = ({
         <Button unstyled className={"flex-row items-center justify-center bg-primary px-[24px] py-[14px] rounded-[8px] gap-[8px]"} onPress={markScreenComplete}>
           <View className="flex-row items-center justify-center">
             <Text className={"text-primary-foreground text-base font-bold"}>Continue</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={palette.primaryForeground} className="ml-[8px]" />
+            <AppIcon name="chevron-right" size={20} color={palette.primaryForeground} className="ml-[8px]" />
           </View>
         </Button>
       </View>;
@@ -474,11 +469,11 @@ const PrepareLessons = ({
         total
       } = calculateScore();
       const passed = correct >= total * 0.7;
-      return <View className={"flex-1 py-[12px] px-[12px]"}>
-          <View className={"bg-card rounded-[18px] p-[20px] mb-[12px] shadow-sm border border-border max-w-[900px] self-center"}>
-            <MaterialCommunityIcons name={passed ? 'trophy' : 'alert-circle'} size={48} color={passed ? palette.warning : palette.destructive} className={"self-center mb-[16px]"} />
+      return <ScrollView className="flex-1" contentContainerClassName="grow px-4 py-4" contentInsetAdjustmentBehavior="automatic">
+          <View className={"w-full max-w-[640px] self-center bg-card rounded-[18px] p-[20px] shadow-sm border border-border"}>
+            <AppIcon name={passed ? 'trophy' : 'alert-circle'} size={48} color={passed ? palette.warning : palette.destructive} className={"self-center mb-[16px]"} />
             <Text className={"text-[20px] font-bold text-center mb-[12px] text-secondary-foreground"}>
-              {passed ? 'Quiz Passed! 🎉' : 'Quiz Results'}
+              {passed ? 'Quiz Passed' : 'Quiz Results'}
             </Text>
             <Text className={"text-base font-semibold text-primary text-center mb-[8px]"}>
               {correct} out of {total} correct
@@ -486,24 +481,21 @@ const PrepareLessons = ({
             <Text className={"text-base text-secondary-foreground text-center leading-[22px]"}>
               {passed ? 'Great job! You understand the key concepts.' : 'Review the material and try again.'}
             </Text>
-          </View>
-          <Button unstyled className={"flex-row items-center justify-center bg-primary px-[24px] py-[14px] rounded-[8px] gap-[8px]"} onPress={passed ? () => {
+            <Button className="mt-5" onPress={passed ? () => {
           markScreenComplete();
         } : () => {
           setShowResults(false);
           setCurrentQuestion(0);
           setUserAnswers({});
         }}>
-            <Text className={"text-primary-foreground text-base font-bold"}>
-              {passed ? 'Continue' : 'Try Again'}
-            </Text>
-            {passed && <MaterialCommunityIcons name="chevron-right" size={20} color={palette.primaryForeground} />}
+            <Text className="text-base font-bold text-primary-foreground">{passed ? 'Continue' : 'Try Again'}</Text>
+            {passed && <AppIcon name="chevron-right" size={20} color={palette.primaryForeground} />}
           </Button>
-        </View>;
+          </View>
+        </ScrollView>;
     }
-    return <View className={"flex-1 py-[12px] px-[12px]"}>
-        <ScrollView className="flex-1" contentContainerClassName="pb-2">
-          <View className={"bg-card rounded-[18px] p-[20px] mb-[12px] shadow-sm border border-border max-w-[900px] self-center"}>
+    return <ScrollView className="flex-1" contentContainerClassName="grow px-4 py-4" contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled">
+          <View className={"w-full max-w-[640px] self-center bg-card rounded-[18px] p-[20px] shadow-sm border border-border"}>
             <View className={"mb-[20px]"}>
               <Text className={"text-base text-secondary-foreground mb-[6px] font-medium"}>
                 Question {currentQuestion + 1} of {questions.length}
@@ -514,38 +506,35 @@ const PrepareLessons = ({
               }} />
               </View>
             </View>
-            <Text className={"text-base font-semibold text-secondary-foreground text-center mb-[20px] leading-[26px]"}>{currentQ?.question}</Text>
+            <Text className={"text-[17px] font-bold text-secondary-foreground mb-[20px] leading-[24px]"}>{currentQ?.question}</Text>
 
             <View className={"gap-[12px]"}>
-              {currentQ?.options?.map((option, index) => <Button unstyled key={index} className={["flex-row items-center p-[16px] bg-card rounded-[12px] border-[2px] border-border", userAnswers[currentQ.id] === index && "bg-secondary border-primary"].filter(Boolean).join(" ")} onPress={() => handleAnswerSelect(currentQ.id, index)}>
-                  <View className={["w-[32px] h-[32px] rounded-[16px] bg-muted justify-center items-center mr-[12px] border-[2px] border-border", userAnswers[currentQ.id] === index && "bg-primary border-primary"].filter(Boolean).join(" ")}>
+              {currentQ?.options?.map((option, index) => <Button unstyled key={index} className={["w-full min-h-[60px] flex-row items-center gap-3 p-[14px] bg-card rounded-[12px] border-[2px] border-border", userAnswers[currentQ.id] === index && "bg-secondary border-primary"].filter(Boolean).join(" ")} onPress={() => handleAnswerSelect(currentQ.id, index)}>
+                  <View className={["w-[32px] h-[32px] shrink-0 rounded-[16px] bg-muted justify-center items-center border-[2px] border-border", userAnswers[currentQ.id] === index && "bg-primary border-primary"].filter(Boolean).join(" ")}>
                     <Text className={"text-base font-bold text-secondary-foreground"}>
                       {String.fromCharCode(65 + index)}
                     </Text>
                   </View>
-                  <Text className={["text-[15px] text-secondary-foreground flex-1 leading-[20px]", userAnswers[currentQ.id] === index && "text-primary font-semibold"].filter(Boolean).join(" ")}>
+                  <Text className={["min-w-0 flex-1 flex-wrap text-[15px] text-secondary-foreground leading-[21px]", userAnswers[currentQ.id] === index && "text-primary font-semibold"].filter(Boolean).join(" ")}>
                     {option}
                   </Text>
                 </Button>)}
             </View>
-          </View>
-        </ScrollView>
 
-        <Button unstyled className={["flex-row items-center justify-center bg-primary px-[24px] py-[14px] rounded-[8px] gap-[8px]", userAnswers[currentQ.id] === undefined && "bg-muted"].filter(Boolean).join(" ")} onPress={handleNextQuestion} disabled={userAnswers[currentQ.id] === undefined}>
-          <View className="flex-row items-center justify-center">
+            <Button className="mt-5" onPress={handleNextQuestion} disabled={userAnswers[currentQ.id] === undefined}>
             <Text className={"text-primary-foreground text-base font-bold"}>
               {currentQuestion < questions.length - 1 ? 'Next Question' : 'See Results'}
             </Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={palette.primaryForeground} className="ml-[8px]" />
+            <AppIcon name="chevron-right" size={20} color={palette.primaryForeground} className="ml-[8px]" />
+            </Button>
           </View>
-        </Button>
-      </View>;
+      </ScrollView>;
   };
 
   // Complete screen
   const CompletedScreen = () => <View className={"flex-1 py-[12px] px-[12px]"}>
       <View className={"bg-card rounded-[18px] p-[20px] mb-[12px] shadow-sm border border-border max-w-[900px] self-center"}>
-        <MaterialCommunityIcons name="check-circle" size={64} color={palette.primary} className="self-center mb-[12px]" />
+        <AppIcon name="check-circle" size={64} color={palette.primary} className="self-center mb-[12px]" />
         <Text className={["text-[18px] font-bold text-secondary-foreground leading-[22px]", "text-center mb-[8px]"].filter(Boolean).join(" ")}>Lesson Complete</Text>
         <Text className="text-center text-muted-foreground mb-[16px]">You have completed this lesson. Would you like to review it?</Text>
 
@@ -556,14 +545,14 @@ const PrepareLessons = ({
           setLessonCurrentPage(currentModule.id, currentLesson.id, 0).catch(() => {});
         }} className={["flex-row items-center justify-center bg-primary px-[24px] py-[14px] rounded-[8px] gap-[8px]", "mr-[8px] px-[20px]"].filter(Boolean).join(" ")}>
             <View className="flex-row items-center justify-center">
-              <MaterialCommunityIcons name="replay" size={18} color={palette.primaryForeground} />
+              <AppIcon name="replay" size={18} color={palette.primaryForeground} />
               <Text className={["text-primary-foreground text-base font-bold", "ml-[8px]"].filter(Boolean).join(" ")}>Review</Text>
             </View>
           </Button>
 
           <Button unstyled onPress={() => navigation.goBack()} className={["flex-row items-center justify-center bg-primary px-[24px] py-[14px] rounded-[8px] gap-[8px]", "bg-muted-foreground px-[20px]"].filter(Boolean).join(" ")}>
             <View className="flex-row items-center justify-center">
-              <MaterialCommunityIcons name="close" size={18} color={palette.primaryForeground} />
+              <AppIcon name="close" size={18} color={palette.primaryForeground} />
               <Text className={["text-primary-foreground text-base font-bold", "ml-[8px]"].filter(Boolean).join(" ")}>Close</Text>
             </View>
           </Button>
@@ -598,7 +587,7 @@ const PrepareLessons = ({
           <View className={"flex-row items-center bg-card px-[16px] py-[12px] border-b border-border shadow-sm min-h-[68px]"}>
             <View className={"items-center mr-[16px] w-[60px]"}>
               <Button unstyled className={"w-[44px] h-[44px] justify-center items-center rounded-[22px] mb-[4px]"} onPress={() => navigation.goBack()}>
-                <MaterialCommunityIcons name="chevron-left" size={24} color={palette.primary} />
+                <AppIcon name="chevron-left" size={24} color={palette.primary} />
               </Button>
               <View className={"items-center"}>
                 <Text className={"text-[12px] font-semibold text-primary"}>{Math.round(progress * 100)}%</Text>
@@ -618,7 +607,7 @@ const PrepareLessons = ({
           <View className={"bg-card border-b border-border py-[6px] px-[8px] shadow-sm"}>
             <HScrollView ref={menuRef} horizontal showsHorizontalScrollIndicator={false} className={""} contentContainerClassName="px-[6px]">
               {screens.map((screen, index) => <Button unstyled key={screen.id || index} className={index === currentScreenIndex ? "flex-row items-center px-[10px] py-[6px] mx-[6px] rounded-[18px] bg-primary border border-primary min-w-[110px]" : "w-[36px] h-[36px] justify-center items-center mx-[6px] rounded-[18px] bg-card border border-border p-0"} onPress={() => goToScreen(index)}>
-                  <MaterialCommunityIcons name={screen.icon} size={18} color={index === currentScreenIndex ? palette.primaryForeground : palette.mutedForeground} />
+                  <AppIcon name={screen.icon} size={18} color={index === currentScreenIndex ? palette.primaryForeground : palette.mutedForeground} />
                   {index === currentScreenIndex && <Text numberOfLines={1} ellipsizeMode="tail" className={["text-[13px] font-semibold text-secondary-foreground", "text-primary-foreground", "ml-[8px]"].filter(Boolean).join(" ")} style={{
                 maxWidth: screenWidth * 0.55
               }}>

@@ -1,17 +1,23 @@
 import { Button } from "../../components/ui/button";
+import { AppIcon } from "../../components/app-icon";
+import { EmptyState, StatusCard } from "../../components/app-ui";
 import { Input } from "../../components/ui/input";
+import {
+  SkeletonList,
+  useDelayedSkeleton,
+} from "../../components/ui/skeleton";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from 'react';
-import { Alert, FlatList, Image, InputAccessoryView, Keyboard, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, StatusBar, Text, TouchableWithoutFeedback, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Alert, FlatList, Image, InputAccessoryView, Keyboard, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, Text, TouchableWithoutFeedback, View } from 'react-native';
 const STORAGE_KEY = 'important_documents';
 export default function ImportantDocuments({
   navigation
 }) {
-  const insets = useSafeAreaInsets();
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const showSkeleton = useDelayedSkeleton(loading);
   const [showMetaModal, setShowMetaModal] = useState(false);
   const [pendingFile, setPendingFile] = useState(null);
   const [meta, setMeta] = useState({
@@ -25,6 +31,7 @@ export default function ImportantDocuments({
         if (raw) setDocs(JSON.parse(raw));
       } catch (e) {
         console.warn('Failed to load docs', e);
+        setLoadError("Your documents could not be loaded.");
       } finally {
         setLoading(false);
       }
@@ -144,30 +151,28 @@ export default function ImportantDocuments({
       }
     }]);
   };
-  const topPadding = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : insets.top || 20;
-  return <View className="flex-1 bg-background" style={{
-    paddingTop: topPadding
-  }}>
+  return <View className="flex-1 bg-background">
       
-      <ScrollView contentContainerClassName="p-[18px]" keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
-        <Button unstyled onPress={() => navigation?.goBack?.()} className={"mb-[12px] self-start py-[8px] px-[12px] rounded-[10px] bg-card"}>
-          <Text className={"text-primary font-bold"}>{'← Back'}</Text>
-        </Button>
-
-        <View className={"bg-card p-[16px] rounded-[12px] mb-[12px] shadow-sm"}>
-          <Text className={"text-[20px] font-extrabold text-primary"}>Important Documents</Text>
+      <ScrollView contentContainerClassName="p-[20px]" contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+        <View className={"bg-card p-[20px] rounded-[16px] mb-[12px] shadow-sm border border-border"}>
           <Text className={"text-muted-foreground mt-[6px]"}>Store photos or documents (e.g., IDs, insurance) locally. You can take a photo or choose from your library.</Text>
 
           <View className="flex-row mt-[12px]">
             <Button unstyled className={["py-[10px] px-[12px] bg-secondary rounded-[8px]", "mr-[8px]"].filter(Boolean).join(" ")} onPress={openCamera}>
-              <Text className={"text-primary font-bold"}>Take Photo</Text>
+              <View className="flex-row items-center gap-2">
+                <AppIcon name="camera" size={17} className="text-primary" />
+                <Text className={"text-primary font-bold"}>Take Photo</Text>
+              </View>
             </Button>
             <Button unstyled className={"py-[10px] px-[12px] bg-secondary rounded-[8px]"} onPress={pickFromLibrary}>
-              <Text className={"text-primary font-bold"}>Open Library</Text>
+              <View className="flex-row items-center gap-2">
+                <AppIcon name="images" size={17} className="text-primary" />
+                <Text className={"text-primary font-bold"}>Open Library</Text>
+              </View>
             </Button>
           </View>
 
-          {loading ? <Text className="mt-[12px] text-muted-foreground">Loading…</Text> : docs.length === 0 ? <Text className="mt-[12px] text-muted-foreground">No documents yet. Add one above.</Text> : <FlatList data={docs} keyExtractor={i => i.id} className="mt-[12px]" renderItem={({
+          {loading ? showSkeleton ? <SkeletonList count={3} className="mt-4" /> : <View className="h-40" /> : loadError ? <StatusCard className="mt-4" tone="danger" title="Documents unavailable" description={loadError} /> : docs.length === 0 ? <EmptyState className="mt-4 bg-muted/40" title="No documents yet" description="Add a photo of an ID, insurance policy, or other critical document." /> : <FlatList data={docs} keyExtractor={i => i.id} className="mt-[12px]" renderItem={({
           item
         }) => <View className={"flex-row items-center py-[12px] border-b border-border"}>
                   {item.type && item.type.startsWith('image') ? <Image source={{

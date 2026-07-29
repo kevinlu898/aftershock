@@ -1,19 +1,25 @@
 import { Button } from "../../components/ui/button";
+import { AppIcon } from "../../components/app-icon";
+import { EmptyState, StatusCard } from "../../components/app-ui";
 import { Input } from "../../components/ui/input";
+import {
+  SkeletonList,
+  useDelayedSkeleton,
+} from "../../components/ui/skeleton";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { addDoc, collection, deleteDoc, doc, query as fsQuery, getDocs, updateDoc, where } from 'firebase/firestore';
 import { useEffect, useRef, useState } from "react";
-import { Alert, Dimensions, FlatList, KeyboardAvoidingView, Modal, Platform, ScrollView, StatusBar, Text, TouchableWithoutFeedback, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TouchableWithoutFeedback, useWindowDimensions, View } from "react-native";
 import { db } from '../../lib/firebaseConfig';
 import { getData } from '../../lib/storage/storageUtils';
 const STORAGE_KEY = 'emergency_contacts';
 export default function EmergencyContacts({
   navigation
 }) {
-  const insets = useSafeAreaInsets();
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const showSkeleton = useDelayedSkeleton(loading);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
@@ -21,7 +27,7 @@ export default function EmergencyContacts({
     phone: '',
     relation: ''
   });
-  const screenHeight = Dimensions.get('window').height;
+  const { height: screenHeight } = useWindowDimensions();
   const nameRef = useRef(null);
   const phoneRef = useRef(null);
   const relationRef = useRef(null);
@@ -62,7 +68,7 @@ export default function EmergencyContacts({
           }
         }
       } catch (_error) {
-        // ignore
+        setLoadError("Your emergency contacts could not be loaded.");
       } finally {
         setLoading(false);
       }
@@ -193,25 +199,20 @@ export default function EmergencyContacts({
     }
     setShowForm(false);
   };
-  const topPadding = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : insets.top || 20;
-  return <View className="flex-1 bg-background" style={{
-    paddingTop: topPadding
-  }}>
+  return <View className="flex-1 bg-background">
       
-      <ScrollView contentContainerClassName="p-[18px]">
-        <Button unstyled onPress={() => navigation?.goBack?.()} className={"mb-[12px] self-start py-[8px] px-[12px] rounded-[10px] bg-card"}>
-          <Text className={"text-primary font-bold"}>{'← Back'}</Text>
-        </Button>
-
-        <View className={"bg-card p-[16px] rounded-[12px] mb-[12px] shadow-sm"}>
-          <Text className={"text-[20px] font-extrabold text-primary mt-[12px]"}>Emergency Contacts</Text>
+      <ScrollView contentContainerClassName="p-[20px]" contentInsetAdjustmentBehavior="automatic">
+        <View className={"bg-card p-[20px] rounded-[16px] mb-[12px] shadow-sm border border-border"}>
           <Text className={"text-muted-foreground mt-[6px]"}>Add people to call or text during an emergency. These are saved to your account.</Text>
 
           <Button unstyled className={"mt-[12px] py-[10px] px-[12px] bg-secondary rounded-[8px] self-start"} onPress={openAdd}>
-            <Text className={"text-primary font-bold"}>+ Add Contact</Text>
+            <View className="flex-row items-center gap-2">
+              <AppIcon name="plus" size={17} className="text-primary" />
+              <Text className={"text-primary font-bold"}>Add Contact</Text>
+            </View>
           </Button>
 
-          {loading ? <Text className="mt-[12px] text-muted-foreground">Loading…</Text> : contacts.length === 0 ? <Text className="mt-[12px] text-muted-foreground">No contacts yet. Add one above.</Text> : <FlatList data={contacts} keyExtractor={item => item.id} className="mt-[12px]" renderItem={({
+          {loading ? showSkeleton ? <SkeletonList count={3} className="mt-4" /> : <View className="h-40" /> : loadError ? <StatusCard className="mt-4" tone="danger" title="Contacts unavailable" description={loadError} /> : contacts.length === 0 ? <EmptyState className="mt-4 bg-muted/40" title="No contacts yet" description="Add someone you can call or text during an emergency." /> : <FlatList data={contacts} keyExtractor={item => item.id} className="mt-[12px]" renderItem={({
           item
         }) => <View className={"flex-row items-center py-[12px] border-b border-border"}>
                   <View className="flex-1">

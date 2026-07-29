@@ -2245,8 +2245,18 @@ export const getLessonPages = (lesson) => {
     const pages = lesson.content.pages;
     if (!Array.isArray(pages) || pages.length === 0) return [];
 
-    return pages.map(page => ({
+    const textIcons = ['book-open', 'layers', 'lightbulb', 'shield'];
+    return pages.map((page, index) => ({
         ...page,
+        icon: page.icon || (
+            page.type === 'video'
+                ? 'play'
+                : page.type === 'checklist'
+                    ? 'list-checks'
+                    : page.type === 'quiz'
+                        ? 'brain'
+                        : textIcons[index % textIcons.length]
+        ),
         body: page.type === 'text' ? (page.html || page.body || '') : page.body
     }));
 };

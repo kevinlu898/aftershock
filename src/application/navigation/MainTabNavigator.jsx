@@ -1,8 +1,8 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { StatusBar as ExpoStatusBar } from "expo-status-bar";
 import { Image, Platform, StatusBar, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AppIcon } from "../../components/app-icon";
 import { useTheme } from "../../lib/theme";
 import DashboardScreen from "../../screens/dashboard/DashboardScreen";
 import EmergencyScreen from "../../screens/emergency/EmergencyScreen";
@@ -13,20 +13,20 @@ import ProfileScreen from "../../screens/profile/ProfileScreen";
 const Tab = createBottomTabNavigator();
 
 const TAB_ICONS = {
-  Dashboard: { outline: "home-outline", filled: "home" },
+  Dashboard: { outline: "home", filled: "home" },
   Prepare: {
-    outline: "clipboard-list-outline",
+    outline: "clipboard-list",
     filled: "clipboard-list",
   },
   Emergency: {
-    outline: "alert-circle-outline",
+    outline: "alert-circle",
     filled: "alert-circle",
   },
   EpicenterAI: {
     outline: require("../../../assets/images/outlineEpicenter.png"),
     filled: require("../../../assets/images/filledEpicenter1.png"),
   },
-  Profile: { outline: "account-outline", filled: "account" },
+  Profile: { outline: "account", filled: "account" },
 };
 
 const TabIcon = ({ routeName, focused, color }) => {
@@ -34,7 +34,14 @@ const TabIcon = ({ routeName, focused, color }) => {
   const icon = focused ? iconSet?.filled : iconSet?.outline;
 
   if (typeof icon === "string") {
-    return <MaterialCommunityIcons name={icon} color={color} size={28} />;
+    return (
+      <AppIcon
+        name={icon}
+        color={color}
+        size={25}
+        strokeWidth={focused ? 2.6 : 2}
+      />
+    );
   }
   if (icon) {
     return (
@@ -67,21 +74,21 @@ export default function MainTabNavigator() {
         initialRouteName="Dashboard"
         screenOptions={({ route }) => ({
           headerShown: false,
-          tabBarShowLabel: true,
+          tabBarShowLabel: false,
           tabBarIcon: (props) => (
             <TabIcon routeName={route.name} {...props} />
           ),
           tabBarActiveTintColor: palette.primary,
           tabBarInactiveTintColor: palette.mutedForeground,
-          tabBarLabelStyle: { fontSize: 11, fontWeight: "700", marginTop: 1 },
           tabBarStyle: {
             backgroundColor: palette.card,
             borderTopWidth: 1,
             borderTopColor: palette.border,
-            height: 72 + insets.bottom,
-            paddingBottom: Math.max(insets.bottom, 10),
-            paddingTop: 8,
+            height: 58 + insets.bottom,
+            paddingBottom: Math.max(insets.bottom, 8),
+            paddingTop: 6,
           },
+          tabBarItemStyle: { borderRadius: 14 },
         })}
       >
         <Tab.Screen

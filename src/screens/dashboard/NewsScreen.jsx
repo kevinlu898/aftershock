@@ -1,15 +1,21 @@
 import { Button } from "../../components/ui/button";
+import {
+  ScreenSkeleton,
+  useDelayedSkeleton,
+} from "../../components/ui/skeleton";
+import { EmptyState, PageHeader } from "../../components/app-ui";
+import { AppIcon } from "../../components/app-icon";
+import { Card } from "../../components/ui/card";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Linking, Platform, ScrollView, StatusBar, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Linking, ScrollView, Text, View } from "react-native";
 import { fetchNews } from "../../lib/api";
 export default function News({
   navigation
 }) {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const insets = useSafeAreaInsets();
-  const topPadding = Platform.OS === "android" ? StatusBar.currentHeight || 0 : insets.top || 20;
+  const [error, setError] = useState(null);
+  const showSkeleton = useDelayedSkeleton(loading);
   const today = new Date();
   const formattedDate = today.toLocaleDateString(undefined, {
     year: "numeric",
@@ -25,6 +31,7 @@ export default function News({
         setNews(Array.isArray(newsData) ? newsData : []);
       } catch (e) {
         console.warn("Failed to fetch news", e);
+        if (mounted) setError(e?.message || "Unable to load news.");
       } finally {
         if (mounted) setLoading(false);
       }
@@ -34,27 +41,25 @@ export default function News({
       mounted = false;
     };
   }, []);
-  if (loading) return <ActivityIndicator className="mt-[24px]" color={"#25745A"} />;
-  return <View className="flex-1 bg-background" style={{
-    paddingTop: topPadding
-  }}>
+  if (loading) {
+    return showSkeleton ? <ScreenSkeleton cards={4} /> : <View className="flex-1 bg-background" />;
+  }
+  return <View className="flex-1 bg-background">
       
-      <ScrollView contentContainerClassName={"grow"} showsVerticalScrollIndicator={false}>
-        <View className={"flex-1 p-[18px] pt-[28px]"}>
-          <Button unstyled onPress={() => navigation?.goBack?.()} className={"mb-[12px] self-start py-[8px] px-[12px] rounded-[12px] bg-card border border-border"}>
-            <Text className={"text-primary font-bold"}>{"← Back"}</Text>
-          </Button>
-          <Text className={"text-[20px] font-bold text-secondary-foreground mb-[12px]"}>Earthquake News</Text>
-          <Text className={"text-muted-foreground mb-[12px]"}>{formattedDate}</Text>
-          {news.length === 0 && <Text className={"text-muted-foreground"}>No news available.</Text>}
-          <Text className={"text-secondary-foreground mb-[12px]"}>
-            Your feed of relevant earthquake news worldwide.
-          </Text>
-          {news.map((story, idx) => <View key={story.id ?? story.title ?? idx} className={"bg-card p-[18px] rounded-[18px] mb-[14px] shadow-sm border border-border"}>
-              <Text className={"text-[18px] font-extrabold text-primary mb-[8px]"}>{story.title}</Text>
+      <ScrollView contentContainerClassName={"grow"} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
+        <View className={"flex-1 gap-[16px] p-[20px]"}>
+          <PageHeader
+            title="News and updates"
+            description="Relevant earthquake reporting from around the world."
+          />
+          <Text className="text-[13px] text-muted-foreground">{formattedDate}</Text>
+          {error ? <EmptyState title="News is unavailable" description={error} /> : null}
+          {!error && news.length === 0 ? <EmptyState title="No news available" description="Check back soon for the latest earthquake reporting." /> : null}
+          {news.map((story, idx) => <Card key={story.id ?? story.title ?? idx}>
+              <Text className={"text-[18px] font-extrabold leading-[24px] text-foreground"}>{story.title}</Text>
               {story.summary ? <Text className={"text-[14px] text-muted-foreground leading-[20px]"}>{story.summary}</Text> : null}
               {!story.summary && story.description ? <Text className={"text-[14px] text-muted-foreground leading-[20px]"}>{story.description}</Text> : null}
-              {story.url ? <Button unstyled onPress={async () => {
+              {story.url ? <Button variant="outline" onPress={async () => {
             try {
               const supported = await Linking.canOpenURL(story.url);
               if (supported) {
@@ -65,10 +70,11 @@ export default function News({
             } catch (e) {
               console.warn("Failed to open URL:", e);
             }
-          }} className={"mt-[12px] bg-primary py-[10px] rounded-[12px] items-center"}>
-                  <Text className={"text-primary-foreground font-bold"}>Read more</Text>
+          }} className={"self-start"}>
+                  <Text className={"font-bold text-primary"}>Read more</Text>
+                  <AppIcon name="external-link" size={17} className="text-primary" />
                 </Button> : null}
-            </View>)}
+            </Card>)}
         </View>
       </ScrollView>
     </View>;

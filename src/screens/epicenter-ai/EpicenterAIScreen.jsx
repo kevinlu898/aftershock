@@ -1,9 +1,13 @@
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { AppIcon } from "../../components/app-icon";
+import {
+  SkeletonList,
+  useDelayedSkeleton,
+} from "../../components/ui/skeleton";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
 import Markdown from "react-native-markdown-display";
 import { aiResponse } from "../../lib/api";
 import { useTheme } from "../../lib/theme";
@@ -41,6 +45,8 @@ export default function EpicenterAI() {
   const preventAutoScrollRef = useRef(false);
   const [chats, setChats] = useState([]);
   const [selectedChatId, setSelectedChatId] = useState(null);
+  const [chatLoading, setChatLoading] = useState(true);
+  const showChatSkeleton = useDelayedSkeleton(chatLoading);
   const quickPrompts = ["Create earthquake kit", "How to stay safe during an earthquake", "Secure my home", "Emergency contacts", "Make a family plan", "Learn first aid basics"];
 
   // Auto scroll 
@@ -163,6 +169,8 @@ export default function EpicenterAI() {
         }
       } catch (_err) {
         // ignore
+      } finally {
+        setChatLoading(false);
       }
     };
     loadChats();
@@ -535,161 +543,131 @@ export default function EpicenterAI() {
       return false;
     }
   })();
-  return <SafeAreaView className={"flex-1 bg-background"}>
-    <KeyboardAvoidingView className={"flex-1"} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 30 : 0}>
+  return <View className="flex-1 bg-background">
+    <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <View className="flex-1">
-        {/* Header */}
-        <View className={"px-[20px] pb-[14px] bg-card border-b border-border shadow-sm items-center"}>
-          <View className={"flex-row justify-between items-center w-[100%]"}>
-            <View className={"flex-row items-center flex-1 justify-start"}>
-              <View className={["w-[10px] h-[10px] rounded-[5px] mr-[8px]", isOnline ? "bg-primary" : "bg-destructive"].filter(Boolean).join(" ")} />
-              <Text className={"text-[18px] font-bold text-secondary-foreground text-center"}>Epicenter AI</Text>
+        <View className="border-b border-border bg-background px-4 pb-3 pt-2">
+          <View className="flex-row items-center gap-3">
+            <View className="h-10 w-10 items-center justify-center rounded-full bg-secondary">
+              <Image source={isOnline ? require("../../../assets/images/filledEpicenter.png") : require("../../../assets/images/outlineEpicenter.png")} className="h-6 w-6 object-contain" />
             </View>
-
-            <View className="flex-row items-center">
-              <Button unstyled onPress={deleteChat} className={["p-[6px]"].filter(Boolean).join(" ")} style={!(chats && chats.length > 1) && {
-                opacity: 0.3
-              }} disabled={!(chats && chats.length > 1)}>
-                <MaterialCommunityIcons name="trash-can-outline" size={20} color={palette.mutedForeground} />
-              </Button>
-              <Button unstyled onPress={createNewChat} className="ml-[10px] p-[6px]" accessibilityLabel="New chat">
-                <MaterialCommunityIcons name="plus" size={20} color={palette.primary} />
-              </Button>
+            <View className="min-w-0 flex-1">
+              <Text className="text-[17px] font-bold text-foreground">Epicenter AI</Text>
+              <Text className="text-[12px] text-muted-foreground">
+                {isOnline ? `${requestCount} of 10 prompts used today` : "Offline"}
+              </Text>
             </View>
-          </View>
-
-          <Text className="text-[12px] text-muted-foreground text-center mt-[6px]">
-            {`${requestCount}/10 prompts today`}
-          </Text>
-
-          {/* Chat menu */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-[12px] pt-[8px]">
-            {(chats || []).map(c => <Button unstyled
-              key={c.id}
-              onPress={() => selectChat(c.id)}
-              className={[
-                "mr-2 rounded-full border px-3 py-1.5",
-                c.id === selectedChatId
-                  ? "border-primary bg-primary"
-                  : "border-border bg-card"
-              ].join(" ")}
-            >
-                <Text className={[
-                  "font-semibold",
-                  c.id === selectedChatId
-                    ? "text-primary-foreground"
-                    : "text-secondary-foreground"
-                ].join(" ")}>
-                  {c.name}
-                </Text>
-              </Button>)}
-          </ScrollView>
-        </View>
-
-        {/* Messages */}
-        <ScrollView className={"flex-1 bg-background"} contentContainerClassName={["p-[18px] pb-[28px]", "pb-[16px]"].filter(Boolean).join(" ")} ref={scrollViewRef} showsVerticalScrollIndicator={false}>
-          {messages.map((msg, idx) => {
-            const isUser = msg.from === "user";
-            const isFirstMessage = idx === 0;
-            return <View key={idx} className={["my-[10px]", isUser ? "items-end" : "items-start"].filter(Boolean).join(" ")}>
-                {/* Header with avatar + timestamp */}
-                <View className={["flex-row items-center mb-[6px] px-[8px]", isUser ? "justify-end" : "justify-start"].filter(Boolean).join(" ")}>
-                  {!isUser && <View className={"w-[28px] h-[28px] rounded-[14px] bg-background items-center justify-center mx-[6px]"}>
-                      <Image source={isOnline ? require("../../../assets/images/filledEpicenter.png") : require("../../../assets/images/outlineEpicenter.png")} className="w-[16px] h-[16px] object-contain" />
-                    </View>}
-                  <Text className={"text-[12px] text-muted-foreground font-medium"}>
-                    {isUser ? "You" : "Epicenter AI"} • {formatTime(msg.time)}
-                  </Text>
-                  {isUser && <View className={"w-[28px] h-[28px] rounded-[14px] bg-background items-center justify-center mx-[6px]"}>
-                      <MaterialCommunityIcons name="account" size={16} color={palette.primary} />
-                    </View>}
-                </View>
-
-                {/* Message bubble */}
-                <View className={[
-                  "max-w-[88%] p-[15px] rounded-[18px] shadow-sm",
-                  isUser
-                    ? "bg-primary rounded-tr-[6px] mr-[4px]"
-                    : "bg-card rounded-tl-[6px] ml-[4px] border border-border",
-                  msg.starred && "bg-warning/10"
-                ].filter(Boolean).join(" ")}>
-                  {msg.from === "bot" && msg.text === "Thinking..." ? <View className={"flex-row items-center"}>
-                      <ActivityIndicator size="small" color={palette.primary} className="mr-[8px]" />
-                      <Text className={"text-[15px] text-muted-foreground"}>Thinking…</Text>
-                    </View> : msg.from === "bot" ? <>
-                      <Markdown style={markdownStyles}>
-                        {msg.text || ""}
-                      </Markdown>
-                      {isFirstMessage && messages.length === 1 && <View className={"mt-[14px] pt-[12px] border-t border-border"}>
-                          <Text className={"text-[14px] font-semibold text-secondary-foreground mb-[8px]"}>
-                            Quick questions:
-                          </Text>
-                          <View className={"flex-row flex-wrap"}>
-                            {quickPrompts.map((prompt, index) => <Button unstyled key={index} className={"bg-background border border-border px-[12px] py-[8px] rounded-[18px] m-[6px]"} onPress={() => handleQuickPrompt(prompt)} disabled={isThinking}>
-                                <Text className={"text-[13px] text-secondary-foreground font-medium"}>
-                                  {prompt}
-                                </Text>
-                              </Button>)}
-                          </View>
-                        </View>}
-                    </> : <Text className={[
-                      "text-[15px] leading-[21px]",
-                      msg.starred ? "text-foreground" : "text-primary-foreground"
-                    ].join(" ")}>
-                      {msg.text}
-                    </Text>}
-
-                  {/* Actions */}
-                  <View className="flex-row justify-end mt-[8px]">
-                    {msg.from === "bot" && !msg.temp && <>
-                        <Button unstyled onPress={async () => {
-                      try {
-                        await copyToClipboard(msg.text || "");
-                      } catch (_err) {
-                        console.warn("Copy failed", _err);
-                      }
-                    }} className="p-[6px] mr-[6px]">
-                          <MaterialCommunityIcons name="content-copy" size={18} color={palette.mutedForeground} />
-                        </Button>
-                        <Button unstyled onPress={() => regenerateResponse(idx)} className="p-[6px] mr-[6px]">
-                          <MaterialCommunityIcons name="autorenew" size={18} color={palette.primary} />
-                        </Button>
-                      </>}
-                    <Button unstyled onPress={() => {
-                    if (preventAutoScrollRef) preventAutoScrollRef.current = true;
-                    toggleStar(idx);
-                  }} className="p-[6px]">
-                      <MaterialCommunityIcons name={msg.starred ? "star" : "star-outline"} size={18} color={msg.starred ? palette.warning : palette.mutedForeground} />
-                    </Button>
-                  </View>
-                </View>
-              </View>;
-          })}
-        </ScrollView>
-
-        {/* Input Section */}
-        <View className={"bg-card px-[16px] pt-[10px] border-t border-border shadow-sm"}>
-          <View className={"flex-row items-end"}>
-            <Input value={inputValue} onChangeText={t => {
-              setInputValue(t);
-              if (selectedChatId) setDrafts(p => ({
-                ...p,
-                [selectedChatId]: t
-              }));
-            }} placeholder="Ask about earthquake safety..." className={["flex-1 border border-border rounded-[24px] px-[16px] py-[10px] text-[15px] bg-muted mr-[8px] text-secondary-foreground"].filter(Boolean).join(" ")} style={{
-              height: inputHeight
-            }} onSubmitEditing={handleSubmission} onContentSizeChange={handleInputContentSizeChange} returnKeyType="send" multiline maxLength={500} editable={!isThinking && isOnline && !otherHasDraft} />
-            <Button unstyled onPress={handleSubmission} className={["w-[44px] h-[44px] rounded-[22px] bg-primary items-center justify-center", (!inputValue.trim() || isThinking || !isOnline) && "opacity-[0.5]"].filter(Boolean).join(" ")} disabled={!inputValue.trim() || isThinking || !isOnline}>
-              {isThinking ? <ActivityIndicator color={palette.primaryForeground} size="small" /> : <MaterialCommunityIcons name="send" size={18} color={palette.primaryForeground} />}
+            <Button unstyled className="h-10 w-10 items-center justify-center rounded-full active:bg-muted" onPress={deleteChat} disabled={!(chats && chats.length > 1)} accessibilityLabel="Delete current chat" style={!(chats && chats.length > 1) ? { opacity: 0.35 } : undefined}>
+              <AppIcon name="trash-can-outline" size={20} color={palette.mutedForeground} />
+            </Button>
+            <Button unstyled className="h-10 w-10 items-center justify-center rounded-full bg-primary" onPress={createNewChat} accessibilityLabel="New chat">
+              <AppIcon name="plus" size={20} color={palette.primaryForeground} />
             </Button>
           </View>
 
-          {!isOnline && <View className={"flex-row items-center justify-center mt-[6px]"}>
-              <MaterialCommunityIcons name="wifi-off" size={14} color={palette.destructive} />
-              <Text className={"text-[12px] text-destructive font-medium"}>Offline - check connection</Text>
-            </View>}
+          {chats.length > 1 ? <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2 pt-3">
+            {chats.map(c => <Button unstyled key={c.id} onPress={() => selectChat(c.id)} className={[
+              "min-h-8 rounded-full border px-3 py-1.5",
+              c.id === selectedChatId ? "border-primary bg-secondary" : "border-border bg-background"
+            ].join(" ")}>
+              <Text className={c.id === selectedChatId ? "text-[13px] font-semibold text-primary" : "text-[13px] text-muted-foreground"}>
+                {c.name}
+              </Text>
+            </Button>)}
+          </ScrollView> : null}
+        </View>
+
+        <ScrollView
+          className="flex-1 bg-background"
+          contentContainerClassName="gap-6 px-4 py-5"
+          keyboardDismissMode="interactive"
+          ref={scrollViewRef}
+          showsVerticalScrollIndicator={false}
+        >
+          {chatLoading ? showChatSkeleton ? <SkeletonList count={4} /> : <View className="h-64" /> : messages.map((msg, idx) => {
+            const isUser = msg.from === "user";
+            const isFirstMessage = idx === 0;
+            if (isUser) {
+              return <View key={idx} className="items-end">
+                <View className={["max-w-[84%] rounded-[20px] rounded-br-[6px] bg-secondary px-4 py-3", msg.starred && "border border-warning/40 bg-warning/10"].filter(Boolean).join(" ")}>
+                  <Text className="text-[15px] leading-[22px] text-foreground">{msg.text}</Text>
+                </View>
+                <View className="mt-1 flex-row items-center gap-2 pr-1">
+                  <Text className="text-[11px] text-muted-foreground">{formatTime(msg.time)}</Text>
+                  <Button unstyled className="h-8 w-8 items-center justify-center" onPress={() => toggleStar(idx)} accessibilityLabel={msg.starred ? "Unstar message" : "Star message"}>
+                    <AppIcon name={msg.starred ? "star" : "star-outline"} size={16} color={msg.starred ? palette.warning : palette.mutedForeground} fill={msg.starred ? palette.warning : "none"} />
+                  </Button>
+                </View>
+              </View>;
+            }
+
+            return <View key={idx} className="flex-row items-start gap-3">
+              <View className="mt-0.5 h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary">
+                <Image source={isOnline ? require("../../../assets/images/filledEpicenter.png") : require("../../../assets/images/outlineEpicenter.png")} className="h-5 w-5 object-contain" />
+              </View>
+              <View className={["min-w-0 flex-1", msg.starred && "rounded-2xl bg-warning/10 p-3"].filter(Boolean).join(" ")}>
+                <View className="mb-1 flex-row items-center gap-2">
+                  <Text className="text-[13px] font-bold text-foreground">Epicenter AI</Text>
+                  <Text className="text-[11px] text-muted-foreground">{formatTime(msg.time)}</Text>
+                </View>
+                {msg.text === "Thinking..." ? <View className="flex-row items-center gap-2 py-2">
+                  <ActivityIndicator size="small" color={palette.primary} />
+                  <Text className="text-[15px] text-muted-foreground">Thinking...</Text>
+                </View> : <>
+                  <Markdown style={markdownStyles}>{msg.text || ""}</Markdown>
+                  {isFirstMessage && messages.length === 1 ? <View className="mt-3 gap-2">
+                    <Text className="text-[13px] font-semibold text-muted-foreground">Try asking</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2 pr-4">
+                      {quickPrompts.map(prompt => <Button unstyled key={prompt} className="min-h-10 max-w-[220px] rounded-full border border-border bg-card px-4 py-2" onPress={() => handleQuickPrompt(prompt)} disabled={isThinking}>
+                        <Text numberOfLines={1} className="text-[13px] font-medium text-foreground">{prompt}</Text>
+                      </Button>)}
+                    </ScrollView>
+                  </View> : null}
+                </>}
+                {!msg.temp && msg.text !== "Thinking..." ? <View className="mt-2 flex-row items-center gap-1">
+                  <Button unstyled className="h-9 w-9 items-center justify-center rounded-full active:bg-muted" onPress={() => copyToClipboard(msg.text || "")} accessibilityLabel="Copy response">
+                    <AppIcon name="content-copy" size={17} color={palette.mutedForeground} />
+                  </Button>
+                  <Button unstyled className="h-9 w-9 items-center justify-center rounded-full active:bg-muted" onPress={() => regenerateResponse(idx)} accessibilityLabel="Regenerate response">
+                    <AppIcon name="autorenew" size={17} color={palette.mutedForeground} />
+                  </Button>
+                  <Button unstyled className="h-9 w-9 items-center justify-center rounded-full active:bg-muted" onPress={() => toggleStar(idx)} accessibilityLabel={msg.starred ? "Unstar response" : "Star response"}>
+                    <AppIcon name={msg.starred ? "star" : "star-outline"} size={17} color={msg.starred ? palette.warning : palette.mutedForeground} fill={msg.starred ? palette.warning : "none"} />
+                  </Button>
+                </View> : null}
+              </View>
+            </View>;
+          })}
+        </ScrollView>
+
+        <View className="bg-background px-3 pb-3 pt-2">
+          {!isOnline ? <View className="mb-2 flex-row items-center justify-center gap-2">
+            <AppIcon name="wifi-off" size={14} color={palette.destructive} />
+            <Text className="text-[12px] font-medium text-destructive">Offline. Check your connection.</Text>
+          </View> : null}
+          <View className="flex-row items-end gap-2 rounded-[26px] border border-border bg-card p-1.5">
+            <Input
+              value={inputValue}
+              onChangeText={t => {
+                setInputValue(t);
+                if (selectedChatId) setDrafts(p => ({ ...p, [selectedChatId]: t }));
+              }}
+              placeholder="Message Epicenter AI"
+              className="min-h-11 flex-1 border-0 bg-transparent px-3 py-2 text-[15px] shadow-none"
+              style={{ height: inputHeight }}
+              onSubmitEditing={handleSubmission}
+              onContentSizeChange={handleInputContentSizeChange}
+              returnKeyType="send"
+              multiline
+              maxLength={500}
+              editable={!isThinking && isOnline && !otherHasDraft}
+            />
+            <Button unstyled onPress={handleSubmission} className={["h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary", (!inputValue.trim() || isThinking || !isOnline) && "opacity-40"].filter(Boolean).join(" ")} disabled={!inputValue.trim() || isThinking || !isOnline} accessibilityLabel="Send message">
+              {isThinking ? <ActivityIndicator color={palette.primaryForeground} size="small" /> : <AppIcon name="send" size={18} color={palette.primaryForeground} />}
+            </Button>
+          </View>
         </View>
       </View>
     </KeyboardAvoidingView>
-  </SafeAreaView>;
+  </View>;
 }

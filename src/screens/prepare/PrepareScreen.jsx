@@ -1,6 +1,11 @@
 import { Button } from "../../components/ui/button";
 import { Progress } from "../../components/ui/progress";
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import {
+  ScreenSkeleton,
+  useDelayedSkeleton,
+} from "../../components/ui/skeleton";
+import { AppIcon } from "../../components/app-icon";
+import { PageHeader, SectionHeader, StatusCard } from "../../components/app-ui";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
@@ -10,6 +15,9 @@ import { useTheme } from '../../lib/theme';
 const Prepare = () => {
   const [expandedModule, setExpandedModule] = useState(null);
   const [modules, setModules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const showSkeleton = useDelayedSkeleton(loading);
   const navigation = useNavigation();
   const { palette } = useTheme();
   const toggleModule = moduleId => {
@@ -17,10 +25,14 @@ const Prepare = () => {
   };
   const fetchModules = async () => {
     try {
+      setLoadError(null);
       const ms = await getPrepareModules();
       setModules(ms || []);
     } catch (e) {
       console.warn('Prepare: fetchModules error', e);
+      setLoadError("Your learning path could not be loaded.");
+    } finally {
+      setLoading(false);
     }
   };
   useEffect(() => {
@@ -37,27 +49,28 @@ const Prepare = () => {
   }) => {
     const isExpanded = expandedModule === module.id;
     const statusColor = module.progress > 0 ? palette.primary : palette.mutedForeground;
-    return <View className={"bg-card rounded-[16px] shadow-sm border border-border overflow-hidden"}>
-        <Button unstyled className={"flex-row items-center justify-between p-[18px]"} onPress={() => toggleModule(module.id)} activeOpacity={0.7}>
+    return <View className={"bg-card rounded-[16px] shadow-sm border border-border overflow-hidden"} style={{ borderCurve: "continuous" }}>
+        <Button unstyled className={"min-h-[88px] flex-row items-center justify-between p-[18px] active:bg-muted"} onPress={() => toggleModule(module.id)} activeOpacity={0.7}>
           <View className={"flex-row items-center flex-1"}>
             <View className={["w-[40px] h-[40px] rounded-[20px] justify-center items-center mr-[12px]"].filter(Boolean).join(" ")} style={{
             backgroundColor: `${statusColor}20`
           }}>
-              <MaterialCommunityIcons name={module.icon} size={24} color={statusColor} />
+              <AppIcon name={module.icon} size={24} color={statusColor} />
             </View>
             <View className={"flex-1"}>
-              <Text className={"text-base font-semibold text-secondary-foreground mb-[2px]"}>{module.title}</Text>
-              <Text className={"text-base text-muted-foreground mb-[8px]"}>{module.description}</Text>
+              <Text className={"text-base font-bold text-secondary-foreground mb-[2px]"}>{module.title}</Text>
+              <Text className={"text-[13px] leading-[18px] text-muted-foreground mb-[10px]"}>{module.description}</Text>
               <Progress value={module.progress} className="h-2" />
             </View>
           </View>
           <View className={"items-end gap-[4px]"}>
-            <Text className={["text-base font-semibold"].filter(Boolean).join(" ")} style={{
-            color: statusColor
+            <Text className={["text-[13px] font-bold"].filter(Boolean).join(" ")} style={{
+            color: statusColor,
+            fontVariant: ["tabular-nums"]
           }}>
               {Math.round(module.progress * 100)}%
             </Text>
-            <MaterialCommunityIcons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={24} color={palette.foreground} />
+            <AppIcon name={isExpanded ? 'chevron-up' : 'chevron-down'} size={24} color={palette.foreground} />
           </View>
         </Button>
 
@@ -73,14 +86,14 @@ const Prepare = () => {
           });
         }}>
                 <View className={"flex-row items-center flex-1"}>
-                  <MaterialCommunityIcons name={lesson.completed ? 'check-circle' : 'circle-outline'} size={20} color={lesson.completed ? palette.primary : palette.foreground} />
+                  <AppIcon name={lesson.completed ? 'check-circle' : 'circle-outline'} size={20} color={lesson.completed ? palette.primary : palette.foreground} />
                   <Text className={["text-base text-secondary-foreground ml-[12px] flex-1", lesson.completed && "line-through text-muted-foreground"].filter(Boolean).join(" ")}>
                     {lesson.title}
                   </Text>
                 </View>
                 <View className={"flex-row items-center"}>
                   <Text className={"text-base text-muted-foreground mr-[8px]"}>{lesson.duration}</Text>
-                  <MaterialCommunityIcons name="chevron-right" size={16} color={palette.foreground} />
+                  <AppIcon name="chevron-right" size={16} color={palette.foreground} />
                 </View>
               </Button>)}
 
@@ -147,22 +160,35 @@ const Prepare = () => {
       </View>;
   };
   const overallProgress = modules.length > 0 ? modules.reduce((acc, module) => acc + (Number(module.progress) || 0), 0) / modules.length : 0;
+  if (loading) {
+    return showSkeleton ? <ScreenSkeleton cards={4} /> : <View className="flex-1 bg-background" />;
+  }
+  if (loadError) {
+    return (
+      <View className="flex-1 justify-center bg-background p-5">
+        <StatusCard tone="danger" title="Prepare is unavailable" description={loadError} />
+      </View>
+    );
+  }
   return <View className="flex-1 bg-background">
       
 
-      <ScrollView className="flex-1 bg-background" contentContainerClassName="px-[16px] pt-[30px] pb-[30px]" showsVerticalScrollIndicator={false}>
-        <Text className={"text-[30px] font-extrabold text-primary text-center mb-[8px] mt-0"}>Prepare</Text>
-        <Text className={"text-base text-muted-foreground text-center mb-[24px] leading-[22px]"}>Complete your journey to earthquake safety</Text>
+      <ScrollView className="flex-1 bg-background" contentInsetAdjustmentBehavior="automatic" contentContainerClassName="gap-[24px] px-[20px] py-[24px]" showsVerticalScrollIndicator={false}>
+        <PageHeader
+          title="Prepare with confidence"
+          description="Build practical skills and finish the steps that matter before an earthquake."
+        />
 
-        <View className={["bg-card rounded-[18px] p-[18px] mb-[20px] shadow-sm border border-border", "bg-card"].filter(Boolean).join(" ")}>
+        <View className={["bg-card rounded-[18px] p-[20px] shadow-sm border border-border gap-[12px]", "bg-card"].filter(Boolean).join(" ")}>
           <View className={"flex-row justify-between items-center mb-[12px]"}>
-            <Text className={"text-base font-semibold text-secondary-foreground"}>Overall Progress</Text>
-            <Text className={"text-base font-bold text-primary"}>{Math.round(overallProgress * 100)}%</Text>
+            <Text className={"text-base font-bold text-secondary-foreground"}>Overall progress</Text>
+            <Text className={"text-lg font-extrabold text-primary"} style={{ fontVariant: ["tabular-nums"] }}>{Math.round(overallProgress * 100)}%</Text>
           </View>
           <Progress value={overallProgress} className="h-2" />
         </View>
 
         <View className={"gap-[12px]"}>
+          <SectionHeader title="Learning path" description="Open a module to continue or review lessons." />
           {modules.map(module => <ModuleCard key={module.id} module={module} />)}
         </View>
       </ScrollView>

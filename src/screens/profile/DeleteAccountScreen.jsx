@@ -20,30 +20,30 @@ export default function DeleteAccount() {
       console.warn('Failed to clear storage', e);
     }
   };
-  const [usernameInput, setUsernameInput] = useState('');
+  const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [loading, setLoading] = useState(false);
   useEffect(() => {
     (async () => {
       try {
-        const current = await getData('username');
-        if (current) setUsernameInput(current);
+        const current = await getData('email');
+        if (current) setEmailInput(current);
       } catch (e) {
         console.error('Error loading username for deletion:', e);
       }
     })();
   }, []);
   const handleDelete = async () => {
-    if (!usernameInput || !passwordInput) {
-      Alert.alert('Error', 'Please enter both username and password to confirm.');
+    if (!emailInput || !passwordInput) {
+      Alert.alert('Error', 'Enter your email and password to confirm.');
       return;
     }
     setLoading(true);
     try {
-      const q = query(collection(db, 'user'), where('username', '==', usernameInput));
+      const q = query(collection(db, 'user'), where('email', '==', emailInput.trim().toLowerCase()));
       const res = await getDocs(q);
       if (res.empty) {
-        Alert.alert('Error', 'No account found with that username.');
+        Alert.alert('Error', 'No account found with that email.');
         setLoading(false);
         return;
       }
@@ -51,12 +51,12 @@ export default function DeleteAccount() {
       const data = userDoc.data();
       const hashed = await backendHash(passwordInput);
       if (!hashed || data.password_hash !== hashed) {
-        Alert.alert('Error', 'Username or password is incorrect.');
+        Alert.alert('Error', 'Email or password is incorrect.');
         setLoading(false);
         return;
       }
       const logged = await getData('username');
-      if (!logged || logged !== usernameInput) {
+      if (!logged || logged !== (data.username || data.email)) {
         Alert.alert('Error', 'You can only delete the account you are currently signed in with.');
         setLoading(false);
         return;
@@ -100,27 +100,23 @@ export default function DeleteAccount() {
       padding: 18,
       paddingBottom: (insets?.bottom || 16) + 24
     }} keyboardShouldPersistTaps="handled">
-        <Button unstyled onPress={() => navigation?.goBack?.()} className={[["mb-[20px]"].filter(Boolean).join(" "), "mt-[20px] mb-[15px] self-start py-[8px] px-[12px] rounded-[12px] bg-card border border-border"].filter(Boolean).join(" ")}>
-          <Text className={"text-primary font-bold"}>{"← Back"}</Text>
-        </Button>
         <View className={"bg-card p-[18px] rounded-[14px] shadow-sm mb-[12px]"}>
-          <Text className={["text-[30px] font-extrabold text-primary text-center mb-[8px] mt-0"].filter(Boolean).join(" ")}>Delete Account</Text>
           <Text className={"mb-[14px] text-secondary-foreground leading-[20px]"}>
             To permanently delete your account, please verify your password.
           </Text>
 
-         <Text className={"text-foreground mb-[8px] font-semibold"}>Username</Text>
-          <Input placeholder="Username" value={usernameInput} onChangeText={setUsernameInput} className={["border border-border rounded-[12px] py-[13px] px-[14px] mb-[12px] bg-card text-foreground", "bg-muted text-muted-foreground"].filter(Boolean).join(" ")} autoCapitalize="none" editable={false} selectTextOnFocus={false} />
+         <Text className={"text-foreground mb-[8px] font-semibold"}>Email</Text>
+          <Input placeholder="Email" value={emailInput} onChangeText={setEmailInput} className={["border border-border rounded-[12px] py-[13px] px-[14px] mb-[12px] bg-card text-foreground", "bg-muted text-muted-foreground"].filter(Boolean).join(" ")} autoCapitalize="none" editable={false} selectTextOnFocus={false} />
           <Text className={"text-foreground mb-[8px] font-semibold"}>Confirm Password</Text>
           <Input placeholder="Password" value={passwordInput} onChangeText={setPasswordInput} secureTextEntry className={"border border-border rounded-[12px] py-[13px] px-[14px] mb-[12px] bg-card text-foreground"} />
           <View className={"bg-warning/10 border-l-[4px] border-warning py-[10px] px-[12px] rounded-[8px] mb-[12px] mt-[6px]"}>
             <Text className={"font-bold text-warning mb-[4px]"}>Important</Text>
             <Text className={"text-warning leading-[18px] text-[13px]"}>
-              Deleting your account will permanently remove all of your data — emergency contacts, plans, documents, and preferences. This action cannot be undone.
+              Deleting your account will permanently remove all of your data, including emergency contacts, plans, documents, and preferences. This action cannot be undone.
             </Text>
           </View>
-          <Button unstyled onPress={handleDelete} className={["bg-primary rounded-[12px] mt-[8px] py-[14px] items-center justify-center", loading && "opacity-[0.6]"].filter(Boolean).join(" ")} disabled={loading}>
-            <Text className={"text-primary-foreground font-bold"}>{loading ? 'Deleting...' : 'Delete Account'}</Text>
+          <Button variant="destructive" onPress={handleDelete} loading={loading}>
+            Delete Account
           </Button>
         </View>
       </ScrollView>

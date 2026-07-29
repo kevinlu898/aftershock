@@ -1,10 +1,11 @@
 import { cn } from '../../lib/utils';
-import { Platform, TextInput } from 'react-native';
+import { Platform, TextInput, useColorScheme } from 'react-native';
 
 function Input({
   className,
   ...props
 }) {
+  const colorScheme = useColorScheme();
   return (
     <TextInput
       className={cn(
@@ -24,7 +25,11 @@ function Input({
         }),
         className
       )}
-      placeholderTextColor="#789084"
+      placeholderTextColor={
+        props.placeholderTextColor ||
+        (colorScheme === 'dark' ? '#A6BDB3' : '#5D786C')
+      }
+      textAlignVertical={props.multiline ? 'top' : 'center'}
       {...props} />
   );
 }
