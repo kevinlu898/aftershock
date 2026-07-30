@@ -57,37 +57,93 @@ export default function ChecklistLessonPage({
       completed: !item.completed
     } : item));
   };
-  return <View className={"flex-1 py-[12px] px-[12px]"}>
-      <ScrollView className="flex-1" contentContainerClassName="pb-2">
-        <View className={"bg-card rounded-[18px] p-[20px] mb-[12px] shadow-sm border border-border max-w-[900px] self-center"}>
-          <Text className={"text-base text-secondary-foreground mb-[16px] text-left font-semibold"}>
-            Complete the following tasks:
-          </Text>
-          <View className={"mb-[16px] bg-muted rounded-[8px] p-[4px]"}>
-            {checklist.map(item => <Button unstyled key={item.id} className={["flex-row items-center py-[14px] px-[12px] bg-card rounded-[6px] mb-[4px] border border-border", item.completed && "bg-secondary border-primary"].filter(Boolean).join(" ")} onPress={() => toggleItem(item.id)}>
-                <View className={"flex-row items-center flex-1"}>
-                  <View className={["w-[22px] h-[22px] rounded-[4px] border-[2px] border-muted-foreground justify-center items-center mr-[14px] bg-card", item.completed && "bg-primary border-primary"].filter(Boolean).join(" ")}>
-                    {item.completed && <AppIcon name="check" size={16} color={palette.primaryForeground} />}
+  const completedCount = checklist.filter(item => item.completed).length;
+  return <View className="flex-1">
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="grow px-5 pb-8 pt-6"
+        contentInsetAdjustmentBehavior="automatic"
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="w-full max-w-[720px] self-center">
+          <View className="mb-5 flex-row items-start gap-3">
+            <View className="h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary" style={{ borderCurve: "continuous" }}>
+              <AppIcon name="list-checks" size={21} color={palette.primary} />
+            </View>
+            <View className="min-w-0 flex-1 gap-1.5">
+              <Text className="text-[26px] font-extrabold leading-[32px] text-foreground">Action checklist</Text>
+              <Text className="text-[15px] leading-[22px] text-muted-foreground">
+                Mark each item as you complete it. Your progress is saved automatically.
+              </Text>
+            </View>
+          </View>
+
+          <View
+            className="rounded-[20px] border border-border bg-card p-5"
+            style={{
+              borderCurve: "continuous",
+              boxShadow: "0 2px 12px rgba(23, 32, 28, 0.05)"
+            }}
+          >
+            <View className="mb-5 flex-row items-center justify-between gap-4">
+              <Text className="text-[15px] font-bold text-foreground">Tasks</Text>
+              <Text
+                className="text-[13px] font-semibold text-muted-foreground"
+                style={{ fontVariant: ["tabular-nums"] }}
+              >
+                {completedCount} of {checklist.length}
+              </Text>
+            </View>
+
+            <View className="gap-3">
+              {checklist.map(item => <Button
+                unstyled
+                key={item.id}
+                className={[
+                  "min-h-[64px] flex-row items-center gap-3 rounded-[15px] border border-border bg-background p-3.5 active:bg-muted",
+                  item.completed && "border-primary bg-secondary"
+                ].filter(Boolean).join(" ")}
+                style={{ borderCurve: "continuous" }}
+                onPress={() => toggleItem(item.id)}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: item.completed }}
+              >
+                  <View className={[
+                    "h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-muted-foreground bg-card",
+                    item.completed && "border-primary bg-primary"
+                  ].filter(Boolean).join(" ")}>
+                    {item.completed ? <AppIcon name="check" size={17} color={palette.primaryForeground} /> : null}
                   </View>
-                  <Text className={["text-[15px] text-secondary-foreground flex-1 leading-[20px]", item.completed && "text-muted-foreground line-through"].filter(Boolean).join(" ")}>
+                  <Text className={[
+                    "min-w-0 flex-1 text-[15px] leading-[21px] text-foreground",
+                    item.completed && "text-muted-foreground line-through"
+                  ].filter(Boolean).join(" ")}>
                     {item.text}
                   </Text>
-                </View>
               </Button>)}
-          </View>
-          {allCompleted && <View className={"flex-row items-center justify-center bg-secondary p-[12px] rounded-[8px] gap-[8px] border border-primary"}>
+            </View>
+
+            {allCompleted ? <View className="mt-5 flex-row items-center gap-2 rounded-[14px] bg-secondary p-3.5">
               <AppIcon name="check-circle" size={20} color={palette.primary} />
-              <Text className={"text-base text-primary font-semibold"}>
-                All items completed!
+              <Text className="flex-1 text-[14px] font-semibold text-primary">
+                Everything is checked off. You are ready to continue.
               </Text>
-            </View>}
+            </View> : null}
+          </View>
         </View>
       </ScrollView>
-      <Button unstyled className={["flex-row items-center justify-center bg-primary px-[24px] py-[14px] rounded-[8px] gap-[8px]", !allCompleted && "bg-muted"].filter(Boolean).join(" ")} onPress={onContinue} disabled={!allCompleted}>
-        <Text className={"text-primary-foreground text-base font-bold"}>
-          {allCompleted ? "Continue" : "Complete All Items to Continue"}
-        </Text>
-        {allCompleted && <AppIcon name="chevron-right" size={20} color={palette.primaryForeground} />}
-      </Button>
+
+      <View className="border-t border-border bg-background px-5 pb-3 pt-3">
+        <Button
+          className="min-h-[52px] w-full max-w-[720px] self-center rounded-[14px]"
+          onPress={onContinue}
+          disabled={!allCompleted}
+        >
+          <Text className="text-base font-bold text-primary-foreground">
+            {allCompleted ? "Continue" : `${checklist.length - completedCount} tasks remaining`}
+          </Text>
+          {allCompleted ? <AppIcon name="chevron-right" size={20} color={palette.primaryForeground} /> : null}
+        </Button>
+      </View>
     </View>;
 }

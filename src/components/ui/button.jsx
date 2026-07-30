@@ -129,7 +129,11 @@ function Button({
         {...props}
         accessibilityRole={props.accessibilityRole || "button"}
         accessibilityLabel={props.accessibilityLabel || label || undefined}
-        accessibilityState={{ disabled: Boolean(disabled), busy: loading }}
+        accessibilityState={{
+          ...props.accessibilityState,
+          disabled: Boolean(disabled),
+          busy: loading,
+        }}
         disabled={disabled}>
         {loading ? (
           <ActivityIndicator

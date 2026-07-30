@@ -1,7 +1,7 @@
 import { Button } from "../../components/ui/button";
 import { AppIcon } from "../../components/app-icon";
-import { useEffect, useRef, useState } from 'react';
-import { Alert, ScrollView as HScrollView, Linking, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Linking, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import YoutubePlayer from 'react-native-youtube-iframe';
 import ChecklistLessonPage from '../../components/prepare/ChecklistLessonPage';
@@ -25,6 +25,24 @@ const handleButtonPress = (btnText, navigation) => {
   } else {
     console.warn('No route mapped for button:', btnText);
   }
+};
+
+const decodeHtml = s => String(s || '')
+  .replace(/&amp;/g, '&')
+  .replace(/&lt;/g, '<')
+  .replace(/&gt;/g, '>');
+
+const stripTags = s => decodeHtml(String(s || '').replace(/<[^>]*>/g, '')).trim();
+
+const RichInlineText = ({ html, style, strongStyle }) => {
+  const parts = String(html || '').split(/(<strong>.*?<\/strong>)/gi);
+  return <Text style={style}>
+      {parts.map((part, index) => {
+      const strong = /^<strong>.*<\/strong>$/i.test(part);
+      const value = decodeHtml(part.replace(/<[^>]*>/g, ''));
+      return strong ? <Text key={index} style={strongStyle}>{value}</Text> : value;
+    })}
+    </Text>;
 };
 
 // Render HTML
@@ -57,20 +75,37 @@ const SimpleHtmlRenderer = ({
     type: 'html',
     content: tail
   });
-  return <View>
+  return <View style={{ gap: 6 }}>
             {parts.map((part, idx) => {
       if (part.type === 'ul') {
         const liRegex = /<li>(.*?)<\/li>/gi;
         const items = [];
         let m;
         while ((m = liRegex.exec(part.content)) !== null) items.push(m[1]);
-        return <View key={`ul-${idx}`} className="pl-[12px] mb-[12px]">
-                            {items.map((it, i) => <Text key={`li-${i}`} style={config.tagsStyles?.li || {
-            marginBottom: 8,
-            lineHeight: 22
+        return <View key={`ul-${idx}`} style={{ gap: 10, paddingBottom: 12 }}>
+                            {items.map((it, i) => <View key={`li-${i}`} style={{
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            gap: 12,
+            backgroundColor: config.listBackground,
+            borderRadius: 14,
+            borderCurve: 'continuous',
+            paddingHorizontal: 14,
+            paddingVertical: 12
           }}>
-                                    {'\u2022 '}{stripTags(it)}
-                                </Text>)}
+                                  <View style={{
+              width: 7,
+              height: 7,
+              borderRadius: 4,
+              backgroundColor: config.accentColor,
+              marginTop: 8
+            }} />
+                                  <RichInlineText
+                                    html={it}
+                                    style={config.tagsStyles?.li}
+                                    strongStyle={config.tagsStyles?.strong}
+                                  />
+                                </View>)}
                         </View>;
       }
       const buttonRegex = /<button(?:\s+[^>]*)?>([\s\S]*?)<\/button>/gi;
@@ -85,32 +120,21 @@ const SimpleHtmlRenderer = ({
               try {
                 if (typeof config.onButton === 'function') config.onButton(btnText);else handleButtonPress(btnText, config.navigation);
               } catch (_e) {}
-            }} style={config.buttonStyle || {
-              backgroundColor: "#25745A",
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              borderRadius: 10,
-              alignSelf: 'center',
-              marginTop: 12,
-              minWidth: 140,
-              alignItems: 'center',
-              justifyContent: 'center',
-              shadowColor: '#000',
-              shadowOpacity: 0.08,
-              shadowOffset: {
-                width: 0,
-                height: 4
-              },
-              shadowRadius: 6,
-              elevation: 3
-            }}>
-                                        <Text style={config.buttonTextStyle || {
-                color: '#fff',
-                fontWeight: '800',
-                fontSize: 15
-              }}>
+            }}
+              className="mt-3 min-h-[52px] w-full flex-row items-center justify-between rounded-[14px] bg-primary px-4 py-3 active:bg-primary/90"
+              style={[{ borderCurve: 'continuous' }, config.buttonStyle]}
+            >
+                                        <Text
+                                          className="text-base font-bold text-primary-foreground"
+                                          style={config.buttonTextStyle}
+                                        >
                                             {btnText}
                                         </Text>
+                                        <AppIcon
+                                          name="chevron-right"
+                                          size={19}
+                                          color={config.buttonIconColor || '#FFFFFF'}
+                                        />
                                     </Button>;
           }
           if (seg.startsWith('__H3__') && seg.endsWith('__H3__')) {
@@ -118,7 +142,8 @@ const SimpleHtmlRenderer = ({
             return <Text key={`h3-${i}`} style={config.tagsStyles?.h3 || {
               fontSize: 18,
               fontWeight: '700',
-              marginVertical: 8
+              marginTop: 14,
+              marginBottom: 8
             }}>{stripTags(text)}</Text>;
           }
           if (seg.includes('**')) {
@@ -131,16 +156,13 @@ const SimpleHtmlRenderer = ({
               }}>{stripTags(pb)}</Text> : stripTags(pb))}
                                     </Text>;
           }
-          return <Text key={`t-${i}`} style={config.tagsStyles?.p || {
+          return <Text selectable key={`t-${i}`} style={config.tagsStyles?.p || {
             marginBottom: 12
           }}>{stripTags(seg)}</Text>;
         })}
                     </View>;
     })}
         </View>;
-};
-const stripTags = s => {
-  return String(s || '').replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
 };
 
 // Youtube video
@@ -178,21 +200,29 @@ const PrepareLessons = ({
   const [showCompletedView, setShowCompletedView] = useState(false);
   const { width: screenWidth } = useWindowDimensions();
   const htmlConfig = {
+    accentColor: palette.primary,
+    buttonIconColor: palette.primaryForeground,
+    listBackground: palette.muted,
     tagsStyles: {
       h3: {
-        marginBottom: 16,
-        fontSize: 20,
+        color: palette.foreground,
+        fontSize: 21,
         fontWeight: '700'
       },
       p: {
-        marginBottom: 12,
-        lineHeight: 22
+        color: palette.foreground,
+        marginBottom: 10,
+        fontSize: 16,
+        lineHeight: 25
       },
       strong: {
+        color: palette.foreground,
         fontWeight: '700'
       },
       li: {
-        marginBottom: 8,
+        color: palette.foreground,
+        flex: 1,
+        fontSize: 15,
         lineHeight: 22
       }
     }
@@ -212,7 +242,7 @@ const PrepareLessons = ({
             id: p.id,
             type: p.type === 'text' ? 'lesson' : p.type,
             title: p.title || 'Page',
-            icon: p.type === 'text' ? 'book-open-variant' : p.type === 'video' ? 'play-circle' : p.type === 'checklist' ? 'checkbox-multiple-marked-circle-outline' : 'checkbox-marked-circle-outline',
+            icon: p.type === 'text' ? 'book-open' : p.type === 'video' ? 'play' : p.type === 'checklist' ? 'list-checks' : 'brain',
             content: p.type === 'text' ? getPageContent(p) : p.type === 'video' ? {
               url: p.videoUrl,
               caption: p.description || p.caption || p.title || ''
@@ -261,44 +291,6 @@ const PrepareLessons = ({
       navigation.goBack();
     }
   }, [lessonId, lessonData, moduleId, initialPageIndex, navigation]);
-  const menuRef = useRef(null);
-  useEffect(() => {
-    if (!menuRef.current) return;
-    const total = screens.length;
-    const itemFull = 110 + 12;
-    const compact = 44 + 12;
-    const pos = currentScreenIndex * compact;
-    if (currentScreenIndex === 0) {
-      try {
-        menuRef.current.scrollTo({
-          x: 0,
-          y: 0,
-          animated: true
-        });
-      } catch (_error) {}
-      return;
-    }
-    if (currentScreenIndex === total - 1) {
-      const estimatedTotalWidth = itemFull + compact * (total - 1);
-      const offsetRight = Math.max(0, estimatedTotalWidth - screenWidth + 24);
-      try {
-        menuRef.current.scrollTo({
-          x: offsetRight,
-          y: 0,
-          animated: true
-        });
-      } catch (_error) {}
-      return;
-    }
-    const centerOffset = pos - screenWidth / 2 + itemFull / 2;
-    try {
-      menuRef.current.scrollTo({
-        x: Math.max(0, centerOffset),
-        y: 0,
-        animated: true
-      });
-    } catch (_error) {}
-  }, [currentScreenIndex, screenWidth, screens.length]);
   const progress = screens.length > 0 ? (currentScreenIndex + 1) / screens.length : 0;
   if (!currentLesson) {
     return <View className={"flex-1 justify-center items-center bg-background"}>
@@ -348,13 +340,52 @@ const PrepareLessons = ({
     setCurrentScreenIndex(index);
   };
 
+  const ContinueButton = ({ label = "Continue", disabled = false, onPress = markScreenComplete }) => (
+    <View className="border-t border-border bg-background px-5 pb-3 pt-3">
+      <Button
+        className="min-h-[52px] w-full max-w-[720px] self-center rounded-[14px]"
+        onPress={onPress}
+        disabled={disabled}
+      >
+        <Text className="text-base font-bold text-primary-foreground">{label}</Text>
+        {!disabled ? <AppIcon name="chevron-right" size={20} color={palette.primaryForeground} /> : null}
+      </Button>
+    </View>
+  );
+
+  const PageHeading = ({ icon, title, description }) => (
+    <View className="mb-5 flex-row items-start gap-3">
+      <View className="h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-secondary" style={{ borderCurve: "continuous" }}>
+        <AppIcon name={icon} size={21} color={palette.primary} />
+      </View>
+      <View className="min-w-0 flex-1 gap-1.5">
+        <Text className="text-[26px] font-extrabold leading-[32px] text-foreground">{title}</Text>
+        {description ? <Text className="text-[15px] leading-[22px] text-muted-foreground">{description}</Text> : null}
+      </View>
+    </View>
+  );
+
   // Text content
   const LessonScreen = ({
     content
   }) => {
-    return <View className={"flex-1 py-[12px] px-[12px]"}>
-        <ScrollView className="flex-1" contentContainerClassName="pb-2">
-          <View className={"bg-card rounded-[18px] p-[20px] mb-[12px] shadow-sm border border-border max-w-[900px] self-center"}>
+    const currentPage = screens[currentScreenIndex];
+    return <View className="flex-1">
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="grow px-5 pb-8 pt-6"
+          contentInsetAdjustmentBehavior="automatic"
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="w-full max-w-[720px] self-center">
+            <PageHeading icon={currentPage?.icon || "book-open"} title={currentPage?.title || "Lesson"} />
+            <View
+              className="rounded-[20px] border border-border bg-card p-5"
+              style={{
+                borderCurve: "continuous",
+                boxShadow: "0 2px 12px rgba(23, 32, 28, 0.05)"
+              }}
+            >
             <SimpleHtmlRenderer html={content} contentWidth={screenWidth - 48} config={{
             ...htmlConfig,
             onButton: btnText => {
@@ -367,13 +398,9 @@ const PrepareLessons = ({
             navigation
           }} />
           </View>
-        </ScrollView>
-        <Button unstyled className={"flex-row items-center justify-center bg-primary px-[24px] py-[14px] rounded-[8px] gap-[8px]"} onPress={markScreenComplete}>
-          <View className="flex-row items-center justify-center">
-            <Text className={"text-primary-foreground text-base font-bold"}>Continue</Text>
-            <AppIcon name="chevron-right" size={20} color={palette.primaryForeground} className="ml-[8px]" />
           </View>
-        </Button>
+        </ScrollView>
+        <ContinueButton />
       </View>;
   };
 
@@ -384,14 +411,30 @@ const PrepareLessons = ({
     const videoUrl = content?.url || '';
     const caption = content?.caption || '';
     const videoId = extractYouTubeId(videoUrl);
-    const sideMargin = 16;
-    const playerWidth = Math.max(0, screenWidth - sideMargin * 2);
+    const sideMargin = 40;
+    const playerWidth = Math.min(720, Math.max(0, screenWidth - sideMargin));
     const playerHeight = Math.round(playerWidth * 9 / 16);
-    return <View className={"flex-1 py-[12px] px-[12px]"}>
-        <ScrollView className="flex-1" contentContainerClassName="pb-2" scrollEnabled={false}>
-          <View className="p-[12px] items-center">
-            <View className="w-[100%] rounded-[14px] bg-muted p-[8px]">
-              <View className={["bg-card rounded-[18px] p-[20px] mb-[12px] shadow-sm border border-border max-w-[900px] self-center", "rounded-[12px] overflow-hidden p-0"].filter(Boolean).join(" ")}>
+    const currentPage = screens[currentScreenIndex];
+    return <View className="flex-1">
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="grow px-5 pb-8 pt-6"
+          contentInsetAdjustmentBehavior="automatic"
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="w-full max-w-[720px] self-center">
+            <PageHeading
+              icon={currentPage?.icon || "play"}
+              title={currentPage?.title || "Video"}
+              description="Watch this short lesson, then continue when you are ready."
+            />
+              <View
+                className="overflow-hidden rounded-[20px] border border-border bg-card"
+                style={{
+                  borderCurve: "continuous",
+                  boxShadow: "0 2px 12px rgba(23, 32, 28, 0.05)"
+                }}
+              >
                 <View className="bg-black items-center">
                   {videoId ? <View style={{
                   width: playerWidth,
@@ -408,24 +451,18 @@ const PrepareLessons = ({
                     </Button>}
                 </View>
 
-                {caption ? caption.includes('<') ? <SimpleHtmlRenderer html={caption} contentWidth={screenWidth - 48} config={{
+                {caption ? <View className="p-5">{caption.includes('<') ? <SimpleHtmlRenderer html={caption} contentWidth={screenWidth - 48} config={{
                 ...htmlConfig,
                 onButton: btnText => {
                   handleButtonPress(btnText, navigation);
                 },
                 navigation
-              }} /> : <Text className={"text-[13px] text-secondary-foreground text-center mt-[6px] p-[5px]"}>{caption}</Text> : null}
+              }} /> : <Text className="text-[15px] leading-[22px] text-muted-foreground">{caption}</Text>}</View> : null}
               </View>
-            </View>
           </View>
         </ScrollView>
 
-        <Button unstyled className={"flex-row items-center justify-center bg-primary px-[24px] py-[14px] rounded-[8px] gap-[8px]"} onPress={markScreenComplete}>
-          <View className="flex-row items-center justify-center">
-            <Text className={"text-primary-foreground text-base font-bold"}>Continue</Text>
-            <AppIcon name="chevron-right" size={20} color={palette.primaryForeground} className="ml-[8px]" />
-          </View>
-        </Button>
+        <ContinueButton />
       </View>;
   };
 
@@ -435,13 +472,29 @@ const PrepareLessons = ({
   }) => {
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [userAnswers, setUserAnswers] = useState({});
+    const [submittedQuestions, setSubmittedQuestions] = useState({});
     const [showResults, setShowResults] = useState(false);
     const questions = content || [];
     const currentQ = questions[currentQuestion];
+    const selectedAnswer = currentQ ? userAnswers[currentQ.id] : undefined;
+    const hasSelectedAnswer = selectedAnswer !== undefined;
+    const hasSubmitted = currentQ
+      ? Boolean(submittedQuestions[currentQ.id])
+      : false;
+    const answerIsCorrect =
+      hasSubmitted && selectedAnswer === currentQ?.correctAnswer;
     const handleAnswerSelect = (questionId, answerIndex) => {
+      if (submittedQuestions[questionId]) return;
       setUserAnswers({
         ...userAnswers,
         [questionId]: answerIndex
+      });
+    };
+    const handleSubmitAnswer = () => {
+      if (!currentQ || !hasSelectedAnswer) return;
+      setSubmittedQuestions({
+        ...submittedQuestions,
+        [currentQ.id]: true
       });
     };
     const handleNextQuestion = () => {
@@ -469,24 +522,43 @@ const PrepareLessons = ({
         total
       } = calculateScore();
       const passed = correct >= total * 0.7;
-      return <ScrollView className="flex-1" contentContainerClassName="grow px-4 py-4" contentInsetAdjustmentBehavior="automatic">
-          <View className={"w-full max-w-[640px] self-center bg-card rounded-[18px] p-[20px] shadow-sm border border-border"}>
-            <AppIcon name={passed ? 'trophy' : 'alert-circle'} size={48} color={passed ? palette.warning : palette.destructive} className={"self-center mb-[16px]"} />
-            <Text className={"text-[20px] font-bold text-center mb-[12px] text-secondary-foreground"}>
+      return <ScrollView
+        className="flex-1"
+        contentContainerClassName="grow justify-center px-5 py-8"
+        contentInsetAdjustmentBehavior="automatic"
+      >
+          <View
+            className="w-full max-w-[560px] self-center rounded-[24px] border border-border bg-card p-6"
+            style={{
+              borderCurve: "continuous",
+              boxShadow: "0 4px 18px rgba(23, 32, 28, 0.07)"
+            }}
+          >
+            <View className={[
+              "mb-5 h-16 w-16 self-center items-center justify-center rounded-[22px]",
+              passed ? "bg-secondary" : "bg-destructive/10"
+            ].join(" ")}>
+              <AppIcon name={passed ? 'trophy' : 'alert-circle'} size={30} color={passed ? palette.primary : palette.destructive} />
+            </View>
+            <Text className="mb-2 text-center text-[24px] font-extrabold leading-[30px] text-foreground">
               {passed ? 'Quiz Passed' : 'Quiz Results'}
             </Text>
-            <Text className={"text-base font-semibold text-primary text-center mb-[8px]"}>
+            <Text
+              className="mb-3 text-center text-[32px] font-extrabold text-primary"
+              style={{ fontVariant: ["tabular-nums"] }}
+            >
               {correct} out of {total} correct
             </Text>
-            <Text className={"text-base text-secondary-foreground text-center leading-[22px]"}>
+            <Text className="text-center text-[15px] leading-[22px] text-muted-foreground">
               {passed ? 'Great job! You understand the key concepts.' : 'Review the material and try again.'}
             </Text>
-            <Button className="mt-5" onPress={passed ? () => {
+            <Button className="mt-6 min-h-[52px] rounded-[14px]" onPress={passed ? () => {
           markScreenComplete();
         } : () => {
           setShowResults(false);
           setCurrentQuestion(0);
           setUserAnswers({});
+          setSubmittedQuestions({});
         }}>
             <Text className="text-base font-bold text-primary-foreground">{passed ? 'Continue' : 'Try Again'}</Text>
             {passed && <AppIcon name="chevron-right" size={20} color={palette.primaryForeground} />}
@@ -494,67 +566,212 @@ const PrepareLessons = ({
           </View>
         </ScrollView>;
     }
-    return <ScrollView className="flex-1" contentContainerClassName="grow px-4 py-4" contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled">
-          <View className={"w-full max-w-[640px] self-center bg-card rounded-[18px] p-[20px] shadow-sm border border-border"}>
-            <View className={"mb-[20px]"}>
-              <Text className={"text-base text-secondary-foreground mb-[6px] font-medium"}>
-                Question {currentQuestion + 1} of {questions.length}
-              </Text>
-              <View className={"h-[4px] bg-muted rounded-[2px] overflow-hidden"}>
-                <View className={["h-[100%] bg-primary rounded-[2px]"].filter(Boolean).join(" ")} style={{
-                width: `${(currentQuestion + 1) / questions.length * 100}%`
-              }} />
+    return <ScrollView
+      className="flex-1"
+      contentContainerClassName="grow px-5 pb-8 pt-6"
+      contentInsetAdjustmentBehavior="automatic"
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+    >
+          <View className="w-full max-w-[640px] self-center">
+            <PageHeading
+              icon="brain"
+              title="Knowledge check"
+            />
+            <View
+              className="rounded-[20px] border border-border bg-card p-5"
+              style={{
+                borderCurve: "continuous",
+                boxShadow: "0 2px 12px rgba(23, 32, 28, 0.05)"
+              }}
+            >
+              <View className="mb-6 gap-2">
+                <View className="flex-row items-center justify-between">
+                  <Text className="text-[13px] font-semibold text-muted-foreground">
+                    Question {currentQuestion + 1} of {questions.length}
+                  </Text>
+                  <Text
+                    className="text-[13px] font-semibold text-primary"
+                    style={{ fontVariant: ["tabular-nums"] }}
+                  >
+                    {Math.round(((currentQuestion + 1) / questions.length) * 100)}%
+                  </Text>
+                </View>
+                <View className="h-1.5 overflow-hidden rounded-full bg-muted">
+                  <View className="h-full rounded-full bg-primary" style={{
+                  width: `${(currentQuestion + 1) / questions.length * 100}%`
+                }} />
+                </View>
               </View>
-            </View>
-            <Text className={"text-[17px] font-bold text-secondary-foreground mb-[20px] leading-[24px]"}>{currentQ?.question}</Text>
+              <Text className="mb-5 text-[19px] font-bold leading-[27px] text-foreground">{currentQ?.question}</Text>
 
-            <View className={"gap-[12px]"}>
-              {currentQ?.options?.map((option, index) => <Button unstyled key={index} className={["w-full min-h-[60px] flex-row items-center gap-3 p-[14px] bg-card rounded-[12px] border-[2px] border-border", userAnswers[currentQ.id] === index && "bg-secondary border-primary"].filter(Boolean).join(" ")} onPress={() => handleAnswerSelect(currentQ.id, index)}>
-                  <View className={["w-[32px] h-[32px] shrink-0 rounded-[16px] bg-muted justify-center items-center border-[2px] border-border", userAnswers[currentQ.id] === index && "bg-primary border-primary"].filter(Boolean).join(" ")}>
-                    <Text className={"text-base font-bold text-secondary-foreground"}>
+              <View className="gap-3">
+                {currentQ?.options?.map((option, index) => {
+                  const selected = selectedAnswer === index;
+                  const correctOption =
+                    hasSubmitted && index === currentQ.correctAnswer;
+                  const selectedIncorrect =
+                    hasSubmitted && selected && !correctOption;
+                  const selectedPending =
+                    selected && !hasSubmitted;
+                  const optionColors = selectedIncorrect
+                    ? {
+                        backgroundColor: `${palette.destructive}14`,
+                        borderColor: palette.destructive
+                      }
+                    : correctOption || selectedPending
+                      ? {
+                          backgroundColor: palette.secondary,
+                          borderColor: palette.primary
+                        }
+                      : {
+                          backgroundColor: palette.card,
+                          borderColor: palette.border
+                        };
+                  const markerBackground = selectedIncorrect
+                    ? palette.destructive
+                    : correctOption || selectedPending
+                      ? palette.primary
+                      : palette.muted;
+                  const optionTextColor = selectedIncorrect
+                    ? palette.destructive
+                    : correctOption || selectedPending
+                      ? palette.primary
+                      : palette.foreground;
+                  return <Button
+                    unstyled
+                    key={index}
+                    className="w-full min-h-[64px] flex-row items-center gap-3 rounded-[15px] border p-3.5 active:opacity-90"
+                    style={{
+                      borderCurve: "continuous",
+                      ...optionColors
+                    }}
+                    onPress={() => handleAnswerSelect(currentQ.id, index)}
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={`${option}${correctOption ? ", correct answer" : selectedIncorrect ? ", incorrect answer" : ""}`}
+                  >
+                  <View
+                    className="h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                    style={{ backgroundColor: markerBackground }}
+                  >
+                    {correctOption || selectedIncorrect ? <AppIcon
+                      name={correctOption ? "check" : "close"}
+                      size={17}
+                      color={selectedIncorrect ? palette.destructiveForeground : palette.primaryForeground}
+                    /> : <Text
+                      className="text-sm font-bold"
+                      style={{
+                        color: selectedPending
+                          ? palette.primaryForeground
+                          : palette.mutedForeground
+                      }}
+                    >
                       {String.fromCharCode(65 + index)}
-                    </Text>
+                    </Text>}
                   </View>
-                  <Text className={["min-w-0 flex-1 flex-wrap text-[15px] text-secondary-foreground leading-[21px]", userAnswers[currentQ.id] === index && "text-primary font-semibold"].filter(Boolean).join(" ")}>
+                  <Text
+                    className={[
+                      "min-w-0 flex-1 text-[15px] leading-[21px]",
+                      (selectedPending || correctOption || selectedIncorrect) &&
+                        "font-semibold"
+                    ].filter(Boolean).join(" ")}
+                    style={{ color: optionTextColor }}
+                  >
                     {option}
                   </Text>
-                </Button>)}
-            </View>
+                </Button>;
+                })}
+              </View>
 
-            <Button className="mt-5" onPress={handleNextQuestion} disabled={userAnswers[currentQ.id] === undefined}>
+              {hasSubmitted ? <View
+                className="mt-5 flex-row items-start gap-3 rounded-[15px] p-4"
+                style={{
+                  backgroundColor: answerIsCorrect
+                    ? palette.secondary
+                    : `${palette.destructive}14`
+                }}
+                accessibilityLiveRegion="polite"
+              >
+                <View
+                  className="h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                  style={{
+                    backgroundColor: answerIsCorrect
+                      ? palette.primary
+                      : palette.destructive
+                  }}
+                >
+                  <AppIcon
+                    name={answerIsCorrect ? "check" : "close"}
+                    size={17}
+                    color={answerIsCorrect ? palette.primaryForeground : palette.destructiveForeground}
+                  />
+                </View>
+                <View className="min-w-0 flex-1 gap-0.5">
+                  <Text className={[
+                    "text-[15px] font-bold",
+                    answerIsCorrect ? "text-primary" : "text-destructive"
+                  ].filter(Boolean).join(" ")}>
+                    {answerIsCorrect ? "Correct" : "Not quite"}
+                  </Text>
+                  <Text className="text-[14px] leading-5 text-foreground">
+                    {answerIsCorrect
+                      ? "You selected the right answer."
+                      : `The correct answer is ${currentQ.options[currentQ.correctAnswer]}.`}
+                  </Text>
+                </View>
+              </View> : null}
+
+              <Button
+                className="mt-6 min-h-[52px] rounded-[14px]"
+                onPress={hasSubmitted ? handleNextQuestion : handleSubmitAnswer}
+                disabled={!hasSelectedAnswer}
+              >
             <Text className={"text-primary-foreground text-base font-bold"}>
-              {currentQuestion < questions.length - 1 ? 'Next Question' : 'See Results'}
+              {hasSubmitted
+                ? currentQuestion < questions.length - 1
+                  ? 'Next Question'
+                  : 'See Results'
+                : 'Submit Answer'}
             </Text>
-            <AppIcon name="chevron-right" size={20} color={palette.primaryForeground} className="ml-[8px]" />
+            <AppIcon
+              name={hasSubmitted ? "chevron-right" : "check"}
+              size={20}
+              color={palette.primaryForeground}
+              className="ml-[8px]"
+            />
             </Button>
+          </View>
           </View>
       </ScrollView>;
   };
 
   // Complete screen
-  const CompletedScreen = () => <View className={"flex-1 py-[12px] px-[12px]"}>
-      <View className={"bg-card rounded-[18px] p-[20px] mb-[12px] shadow-sm border border-border max-w-[900px] self-center"}>
-        <AppIcon name="check-circle" size={64} color={palette.primary} className="self-center mb-[12px]" />
-        <Text className={["text-[18px] font-bold text-secondary-foreground leading-[22px]", "text-center mb-[8px]"].filter(Boolean).join(" ")}>Lesson Complete</Text>
-        <Text className="text-center text-muted-foreground mb-[16px]">You have completed this lesson. Would you like to review it?</Text>
+  const CompletedScreen = () => <View className="flex-1 items-center justify-center px-5 py-8">
+      <View
+        className="w-full max-w-[540px] rounded-[24px] border border-border bg-card p-7"
+        style={{
+          borderCurve: "continuous",
+          boxShadow: "0 4px 18px rgba(23, 32, 28, 0.07)"
+        }}
+      >
+        <View className="mb-5 h-[72px] w-[72px] self-center items-center justify-center rounded-[24px] bg-secondary">
+          <AppIcon name="check-circle" size={38} color={palette.primary} />
+        </View>
+        <Text className="mb-2 text-center text-[26px] font-extrabold leading-8 text-foreground">Lesson complete</Text>
+        <Text className="mb-6 text-center text-[15px] leading-[22px] text-muted-foreground">Nice work. Your progress has been saved and you can review this lesson at any time.</Text>
 
-        <View className="flex-row justify-center">
-          <Button unstyled onPress={() => {
+        <View className="gap-3">
+          <Button onPress={() => {
           setShowCompletedView(false);
           setCurrentScreenIndex(0);
           setLessonCurrentPage(currentModule.id, currentLesson.id, 0).catch(() => {});
-        }} className={["flex-row items-center justify-center bg-primary px-[24px] py-[14px] rounded-[8px] gap-[8px]", "mr-[8px] px-[20px]"].filter(Boolean).join(" ")}>
-            <View className="flex-row items-center justify-center">
+        }} className="min-h-[52px] rounded-[14px]">
               <AppIcon name="replay" size={18} color={palette.primaryForeground} />
-              <Text className={["text-primary-foreground text-base font-bold", "ml-[8px]"].filter(Boolean).join(" ")}>Review</Text>
-            </View>
+              <Text className="text-base font-bold text-primary-foreground">Review lesson</Text>
           </Button>
 
-          <Button unstyled onPress={() => navigation.goBack()} className={["flex-row items-center justify-center bg-primary px-[24px] py-[14px] rounded-[8px] gap-[8px]", "bg-muted-foreground px-[20px]"].filter(Boolean).join(" ")}>
-            <View className="flex-row items-center justify-center">
-              <AppIcon name="close" size={18} color={palette.primaryForeground} />
-              <Text className={["text-primary-foreground text-base font-bold", "ml-[8px]"].filter(Boolean).join(" ")}>Close</Text>
-            </View>
+          <Button variant="outline" onPress={() => navigation.goBack()} className="min-h-[52px] rounded-[14px]">
+              <Text className="text-base font-bold text-primary">Back to learning path</Text>
           </Button>
         </View>
       </View>
@@ -580,47 +797,77 @@ const PrepareLessons = ({
   };
 
   // Render main component
-  return <>
-      
-      <SafeAreaView className={"flex-1 bg-background"}>
-        <View className={"flex-1 bg-background"}>
-          <View className={"flex-row items-center bg-card px-[16px] py-[12px] border-b border-border shadow-sm min-h-[68px]"}>
-            <View className={"items-center mr-[16px] w-[60px]"}>
-              <Button unstyled className={"w-[44px] h-[44px] justify-center items-center rounded-[22px] mb-[4px]"} onPress={() => navigation.goBack()}>
-                <AppIcon name="chevron-left" size={24} color={palette.primary} />
-              </Button>
-              <View className={"items-center"}>
-                <Text className={"text-[12px] font-semibold text-primary"}>{Math.round(progress * 100)}%</Text>
-              </View>
-            </View>
-            
-            <View className={"flex-1 justify-center"}>
-              <Text className={"text-[14px] text-primary font-medium mb-[2px]"} numberOfLines={1}>
+  return <SafeAreaView className="flex-1 bg-background">
+      <View className="flex-1 bg-background">
+        <View className="border-b border-border bg-card px-4 pb-3 pt-2">
+          <View className="min-h-[58px] flex-row items-center gap-3">
+            <Button
+              unstyled
+              className="h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted active:bg-secondary"
+              onPress={() => navigation.goBack()}
+              accessibilityLabel="Back to learning path"
+            >
+              <AppIcon name="chevron-left" size={22} color={palette.foreground} />
+            </Button>
+
+            <View className="min-w-0 flex-1">
+              <Text className="text-xs font-semibold text-primary" numberOfLines={1}>
                 {currentModule?.title || 'Module'}
               </Text>
-              <Text className={"text-[18px] font-bold text-secondary-foreground leading-[22px]"} numberOfLines={2}>
+              <Text className="text-[17px] font-bold leading-[22px] text-foreground" numberOfLines={1}>
                 {currentLesson?.title}
+              </Text>
+            </View>
+
+            <View className="rounded-full bg-secondary px-3 py-1.5">
+              <Text
+                className="text-xs font-bold text-primary"
+                style={{ fontVariant: ["tabular-nums"] }}
+              >
+                {showCompletedView ? "Done" : `${currentScreenIndex + 1} of ${screens.length}`}
               </Text>
             </View>
           </View>
 
-          <View className={"bg-card border-b border-border py-[6px] px-[8px] shadow-sm"}>
-            <HScrollView ref={menuRef} horizontal showsHorizontalScrollIndicator={false} className={""} contentContainerClassName="px-[6px]">
-              {screens.map((screen, index) => <Button unstyled key={screen.id || index} className={index === currentScreenIndex ? "flex-row items-center px-[10px] py-[6px] mx-[6px] rounded-[18px] bg-primary border border-primary min-w-[110px]" : "w-[36px] h-[36px] justify-center items-center mx-[6px] rounded-[18px] bg-card border border-border p-0"} onPress={() => goToScreen(index)}>
-                  <AppIcon name={screen.icon} size={18} color={index === currentScreenIndex ? palette.primaryForeground : palette.mutedForeground} />
-                  {index === currentScreenIndex && <Text numberOfLines={1} ellipsizeMode="tail" className={["text-[13px] font-semibold text-secondary-foreground", "text-primary-foreground", "ml-[8px]"].filter(Boolean).join(" ")} style={{
-                maxWidth: screenWidth * 0.55
-              }}>
-                      {index + 1}. {screen.title}
-                    </Text>}
-                </Button>)}
-            </HScrollView>
+          <View className="mt-1 h-1 overflow-hidden rounded-full bg-muted">
+            <View
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${showCompletedView ? 100 : progress * 100}%` }}
+            />
           </View>
-          <View className={"flex-1 bg-background"}>
-            {renderCurrentScreen()}
-          </View>
+
+          {!showCompletedView && screens.length > 1 ? (
+            <View className="mt-3 flex-row items-center justify-center gap-2">
+              {screens.map((screen, index) => {
+                const active = index === currentScreenIndex;
+                const visited = index < currentScreenIndex;
+                return <Button
+                  unstyled
+                  key={screen.id || index}
+                  className={[
+                    "h-9 w-9 items-center justify-center rounded-full border border-border bg-background",
+                    active && "border-primary bg-primary",
+                    visited && !active && "border-primary bg-secondary"
+                  ].filter(Boolean).join(" ")}
+                  onPress={() => goToScreen(index)}
+                  accessibilityLabel={`Open page ${index + 1}: ${screen.title}`}
+                  accessibilityState={{ selected: active }}
+                >
+                  <AppIcon
+                    name={visited && !active ? "check" : screen.icon}
+                    size={16}
+                    color={active ? palette.primaryForeground : visited ? palette.primary : palette.mutedForeground}
+                  />
+                </Button>;
+              })}
+            </View>
+          ) : null}
         </View>
-      </SafeAreaView>
-    </>;
+
+        <View className="flex-1 bg-background">
+          {renderCurrentScreen()}
+        </View>
+      </View>
+    </SafeAreaView>;
 };
 export default PrepareLessons;
