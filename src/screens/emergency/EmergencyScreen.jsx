@@ -1,587 +1,705 @@
-import { Button } from "../../components/ui/button";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useCallback, useEffect, useState } from "react";
+import {
+  Image,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppIcon } from "../../components/app-icon";
+import { PageHeader, StatusCard } from "../../components/app-ui";
+import { Button } from "../../components/ui/button";
 import {
   ScreenSkeleton,
   useDelayedSkeleton,
 } from "../../components/ui/skeleton";
-import { PageHeader, SectionHeader, StatusCard } from "../../components/app-ui";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Animated, Easing, Image, Modal, ScrollView, Text, TouchableWithoutFeedback, View } from "react-native";
 import { getData } from "../../lib/storage/storageUtils";
 import { useTheme } from "../../lib/theme";
 
-// alias so existing references to localStyles keep working
+const POST_SHAKING_STEPS = [
+  "Check yourself and others for injuries.",
+  "Be prepared for aftershocks.",
+  "Check the building for structural damage and hazards.",
+  "Turn off utilities if you suspect a leak or damage.",
+  "Listen to local emergency broadcasts.",
+  "Limit phone use to emergencies.",
+  "Stay away from damaged buildings and power lines.",
+  "Wear sturdy shoes and protective clothing outside.",
+  "Check for fires and extinguish them only if it is safe.",
+  "Help neighbors who may need assistance.",
+].map((text, index) => ({
+  id: index + 1,
+  text,
+  completed: false,
+}));
 
-// Renders dropdown content (Important Documents moved before Post-shaking Checklist)
-const EMERGENCY_MODULES = [{
-  id: "2",
-  title: "Important Documents",
-  description: "Keep copies of vital documents accessible. View saved images and file metadata here.",
-  checklistItems: [],
-  icon: "file-document"
-}, {
-  id: "1",
-  title: "Post-shaking Checklist",
-  description: "Keep yourself safe after an earthquake.",
-  checklistItems: [{
-    id: 1,
-    text: "Check yourself and others for injuries.",
-    completed: false
-  }, {
-    id: 2,
-    text: "Be prepared for aftershocks.",
-    completed: false
-  }, {
-    id: 3,
-    text: "Inspect your home for structural damage and hazards (gas, water, electric).",
-    completed: false
-  }, {
-    id: 4,
-    text: "Turn off utilities if you suspect leaks or damage.",
-    completed: false
-  }, {
-    id: 5,
-    text: "Listen to emergency broadcasts for updates and instructions.",
-    completed: false
-  }, {
-    id: 6,
-    text: "Limit phone use to emergencies only.",
-    completed: false
-  }, {
-    id: 7,
-    text: "Stay away from damaged buildings and areas.",
-    completed: false
-  }, {
-    id: 8,
-    text: "Wear sturdy shoes and protective clothing if you must go outside.",
-    completed: false
-  }, {
-    id: 9,
-    text: "Check for fires and extinguish if safe to do so.",
-    completed: false
-  }, {
-    id: 10,
-    text: "Help neighbors who may require special assistance.",
-    completed: false
-  }]
-}];
+const FOOD_AND_WATER = [
+  "Store 1 gallon of water per person per day for at least 3 days.",
+  "Keep non-perishable food such as canned goods, protein bars, and dried fruit.",
+  "Have a manual can opener and disposable utensils.",
+  "Replace stored food and water every 6 months.",
+  "If tap water is unsafe, boil it or use purification tablets.",
+];
+
+const AFTERSHOCKS = [
+  "Expect more shaking after the main earthquake.",
+  "Drop, Cover, and Hold On during each aftershock.",
+  "Stay away from damaged buildings, walls, and power lines.",
+  "Check for gas leaks or fires before re-entering any area.",
+  "Listen to local alerts and contact family when safe.",
+];
+
+const CARD_TITLES = {
+  contacts: "Emergency contacts",
+  medical: "Medical information",
+  documents: "Important documents",
+  checklist: "After the shaking stops",
+  aftershocks: "During aftershocks",
+  supplies: "Food and water",
+};
+
+function EmptyState({ icon, children }) {
+  const { palette } = useTheme();
+
+  return (
+    <View className="items-center gap-3 px-5 py-8">
+      <View className="h-12 w-12 items-center justify-center rounded-full bg-secondary">
+        <AppIcon name={icon} size={24} color={palette.mutedForeground} />
+      </View>
+      <Text className="text-center text-[15px] leading-5 text-muted-foreground">
+        {children}
+      </Text>
+    </View>
+  );
+}
+
+function InformationList({ items }) {
+  return (
+    <View className="w-full gap-4">
+      {items.map((item, index) => (
+        <View key={index} className="flex-row items-start gap-3">
+          <View className="mt-[8px] h-2 w-2 rounded-full bg-primary" />
+          <Text className="flex-1 text-[16px] leading-6 text-foreground">
+            {item}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function EmergencyCard({
+  title,
+  icon,
+  size = "standard",
+  onPress,
+}) {
+  const { palette } = useTheme();
+  const isPrimary = size === "primary";
+  const isWide = size === "wide";
+
+  return (
+    <Button
+      unstyled
+      className={[
+        "rounded-2xl border p-5 active:opacity-80",
+        isPrimary
+          ? "min-h-[164px] flex-1 flex-col items-start justify-between border-border bg-card"
+          : isWide
+            ? "min-h-[112px] w-full flex-row items-center gap-4 border-border bg-card"
+            : "min-h-[148px] flex-1 basis-0 flex-col items-start justify-between border-border bg-card",
+      ].join(" ")}
+      style={{ borderCurve: "continuous" }}
+      onPress={onPress}
+      accessibilityLabel={`Open ${title}`}
+    >
+      <View
+        className={[
+          "items-center justify-center",
+          isPrimary
+            ? "h-14 w-14 rounded-2xl bg-secondary"
+            : isWide
+              ? "h-14 w-14 rounded-2xl bg-secondary"
+              : "h-12 w-12 rounded-xl bg-secondary",
+        ].join(" ")}
+      >
+        <AppIcon
+          name={icon}
+          size={isPrimary ? 28 : 24}
+          color={palette.primary}
+        />
+      </View>
+
+      <View className={isWide ? "min-w-0 flex-1" : "w-full"}>
+        <Text
+          className={[
+            "font-bold",
+            isPrimary
+              ? "text-[19px] leading-6 text-foreground"
+              : isWide
+                ? "text-[19px] leading-6 text-foreground"
+                : "text-[17px] leading-[22px] text-foreground",
+          ].join(" ")}
+        >
+          {title}
+        </Text>
+      </View>
+
+      {isWide ? (
+        <AppIcon
+          name="chevron-right"
+          size={22}
+          color={palette.mutedForeground}
+        />
+      ) : null}
+    </Button>
+  );
+}
+
+function EmergencyDialog({ activeCard, onOpenChange, children }) {
+  const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const { palette } = useTheme();
+  const dialogWidth = Math.max(280, Math.min(width - 32, 520));
+  const dialogMaxHeight = Math.min(
+    height - insets.top - insets.bottom - 32,
+    720
+  );
+
+  return (
+    <Modal
+      visible={Boolean(activeCard)}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      onRequestClose={() => onOpenChange(false)}
+    >
+      <Pressable
+        className="flex-1 items-center justify-center bg-black/50 px-4"
+        style={{
+          paddingTop: insets.top + 16,
+          paddingBottom: insets.bottom + 16,
+        }}
+        onPress={() => onOpenChange(false)}
+        accessibilityRole="button"
+        accessibilityLabel="Close popup"
+      >
+        <Pressable
+          className="overflow-hidden rounded-2xl border border-border bg-card"
+          style={{
+            width: dialogWidth,
+            maxHeight: dialogMaxHeight,
+            borderCurve: "continuous",
+          }}
+          onPress={(event) => event.stopPropagation()}
+        >
+          <View className="min-h-[64px] flex-row items-center border-b border-border px-5 py-4">
+            <Text className="min-w-0 flex-1 pr-3 text-[22px] font-bold leading-7 text-foreground">
+              {activeCard?.title || ""}
+            </Text>
+            <Button
+              unstyled
+              className="h-10 w-10 items-center justify-center rounded-full active:bg-muted"
+              onPress={() => onOpenChange(false)}
+              accessibilityLabel="Close popup"
+            >
+              <AppIcon
+                name="close"
+                size={22}
+                color={palette.mutedForeground}
+              />
+            </Button>
+          </View>
+          <ScrollView
+            className="w-full shrink"
+            contentContainerStyle={{ padding: 20, width: "100%" }}
+            showsVerticalScrollIndicator={false}
+          >
+            <View className="w-full">{children}</View>
+          </ScrollView>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+function EmergencyContactsList({ contacts }) {
+  const { palette } = useTheme();
+
+  if (!contacts.length) {
+    return (
+      <EmptyState icon="account-alert">
+        No emergency contacts saved.
+      </EmptyState>
+    );
+  }
+
+  return (
+    <View className="w-full gap-3">
+      {contacts.map((contact, index) => {
+        const name = contact.name || contact.raw?.name || "Unnamed";
+        const phone =
+          contact.phone ||
+          contact.contact ||
+          contact.raw?.phone ||
+          contact.raw?.contact ||
+          "No phone number";
+        const relation =
+          contact.relation || contact.raw?.relation || contact.raw?.rel || "";
+
+        return (
+          <View
+            key={contact.id || index}
+            className="min-h-[72px] flex-row items-center gap-3 rounded-xl bg-muted p-4"
+            style={{ borderCurve: "continuous" }}
+          >
+            <View className="h-10 w-10 items-center justify-center rounded-full bg-card">
+              <AppIcon name="account" size={20} color={palette.primary} />
+            </View>
+            <View className="min-w-0 flex-1 gap-1">
+              <Text className="text-[16px] font-bold text-foreground">
+                {name}
+              </Text>
+              {relation ? (
+                <Text className="text-[14px] text-muted-foreground">
+                  {relation}
+                </Text>
+              ) : null}
+              <Text
+                selectable
+                className="text-[16px] font-semibold text-primary"
+              >
+                {phone}
+              </Text>
+            </View>
+            <AppIcon name="phone" size={21} color={palette.primary} />
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function MedicalInfoList({ medicalList }) {
+  const { palette } = useTheme();
+
+  if (!medicalList.length) {
+    return (
+      <EmptyState icon="medical-bag">
+        No medical information saved.
+      </EmptyState>
+    );
+  }
+
+  return (
+    <View className="w-full gap-4">
+      {medicalList.map((record, index) => {
+        const details = [
+          ["Medications", record.medications],
+          ["Allergies", record.allergies],
+          ["Blood type", record.bloodType],
+          ["Notes", record.notes],
+        ].filter(([, value]) => value);
+
+        return (
+          <View
+            key={record.id || index}
+            className="gap-4 rounded-xl bg-muted p-4"
+            style={{ borderCurve: "continuous" }}
+          >
+            <View className="flex-row items-center gap-3">
+              <AppIcon
+                name="medical-bag"
+                size={20}
+                color={palette.destructive}
+              />
+              <Text className="flex-1 text-[17px] font-bold text-foreground">
+                {record.name || record.raw?.name || "Medical record"}
+              </Text>
+            </View>
+            {details.length ? (
+              <View className="gap-4">
+                {details.map(([label, value]) => (
+                  <View key={label} className="gap-1">
+                    <Text className="text-[13px] font-semibold uppercase text-muted-foreground">
+                      {label}
+                    </Text>
+                    <Text
+                      selectable
+                      className="text-[16px] leading-6 text-foreground"
+                    >
+                      {String(value)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text className="text-[15px] text-muted-foreground">
+                No details saved.
+              </Text>
+            )}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function DocumentsList({ documents }) {
+  const { palette } = useTheme();
+
+  if (!documents.length) {
+    return (
+      <EmptyState icon="file-document">
+        No important documents saved.
+      </EmptyState>
+    );
+  }
+
+  return (
+    <View className="w-full gap-3">
+      {documents.map((document, index) => {
+        const uri = document.uri || document.path || document.raw?.uri;
+        const isImage =
+          typeof uri === "string" &&
+          /\.(jpe?g|png|gif|bmp|webp|heic|heif)$/i.test(uri);
+
+        return (
+          <View
+            key={document.id || uri || index}
+            className="min-h-[68px] flex-row items-center gap-3 rounded-xl bg-muted p-3"
+            style={{ borderCurve: "continuous" }}
+          >
+            {isImage ? (
+              <Image
+                source={{ uri }}
+                className="h-12 w-12 rounded-lg bg-card"
+                accessibilityLabel=""
+              />
+            ) : (
+              <View className="h-12 w-12 items-center justify-center rounded-lg bg-card">
+                <AppIcon
+                  name="file-document"
+                  size={22}
+                  color={palette.primary}
+                />
+              </View>
+            )}
+            <Text
+              selectable
+              className="min-w-0 flex-1 text-[16px] font-semibold leading-5 text-foreground"
+            >
+              {document.title || document.fileName || uri || "Document"}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function Checklist({ items, onToggle }) {
+  const { palette } = useTheme();
+
+  return (
+    <View className="w-full gap-3">
+      {items.map((item) => (
+        <Button
+          unstyled
+          key={item.id}
+          className="min-h-[64px] w-full flex-row items-start gap-4 rounded-xl bg-muted px-4 py-4 active:opacity-80"
+          onPress={() => onToggle(item.id)}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: item.completed }}
+          accessibilityLabel={item.text}
+        >
+          <View
+            className={[
+              "mt-[1px] h-6 w-6 items-center justify-center rounded-md border-2 border-muted-foreground bg-card",
+              item.completed && "border-primary bg-primary",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          >
+            {item.completed ? (
+              <AppIcon
+                name="check"
+                size={16}
+                color={palette.primaryForeground}
+              />
+            ) : null}
+          </View>
+          <Text
+            className={[
+              "flex-1 text-[16px] font-medium leading-6 text-foreground",
+              item.completed && "text-muted-foreground line-through",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          >
+            {item.text}
+          </Text>
+        </Button>
+      ))}
+    </View>
+  );
+}
+
 export default function Emergency() {
   const navigation = useNavigation();
-  const { palette } = useTheme();
-  const [expandedModule, setExpandedModule] = useState(null);
+  const [activeCardId, setActiveCardId] = useState(null);
   const [emergencyActive, setEmergencyActive] = useState(false);
   const [emergencyContacts, setEmergencyContacts] = useState([]);
   const [medicalList, setMedicalList] = useState([]);
   const [documents, setDocuments] = useState([]);
+  const [checklist, setChecklist] = useState(POST_SHAKING_STEPS);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const showSkeleton = useDelayedSkeleton(loading);
-  const EmergencyContactsList = ({
-    contacts
-  }) => {
-    let list = contacts ?? emergencyContacts;
-    if (!list || Array.isArray(list) && list.length === 0) {
-      return <View className={"items-center p-[40px]"}>
-          <AppIcon name="account-alert" size={48} color={palette.mutedForeground} />
-          <Text className={"text-muted-foreground text-[16px] text-center mt-[12px]"}>
-            No emergency contacts saved.
-          </Text>
-        </View>;
-    }
-    if (!Array.isArray(list)) list = [list];
-    return <View className={"gap-[12px]"}>
-        {list.map((c, idx) => {
-        const name = c.name || c.raw?.name || "Unnamed";
-        const phone = c.phone || c.contact || c.raw?.phone || c.raw?.contact || "-";
-        const relation = c.relation || c.raw?.relation || c.raw?.rel || "";
-        return <View key={idx} className={"flex-row items-center bg-muted rounded-[12px] p-[16px] border border-border"}>
-              <View className={"w-[40px] h-[40px] rounded-[20px] justify-center items-center mr-[12px]"}>
-                <AppIcon name="account" size={20} color={palette.primary} />
-              </View>
-              <View className={"flex-1"}>
-                <Text className={"font-semibold text-[16px] text-secondary-foreground mb-[2px]"}>{name}</Text>
-                <Text className={"text-muted-foreground text-[14px]"}>
-                  {relation ? `${relation} • ${phone}` : `${phone}`}
-                </Text>
-              </View>
-              <Button unstyled className={"p-[8px]"}>
-                <AppIcon name="phone" size={18} color={palette.primary} />
-              </Button>
-            </View>;
-      })}
-      </View>;
-  };
 
-  // Renders medical info
-  const MedicalInfoList = ({
-    medicalList: medicalListProp
-  }) => {
-    let list = medicalListProp ?? medicalList;
-    if (typeof list === "string") {
-      return <View>
-          {list.map((m, idx) => {
-          const title = m.name || m.raw?.name || "Medical Record";
-          let nested = null;
-          if (typeof m.notes === "string") {
-            try {
-              const parsed = JSON.parse(m.notes);
-              if (Array.isArray(parsed)) nested = parsed;
-            } catch (_e) {}
-          }
-          return <View key={idx} className={"bg-muted rounded-[12px] p-[16px] border border-border"}>
-                <View className={"flex-row items-center mb-[12px]"}>
-                  <AppIcon name="medical-bag" size={20} color={palette.destructive} />
-                  <Text className={"font-semibold text-[16px] text-secondary-foreground ml-[8px]"}>{title}</Text>
-                </View>
-                <View className={"gap-[8px]"}>
-                  {m.medications && <View className={"flex-row justify-between items-start"}>
-                      <Text className={"font-medium text-muted-foreground text-[14px] w-[30%]"}>Medications</Text>
-                      <Text className={"flex-1 text-secondary-foreground text-[14px] text-right"}>{m.medications}</Text>
-                    </View>}
-                  {m.allergies && <View className={"flex-row justify-between items-start"}>
-                      <Text className={"font-medium text-muted-foreground text-[14px] w-[30%]"}>Allergies</Text>
-                      <Text className={"flex-1 text-secondary-foreground text-[14px] text-right"}>{m.allergies}</Text>
-                    </View>}
-                  {m.bloodType && <View className={"flex-row justify-between items-start"}>
-                      <Text className={"font-medium text-muted-foreground text-[14px] w-[30%]"}>Blood Type</Text>
-                      <Text className={"flex-1 text-secondary-foreground text-[14px] text-right"}>{m.bloodType}</Text>
-                    </View>}
-
-                  {nested ? <View className="mt-[12px]">
-                      {nested.map((n, i) => <View key={i} className={"bg-[rgba(255,255,255,0.7)] rounded-[8px] p-[12px] mb-[8px]"}>
-                          <Text className={"font-semibold text-secondary-foreground mb-[4px]"}>
-                            {n.name || "Medical Record"}
-                          </Text>
-                          {n.medications && <Text className={"text-muted-foreground text-[13px] mb-[2px]"}>
-                              Medications: {n.medications}
-                            </Text>}
-                          {n.allergies && <Text className={"text-muted-foreground text-[13px] mb-[2px]"}>
-                              Allergies: {n.allergies}
-                            </Text>}
-                          {n.bloodType && <Text className={"text-muted-foreground text-[13px] mb-[2px]"}>
-                              Blood Type: {n.bloodType}
-                            </Text>}
-                          {n.notes && <Text className={"text-muted-foreground text-[13px] mb-[2px]"}>{n.notes}</Text>}
-                        </View>)}
-                    </View> : m.notes && <View className={"flex-row justify-between items-start"}>
-                        <Text className={"font-medium text-muted-foreground text-[14px] w-[30%]"}>Notes</Text>
-                        <Text className={"flex-1 text-secondary-foreground text-[14px] text-right"}>{m.notes}</Text>
-                      </View>}
-                </View>
-              </View>;
-        })}
-        </View>;
-    }
-    if (!Array.isArray(list)) list = [list];
-    if (list.length === 0) {
-      return <View className={"items-center p-[40px]"}>
-          <AppIcon name="medical-bag" size={48} color={palette.mutedForeground} />
-          <Text className={"text-muted-foreground text-[16px] text-center mt-[12px]"}>
-            No medical information saved.
-          </Text>
-        </View>;
-    }
-    return <View className={"gap-[16px]"}>
-        {list.map((m, idx) => <View key={idx} className={"bg-muted rounded-[12px] p-[16px] border border-border"}>
-            <View className={"flex-row items-center mb-[12px]"}>
-              <AppIcon name="medical-bag" size={20} color={palette.destructive} />
-              <Text className={"font-semibold text-[16px] text-secondary-foreground ml-[8px]"}>
-                {m.name || m.raw?.name || "Medical Record"}
-              </Text>
-            </View>
-            <View className={"gap-[8px]"}>
-              {m.medications && <View className={"flex-row justify-between items-start"}>
-                  <Text className={"font-medium text-muted-foreground text-[14px] w-[30%]"}>Medications</Text>
-                  <Text className={"flex-1 text-secondary-foreground text-[14px] text-right"}>{m.medications}</Text>
-                </View>}
-              {m.allergies && <View className={"flex-row justify-between items-start"}>
-                  <Text className={"font-medium text-muted-foreground text-[14px] w-[30%]"}>Allergies</Text>
-                  <Text className={"flex-1 text-secondary-foreground text-[14px] text-right"}>{m.allergies}</Text>
-                </View>}
-              {m.bloodType && <View className={"flex-row justify-between items-start"}>
-                  <Text className={"font-medium text-muted-foreground text-[14px] w-[30%]"}>Blood Type</Text>
-                  <Text className={"flex-1 text-secondary-foreground text-[14px] text-right"}>{m.bloodType}</Text>
-                </View>}
-              {m.notes && <View className={"flex-row justify-between items-start"}>
-                  <Text className={"font-medium text-muted-foreground text-[14px] w-[30%]"}>Notes</Text>
-                  <Text className={"flex-1 text-secondary-foreground text-[14px] text-right"}>{m.notes}</Text>
-                </View>}
-            </View>
-          </View>)}
-      </View>;
-  };
-
-  // Load data from async storage
-  const loadEmergencyData = async () => {
+  const loadEmergencyData = useCallback(async () => {
     try {
       setLoadError(null);
-      const stateRaw = (await AsyncStorage.getItem("emergencyState")) || (await getData("emergencyState")) || "no";
+      const stateRaw =
+        (await AsyncStorage.getItem("emergencyState")) ||
+        (await getData("emergencyState")) ||
+        "no";
       setEmergencyActive(String(stateRaw).toLowerCase() === "yes");
+
+      let contactsRaw =
+        (await AsyncStorage.getItem("emergency_contacts")) ||
+        (await AsyncStorage.getItem("emergencyContacts")) ||
+        (await getData("emergency_contacts")) ||
+        (await getData("emergencyContacts"));
       let contacts = [];
-      let contactsRaw = null;
-      try {
-        contactsRaw = await AsyncStorage.getItem("emergency_contacts");
-      } catch (_) {}
-      if (!contactsRaw) {
-        try {
-          contactsRaw = await AsyncStorage.getItem("emergencyContacts");
-        } catch (_) {}
-      }
-      // fall back to getData helper which may return parsed values
-      if (!contactsRaw) {
-        try {
-          const helperVal = await getData("emergency_contacts");
-          if (helperVal) contactsRaw = helperVal;
-        } catch (_) {}
-      }
-      if (!contactsRaw) {
-        try {
-          const helperVal = await getData("emergencyContacts");
-          if (helperVal) contactsRaw = helperVal;
-        } catch (_) {}
-      }
       if (contactsRaw) {
         if (typeof contactsRaw === "string") {
           try {
             const parsed = JSON.parse(contactsRaw);
             contacts = Array.isArray(parsed) ? parsed : [parsed];
           } catch {
-            contacts = [{
-              name: null,
-              contact: contactsRaw
-            }];
+            contacts = [{ contact: contactsRaw }];
           }
-        } else if (Array.isArray(contactsRaw)) {
-          contacts = contactsRaw;
-        } else if (typeof contactsRaw === "object") {
-          contacts = [contactsRaw];
+        } else {
+          contacts = Array.isArray(contactsRaw) ? contactsRaw : [contactsRaw];
         }
       }
       setEmergencyContacts(contacts);
-      let med = [];
-      try {
-        const medRaw = await AsyncStorage.getItem("medical_info");
-        if (medRaw) {
-          try {
-            const parsed = JSON.parse(medRaw);
-            med = Array.isArray(parsed) ? parsed : [parsed];
-          } catch {
-            med = [medRaw];
-          }
-        } else {
-          med = [];
-        }
-      } catch (e) {
-        console.warn("Emergency: failed to read medical_info from AsyncStorage", e);
-        med = [];
-      }
-      med = med.map(m => {
-        if (!m) return null;
-        if (typeof m === "string") return {
-          id: null,
-          name: null,
-          notes: m,
-          medications: null,
-          allergies: null,
-          bloodType: null,
-          raw: m
-        };
-        return {
-          id: m.id || m._id || null,
-          name: m.name || m.fullName || null,
-          medications: m.medications || m.Medications || m.meds || null,
-          allergies: m.allergies || m.Allergies || null,
-          bloodType: m.bloodType || m.BloodType || m.blood || null,
-          notes: m.notes || m.Notes || null,
-          raw: m
-        };
-      }).filter(Boolean);
-      setMedicalList(med);
-      let docs = [];
-      const docsRaw = (await AsyncStorage.getItem("important_documents")) || (await AsyncStorage.getItem("importantDocuments"));
-      if (docsRaw) {
+
+      let medical = [];
+      const medicalRaw = await AsyncStorage.getItem("medical_info");
+      if (medicalRaw) {
         try {
-          const parsed = JSON.parse(docsRaw);
-          docs = Array.isArray(parsed) ? parsed : [parsed];
+          const parsed = JSON.parse(medicalRaw);
+          medical = Array.isArray(parsed) ? parsed : [parsed];
         } catch {
-          docs = [docsRaw];
+          medical = [{ notes: medicalRaw }];
         }
       }
-      setDocuments(docs);
-    } catch (e) {
-      console.warn("Emergency: failed to load emergency data", e);
+      setMedicalList(
+        medical.filter(Boolean).map((record) => {
+          if (typeof record === "string") {
+            return { notes: record, raw: record };
+          }
+          return {
+            id: record.id || record._id || null,
+            name: record.name || record.fullName || null,
+            medications:
+              record.medications || record.Medications || record.meds || null,
+            allergies: record.allergies || record.Allergies || null,
+            bloodType:
+              record.bloodType || record.BloodType || record.blood || null,
+            notes: record.notes || record.Notes || null,
+            raw: record,
+          };
+        })
+      );
+
+      const documentsRaw =
+        (await AsyncStorage.getItem("important_documents")) ||
+        (await AsyncStorage.getItem("importantDocuments"));
+      if (documentsRaw) {
+        try {
+          const parsed = JSON.parse(documentsRaw);
+          setDocuments(Array.isArray(parsed) ? parsed : [parsed]);
+        } catch {
+          setDocuments([{ title: documentsRaw }]);
+        }
+      } else {
+        setDocuments([]);
+      }
+    } catch (error) {
+      console.warn("Emergency: failed to load emergency data", error);
       setLoadError("Saved emergency information could not be loaded.");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
   useEffect(() => {
     loadEmergencyData();
-  }, []);
-  useFocusEffect(useCallback(() => {
-    loadEmergencyData();
-  }, []));
-  const FoodWater = () => <ScrollView className={"flex-1"}>
-      <View className={"gap-[16px]"}>
-        <Text className={"text-[15px] text-secondary-foreground leading-[22px]"}>• Store 1 gallon of water per person per day (for at least 3 days).</Text>
-        <Text className={"text-[15px] text-secondary-foreground leading-[22px]"}>• Keep non-perishable food like canned goods, protein bars, and dried fruit.</Text>
-        <Text className={"text-[15px] text-secondary-foreground leading-[22px]"}>• Have a manual can opener and disposable utensils.</Text>
-        <Text className={"text-[15px] text-secondary-foreground leading-[22px]"}>• Replace food and water every 6 months.</Text>
-        <Text className={"text-[15px] text-secondary-foreground leading-[22px]"}>• If tap water is unsafe, boil it or use purification tablets.</Text>
-      </View>
-    </ScrollView>;
-  const Aftershocks = () => <ScrollView className={"flex-1"}>
-      <View className={"gap-[16px]"}>
-        <Text className={"text-[15px] text-secondary-foreground leading-[22px]"}>• Expect more shaking after the main earthquake.</Text>
-        <Text className={"text-[15px] text-secondary-foreground leading-[22px]"}>• Drop, Cover, and Hold On during each aftershock.</Text>
-        <Text className={"text-[15px] text-secondary-foreground leading-[22px]"}>• Stay away from damaged buildings, walls, and power lines.</Text>
-        <Text className={"text-[15px] text-secondary-foreground leading-[22px]"}>• Check for gas leaks or fires before re-entering any area.</Text>
-        <Text className={"text-[15px] text-secondary-foreground leading-[22px]"}>• Listen to local alerts and contact family when safe.</Text>
-      </View>
-    </ScrollView>;
-  const emergencyCards = [{
-    id: "1",
-    title: "Emergency Contacts",
-    icon: "phone",
-    component: EmergencyContactsList
-  }, {
-    id: "2",
-    title: "Medical Info",
-    icon: "clipboard-pulse",
-    component: MedicalInfoList
-  }, {
-    id: "3",
-    title: "Food & Water",
-    icon: "water",
-    component: FoodWater
-  }, {
-    id: "4",
-    title: "Aftershocks",
-    icon: "home-alert",
-    component: Aftershocks
-  }];
-  const toggleModule = moduleId => {
-    setExpandedModule(expandedModule === moduleId ? null : moduleId);
-  };
-  const ModuleCard = ({
-    module
-  }) => {
-    const isExpanded = expandedModule === module.id;
-    const [checklist, setChecklist] = useState(Array.isArray(module.checklistItems) ? module.checklistItems : []);
-    const toggleItem = itemId => {
-      const updatedChecklist = checklist.map(item => item.id === itemId ? {
-        ...item,
-        completed: !item.completed
-      } : item);
-      setChecklist(updatedChecklist);
-    };
-    return <View className={[["bg-card rounded-[16px] shadow-sm border border-border overflow-hidden"].filter(Boolean).join(" "), "rounded-[16px] mb-[12px] shadow-sm border border-border overflow-hidden"].filter(Boolean).join(" ")}>
-        <Button unstyled className={[["flex-row items-center justify-between p-[18px]"].filter(Boolean).join(" "), "py-[20px] px-[20px]"].filter(Boolean).join(" ")} onPress={() => toggleModule(module.id)} activeOpacity={0.7}>
-          <View className={"flex-row items-center flex-1"}>
-            <View className={"flex-1"}>
-              <Text className={[["text-base font-semibold text-secondary-foreground mb-[2px]"].filter(Boolean).join(" "), "text-[18px] font-bold text-secondary-foreground mb-[4px]"].filter(Boolean).join(" ")}>
-                {module.title}
-              </Text>
-              <Text className={["text-[14px] leading-[20px]"].filter(Boolean).join(" ")}>
-                {module.description}
-              </Text>
-            </View>
-          </View>
-          <View className={"items-end gap-[4px]"}>
-            <AppIcon name={isExpanded ? "chevron-up" : "chevron-down"} size={24} color={palette.primary} />
-          </View>
-        </Button>
+  }, [loadEmergencyData]);
 
-        {isExpanded && <View className={"border-t border-border p-[18px]"}>
-            {module.title && module.title.toLowerCase().includes("important") ? <View className={"gap-[12px]"}>
-                {documents && documents.length > 0 ? documents.map((d, i) => {
-            const uri = d.uri || d.path || d.raw?.uri;
-            const isImage = typeof uri === "string" && /\.(jpe?g|png|gif|bmp|webp|heic|heif)$/i.test(uri);
-            return <View key={d.id || uri || i} className={"flex-row items-center bg-muted rounded-[12px] p-[16px] border border-border"}>
-                        {isImage && <Image source={{
-                uri
-              }} className={"w-[50px] h-[50px] rounded-[8px] mr-[12px] bg-muted"} />}
-                        <View className={"flex-1"}>
-                          <Text className={"font-semibold text-[15px] text-secondary-foreground mb-[2px]"}>
-                            {d.title || d.fileName || uri || "Document"}
-                          </Text>
-                          <Text className={"text-muted-foreground text-[13px]"}>
-                            {d.fileName || uri}
-                          </Text>
-                        </View>
-                        <Button unstyled className={"p-[8px]"}>
-                          <AppIcon name="download" size={18} color={palette.primary} />
-                        </Button>
-                      </View>;
-          }) : <View className={"items-center p-[40px]"}>
-                    <AppIcon name="file-document" size={48} color={palette.mutedForeground} />
-                    <Text className={"text-muted-foreground text-[16px] text-center mt-[12px]"}>
-                      No important documents saved.
-                    </Text>
-                  </View>}
-              </View> : module.title && module.title.toLowerCase().includes("medical") ? <View className={"gap-[16px]"}>
-                <MedicalInfoList />
-              </View> : <View className={"mb-[8px] bg-muted rounded-[12px] p-[4px]"}>
-                {checklist.map(item => <Button unstyled key={item.id} className={["flex-row items-start py-[16px] px-[16px] bg-card rounded-[12px] mb-[8px] border-[1.5px] border-border shadow-sm", item.completed && "bg-secondary"].filter(Boolean).join(" ")} onPress={() => toggleItem(item.id)} activeOpacity={0.7}>
-                    <View className={"flex-row items-start flex-1"}>
-                      <View className={["w-[24px] h-[24px] rounded-[6px] border-[2px] border-muted-foreground justify-center items-center mr-[16px] bg-card", item.completed && "bg-primary border-primary"].filter(Boolean).join(" ")}>
-                        {item.completed && <AppIcon name="check" size={16} color={palette.primaryForeground} />}
-                      </View>
-                      <Text className={["text-[15px] text-secondary-foreground flex-1 leading-[22px] font-medium", item.completed && "text-muted-foreground line-through"].filter(Boolean).join(" ")}>
-                        {item.text}
-                      </Text>
-                    </View>
-                  </Button>)}
-              </View>}
-          </View>}
-      </View>;
+  useFocusEffect(
+    useCallback(() => {
+      loadEmergencyData();
+    }, [loadEmergencyData])
+  );
+
+  const toggleChecklistItem = (id) => {
+    setChecklist((current) =>
+      current.map((item) =>
+        item.id === id ? { ...item, completed: !item.completed } : item
+      )
+    );
   };
-  const ModuleCardSquare = ({
-    module
-  }) => {
-    const [visible, setVisible] = useState(false);
-    const statusColor = palette.primary;
-    const backdropOpacity = useRef(new Animated.Value(0)).current;
-    const contentScale = useRef(new Animated.Value(0.9)).current;
-    const contentOpacity = useRef(new Animated.Value(0)).current;
-    const openModal = () => {
-      setVisible(true);
-      Animated.parallel([Animated.timing(backdropOpacity, {
-        toValue: 1,
-        duration: 220,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true
-      }), Animated.timing(contentOpacity, {
-        toValue: 1,
-        duration: 220,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true
-      }), Animated.spring(contentScale, {
-        toValue: 1,
-        friction: 8,
-        useNativeDriver: true
-      })]).start();
-    };
-    const closeModal = () => {
-      Animated.parallel([Animated.timing(backdropOpacity, {
-        toValue: 0,
-        duration: 180,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: true
-      }), Animated.timing(contentOpacity, {
-        toValue: 0,
-        duration: 160,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: true
-      }), Animated.timing(contentScale, {
-        toValue: 0.9,
-        duration: 160,
-        easing: Easing.in(Easing.cubic),
-        useNativeDriver: true
-      })]).start(() => setVisible(false));
-    };
-    return <>
-        <Button unstyled className={["w-[50%] aspect-[1] p-[6px]"].filter(Boolean).join(" ")} activeOpacity={0.85} onPress={openModal}>
-          <View className={"bg-card rounded-[18px] p-[20px] flex-1 justify-center items-center shadow-sm border border-border"}>
-            <View className={["w-[60px] h-[60px] rounded-[18px] justify-center items-center mb-[12px]"].filter(Boolean).join(" ")} style={{
-            backgroundColor: `${statusColor}15`
-          }}>
-              <AppIcon name={module.icon} size={36}
-            color={statusColor} />
-            </View>
-            <Text className={"text-[14px] font-semibold text-secondary-foreground text-center leading-[18px]"}>
-              {module.title}
-            </Text>
-          </View>
-        </Button>
-        <Modal visible={visible} animationType="none" transparent={true} onRequestClose={closeModal} statusBarTranslucent={true}>
-          <TouchableWithoutFeedback onPress={closeModal}>
-            <Animated.View className={"flex-1 bg-[rgba(0,0,0,0.6)] justify-center items-center p-[20px]"} style={{
-            opacity: backdropOpacity
-          }}>
-              <TouchableWithoutFeedback>
-                <Animated.View className={"bg-card rounded-[20px] p-[24px] w-[100%] max-w-[500px] max-h-[80%] shadow-sm"} style={{
-                opacity: contentOpacity,
-                transform: [{
-                  scale: contentScale
-                }]
-              }}>
-                  <Button unstyled className={"absolute top-[16px] right-[16px] z-[10] p-[4px]"} onPress={closeModal}>
-                    <AppIcon name="close" size={24} color={palette.mutedForeground} />
-                  </Button>
-                  <View className={"items-center mb-[20px] pt-[8px]"}>
-                    <View className={"w-[64px] h-[64px] rounded-[20px] justify-center items-center mb-[12px]"}>
-                      <AppIcon name={module.icon} size={40}
-                    color={statusColor} />
-                    </View>
-                    <Text className={"font-bold text-[24px] text-secondary-foreground text-center"}>
-                      {module.title}
-                    </Text>
-                  </View>
-                  <View className={"w-[100%] max-h-[400px]"}>
-                    {(() => {
-                    const Comp = module.component;
-                    if (typeof Comp === "function") {
-                      return <ScrollView className={"w-[100%] max-h-[400px]"} contentContainerClassName="pb-[12px]" showsVerticalScrollIndicator>
-                            <Comp contacts={emergencyContacts} medicalList={medicalList} documents={documents} />
-                          </ScrollView>;
-                    }
-                    return <View className={"w-[100%] max-h-[400px]"}>{Comp || null}</View>;
-                  })()}
-                  </View>
-                </Animated.View>
-              </TouchableWithoutFeedback>
-            </Animated.View>
-          </TouchableWithoutFeedback>
-        </Modal>
-      </>;
-  };
+
   if (loading) {
-    return showSkeleton ? <ScreenSkeleton cards={4} /> : <View className="flex-1 bg-background" />;
+    return showSkeleton ? (
+      <ScreenSkeleton cards={5} />
+    ) : (
+      <View className="flex-1 bg-background" />
+    );
   }
+
   if (loadError) {
     return (
       <View className="flex-1 justify-center bg-background p-5">
-        <StatusCard tone="danger" title="Emergency information unavailable" description={loadError} />
+        <StatusCard
+          tone="danger"
+          title="Emergency information unavailable"
+          description={loadError}
+        />
       </View>
     );
   }
-  return <ScrollView className={"flex-1 bg-background"} contentContainerClassName={"gap-[24px] px-[20px] pb-[32px] pt-[24px]"} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
-      <PageHeader
-        title="Emergency hub"
-        description="Critical contacts, medical details, supplies, and post-shaking guidance in one place."
-      />
 
-      {emergencyActive && <View className={"bg-destructive rounded-[18px] py-[16px] px-[16px] mb-[20px] gap-[10px] shadow-sm"}>
-          <View className={"flex-1 min-w-0 pr-[12px] items-start"}>
-            <Text className={"text-primary-foreground text-[18px] font-extrabold mb-[2px] shrink flex-wrap text-left"}>
-              EARTHQUAKE — DROP, COVER, HOLD ON
-            </Text>
-            <Text className={"text-[rgba(255,255,255,0.92)] text-[14px] leading-[20px] shrink text-left"}>
-              An earthquake has been detected near you. Move to safe cover now.
-            </Text>
+  const activeCard = activeCardId
+    ? { id: activeCardId, title: CARD_TITLES[activeCardId] }
+    : null;
+
+  const activeCardContent = {
+    contacts: <EmergencyContactsList contacts={emergencyContacts} />,
+    medical: <MedicalInfoList medicalList={medicalList} />,
+    documents: <DocumentsList documents={documents} />,
+    checklist: (
+      <Checklist items={checklist} onToggle={toggleChecklistItem} />
+    ),
+    aftershocks: <InformationList items={AFTERSHOCKS} />,
+    supplies: <InformationList items={FOOD_AND_WATER} />,
+  };
+
+  return (
+    <>
+      <ScrollView
+        className="flex-1 bg-background"
+        contentContainerClassName="gap-8 px-5 pb-10 pt-6"
+        contentInsetAdjustmentBehavior="automatic"
+        showsVerticalScrollIndicator={false}
+      >
+        <PageHeader title="Emergency hub" />
+
+        {emergencyActive ? (
+          <View
+            className="gap-5 rounded-2xl bg-destructive p-5"
+            style={{ borderCurve: "continuous" }}
+          >
+            <View className="flex-row items-start gap-3">
+              <View className="h-11 w-11 items-center justify-center rounded-full bg-white/15">
+                <AppIcon name="alert-circle" size={24} color="#FFFFFF" />
+              </View>
+              <View className="min-w-0 flex-1 gap-2">
+                <Text className="text-[20px] font-extrabold leading-6 text-destructive-foreground">
+                  Earthquake detected
+                </Text>
+                <Text className="text-[17px] font-bold leading-6 text-destructive-foreground">
+                  Drop, Cover, and Hold On.
+                </Text>
+              </View>
+            </View>
+            <Button
+              variant="secondary"
+              size="lg"
+              onPress={() => navigation.navigate("LocalRisk")}
+              accessibilityLabel="View current earthquakes"
+            >
+              View current earthquakes
+            </Button>
           </View>
-          <Button unstyled className={"bg-card py-[8px] px-[12px] rounded-[12px] ml-[12px] self-center shrink-0"} onPress={() => navigation.navigate("LocalRisk")}>
-            <Text className={"text-destructive font-bold text-[13px]"}>
-              View Current Earthquakes
-            </Text>
-          </Button>
-        </View>}
+        ) : null}
 
-      {/* Quick Actions Grid */}
-      <View className={"gap-[12px]"}>
-        <SectionHeader title="Quick access" description="Open essential information without leaving this screen." />
-        <View className="flex-row flex-wrap">
-        {emergencyCards.map(module => <ModuleCardSquare key={module.id} module={module} />)}
+        <View className="gap-4">
+          <Text
+            role="heading"
+            aria-level={2}
+            className="text-[20px] font-bold leading-6 text-foreground"
+          >
+            Your information
+          </Text>
+          <View className="flex-row gap-4">
+            <EmergencyCard
+              title={CARD_TITLES.contacts}
+              icon="phone"
+              size="primary"
+              onPress={() => setActiveCardId("contacts")}
+            />
+            <EmergencyCard
+              title={CARD_TITLES.medical}
+              icon="medical-bag"
+              size="primary"
+              onPress={() => setActiveCardId("medical")}
+            />
+          </View>
+          <EmergencyCard
+            title={CARD_TITLES.documents}
+            icon="file-document"
+            size="wide"
+            onPress={() => setActiveCardId("documents")}
+          />
         </View>
-      </View>
 
-      {/* Emergency Checklists */}
-      <View className={"gap-[12px]"}>
-        <SectionHeader title="After an earthquake" description="Follow these steps once the shaking stops." />
-        {EMERGENCY_MODULES.map(module => <ModuleCard key={module.id} module={module} />)}
-      </View>
-    </ScrollView>;
+        <View className="gap-4">
+          <Text
+            role="heading"
+            aria-level={2}
+            className="text-[20px] font-bold leading-6 text-foreground"
+          >
+            What to do
+          </Text>
+          <EmergencyCard
+            title={CARD_TITLES.checklist}
+            icon="list-checks"
+            size="wide"
+            onPress={() => setActiveCardId("checklist")}
+          />
+          <View className="flex-row gap-4">
+            <EmergencyCard
+              title={CARD_TITLES.aftershocks}
+              icon="home-alert"
+              onPress={() => setActiveCardId("aftershocks")}
+            />
+            <EmergencyCard
+              title={CARD_TITLES.supplies}
+              icon="water"
+              onPress={() => setActiveCardId("supplies")}
+            />
+          </View>
+        </View>
+      </ScrollView>
+
+      <EmergencyDialog
+        activeCard={activeCard}
+        onOpenChange={(open) => {
+          if (!open) setActiveCardId(null);
+        }}
+      >
+        {activeCardId ? activeCardContent[activeCardId] : null}
+      </EmergencyDialog>
+    </>
+  );
 }
