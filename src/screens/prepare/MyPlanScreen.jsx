@@ -3,10 +3,12 @@ import { Input } from "../../components/ui/input";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppIcon } from "../../components/app-icon";
 import { StatusCard } from "../../components/app-ui";
+import { Card } from "../../components/ui/card";
 import {
   ScreenSkeleton,
   useDelayedSkeleton,
 } from "../../components/ui/skeleton";
+import { Image } from "expo-image";
 import { addDoc, collection, query as fsQuery, getDocs, where } from "firebase/firestore";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, InputAccessoryView, Keyboard, Modal, Platform, ScrollView, StatusBar, Text, View } from "react-native";
@@ -19,6 +21,17 @@ import { getData } from "../../lib/storage/storageUtils";
 import { useTheme } from "../../lib/theme";
 import PlanSectionEditor from "../../components/prepare/PlanSectionEditor";
 const STORAGE_KEY = "my_plan";
+
+function EpicenterAiIcon({ size = 20 }) {
+  return (
+    <Image
+      source={require("../../../assets/images/filledEpicenter.png")}
+      contentFit="contain"
+      style={{ height: size, width: size }}
+    />
+  );
+}
+
 export default function MyPlan({
   navigation
 }) {
@@ -137,40 +150,92 @@ export default function MyPlan({
       ...prev,
       [key]: !prev[key]
     }));
-    // no automatic focus here — editor components manage focus when opened
+    // Editor components manage focus when opened.
   };
   const topPadding = Platform.OS === "android" ? StatusBar.currentHeight || 0 : insets.top || 20;
   const Section = ({
     title,
-    keyName
-  }) => <View className={"bg-card p-[12px] rounded-[12px] mb-[12px] overflow-hidden shadow-sm"}>
-      <View className="flex-row justify-between items-center">
-        <Text className={"font-extrabold text-[16px] text-secondary-foreground"}>{title}</Text>
-        <View className="flex-row gap-[8px]">
-          <Button unstyled onPress={() => toggleEdit(keyName)} className={"bg-card border border-border px-[10px] py-[6px] rounded-[8px]"} accessibilityLabel={editing[keyName] ? "Close editor" : "Edit section"}>
-            <AppIcon name={editing[keyName] ? "content-save" : "pencil"} size={18} color={palette.primary} />
-          </Button>
-          <Button unstyled onPress={() => openAiModal(title, keyName)} className={["bg-card border border-border px-[10px] py-[6px] rounded-[8px]", "ml-[8px]"].filter(Boolean).join(" ")} accessibilityLabel={`Ask AI about ${title}`}>
-            <AppIcon name="map-marker-radius" size={18} color={palette.primary} />
+    keyName,
+    icon
+  }) => {
+    const hasContent = Boolean(
+      decodeAiMarkdown((plan[keyName] || "").replace(/<[^>]+>/g, "")).trim()
+    );
+    return <Card className="gap-4 overflow-hidden p-4">
+        <View className="flex-row items-center gap-3">
+          <View className="h-11 w-11 items-center justify-center rounded-xl bg-secondary" style={{ borderCurve: "continuous" }}>
+            <AppIcon name={icon} size={20} color={palette.primary} />
+          </View>
+          <View className="min-w-0 flex-1 gap-0.5">
+            <Text className="text-[17px] font-bold leading-[22px] text-foreground">{title}</Text>
+            <Text className={hasContent ? "text-xs font-semibold text-primary" : "text-xs font-medium text-muted-foreground"}>
+              {hasContent ? "Ready" : "Not started"}
+            </Text>
+          </View>
+          <Button
+            variant="secondary"
+            size="sm"
+            onPress={() => toggleEdit(keyName)}
+            accessibilityLabel={editing[keyName] ? `Save ${title}` : `Edit ${title}`}
+          >
+            <AppIcon name={editing[keyName] ? "content-save" : "pencil"} size={16} color={palette.primary} />
+            <Text className="font-bold text-primary">{editing[keyName] ? "Save" : "Edit"}</Text>
           </Button>
         </View>
-      </View>
 
-          {editing[keyName] ? <PlanSectionEditor editorRegistry={editorsApi} plan={plan} sectionKey={keyName} title={title} onFocusChange={setCurrentFocusedKey} onSave={savePlan} setEditing={setEditing} /> : <View className={"pt-[8px]"}>
-          {typeof plan[keyName] === "string" && /<[^>]+>/.test(plan[keyName]) ? <View className={"h-[160px] rounded-[8px] overflow-hidden bg-card"}>
-              <WebView originWhitelist={["*"]} source={{
-          html: `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1" /><style>body{font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial; color:${palette.foreground}; background:${palette.card}; padding:8px; margin:0;} img{max-width:100%;height:auto;} p{line-height:1.45;}</style></head><body>${plan[keyName] || ""}</body></html>`
-        }} className="flex-1" scalesPageToFit />
-            </View> : <View className="min-h-[80px] p-2">
-              <Markdown style={markdownStyles}>
-                {decodeAiMarkdown(plan[keyName] || "_No content_")}
-              </Markdown>
-            </View>}
-          {plan._meta?.[keyName] ? <Text className={"text-[12px] text-muted-foreground mt-[4px]"}>
-              Last edited: {formatEdited(plan._meta[keyName])}
-            </Text> : null}
-        </View>}
-    </View>;
+        {editing[keyName] ? (
+          <PlanSectionEditor
+            editorRegistry={editorsApi}
+            plan={plan}
+            sectionKey={keyName}
+            title={title}
+            onFocusChange={setCurrentFocusedKey}
+            onSave={savePlan}
+            setEditing={setEditing}
+          />
+        ) : (
+          <View className="gap-3">
+            {hasContent ? (
+              typeof plan[keyName] === "string" && /<[^>]+>/.test(plan[keyName]) ? (
+                <View className="h-[160px] overflow-hidden rounded-xl bg-card">
+                  <WebView originWhitelist={["*"]} source={{
+                    html: `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1" /><style>body{font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial; color:${palette.foreground}; background:${palette.card}; padding:8px; margin:0;} img{max-width:100%;height:auto;} p{line-height:1.45;}</style></head><body>${plan[keyName] || ""}</body></html>`
+                  }} className="flex-1" scalesPageToFit />
+                </View>
+              ) : (
+                <View className="rounded-xl bg-muted px-4 py-3">
+                  <Markdown style={markdownStyles}>
+                    {decodeAiMarkdown(plan[keyName])}
+                  </Markdown>
+                </View>
+              )
+            ) : (
+              <View className="rounded-xl bg-muted px-4 py-4">
+                <Text className="text-sm leading-5 text-muted-foreground">
+                  Add the details your household will need to follow this part of the plan.
+                </Text>
+              </View>
+            )}
+            <View className="flex-row items-center justify-between gap-3">
+              {plan._meta?.[keyName] ? (
+                <Text className="flex-1 text-xs text-muted-foreground">
+                  Edited {formatEdited(plan._meta[keyName])}
+                </Text>
+              ) : <View className="flex-1" />}
+              <Button
+                unstyled
+                onPress={() => openAiModal(title, keyName)}
+                className="flex-row items-center gap-1.5 rounded-lg px-2 py-1.5 active:bg-secondary"
+                accessibilityLabel={`Ask AI to review ${title}`}
+              >
+                <EpicenterAiIcon size={16} />
+                <Text className="text-[13px] font-bold text-primary">AI review</Text>
+              </Button>
+            </View>
+          </View>
+        )}
+      </Card>;
+  };
   const formatEdited = iso => {
     try {
       if (!iso) return null;
@@ -350,11 +415,22 @@ ${plan.other || ""}
         <View className="flex-1 bg-background" style={{
         paddingTop: topPadding
       }}>
-          
-          <View className="flex-1 p-[18px]">
-            <Text className={"text-[22px] font-extrabold text-primary mb-[6px]"}>Full Emergency Plan</Text>
-            {lastSaved ? <Text className={"text-[12px] text-muted-foreground mt-[4px]"}>Last saved: {lastSaved}</Text> : null}
-            <View className="flex-1 mt-[12px] rounded-[8px] overflow-hidden bg-card p-[12px]">
+          <View className="flex-1 gap-4 px-5 pb-6 pt-4">
+            <View className="flex-row items-center gap-3">
+              <View className="h-11 w-11 items-center justify-center rounded-xl bg-secondary" style={{ borderCurve: "continuous" }}>
+                <AppIcon name="clipboard-list" size={21} color={palette.primary} />
+              </View>
+              <View className="min-w-0 flex-1">
+                <Text className="text-xl font-extrabold text-foreground">Full emergency plan</Text>
+                <Text className="text-xs text-muted-foreground">
+                  {lastSaved ? `Last saved ${lastSaved}` : "Your complete household plan"}
+                </Text>
+              </View>
+              <Button variant="ghost" size="icon" onPress={() => setShowFull(false)} accessibilityLabel="Close full plan">
+                <AppIcon name="close" size={22} color={palette.foreground} />
+              </Button>
+            </View>
+            <Card className="flex-1 overflow-hidden p-2">
               {hasHtml ? <WebView originWhitelist={["*"]} source={{
               html: wrapHtml(`
                   <h2>My Emergency Plan</h2>
@@ -372,10 +448,10 @@ ${plan.other || ""}
             }} className="flex-1" /> : <ScrollView contentContainerClassName="p-[8px]">
                   <Markdown style={markdownStyles}>{markdownCombined}</Markdown>
                 </ScrollView>}
-            </View>
+            </Card>
 
-            <Button unstyled onPress={() => setShowFull(false)} className={["bg-primary py-[12px] rounded-[10px] items-center", "mt-[18px]"].filter(Boolean).join(" ")}>
-              <Text className={"text-primary-foreground font-extrabold"}>Close</Text>
+            <Button onPress={() => setShowFull(false)}>
+              <Text className="text-base font-bold text-primary-foreground">Done</Text>
             </Button>
           </View>
         </View>
@@ -391,30 +467,68 @@ ${plan.other || ""}
       </View>
     );
   }
-  return <View className="flex-1 bg-background">
-      
-      <ScrollView contentContainerClassName="p-[20px]" contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled">
+  const planSections = [
+    { title: "Evacuation route", keyName: "evacuateRoute", icon: "viewport" },
+    { title: "Meet-up points", keyName: "meetUpPoints", icon: "map-marker-radius" },
+    { title: "Aftermath procedures", keyName: "aftermathProcedures", icon: "list-checks" },
+    { title: "Other details", keyName: "other", icon: "clipboard-list" }
+  ];
+  const completedSections = planSections.filter(({ keyName }) =>
+    Boolean(decodeAiMarkdown((plan[keyName] || "").replace(/<[^>]+>/g, "")).trim())
+  ).length;
 
-        <Text className={"text-muted-foreground mb-[12px]"}>
-          Create and save a plan for emergency situations. Use the editor to
-          format text (Markdown supported).
-        </Text>
-        <View className="flex-row gap-[8px] items-center">
-          <Button unstyled onPress={() => setShowFull(true)} className={["bg-card border border-border px-[10px] py-[6px] rounded-[8px]", "bg-card mt-[8px] mb-[10px] self-start"].filter(Boolean).join(" ")}>
-            <Text className={"text-primary font-bold"}>View Full Plan</Text>
-          </Button>
-          <Button unstyled onPress={() => openAiModal("Full Plan", null)} className={["bg-card border border-border px-[10px] py-[6px] rounded-[8px]", "bg-card mt-[8px] mb-[10px] self-start flex-row items-center"].filter(Boolean).join(" ")} accessibilityLabel="Ask AI to review full plan">
-            <AppIcon name="map-marker-radius" size={16} color={palette.primary} />
-            <Text className={["text-primary font-bold", "ml-[6px]"].filter(Boolean).join(" ")}>
-              Ask AI
-            </Text>
-          </Button>
+  return <View className="flex-1 bg-background">
+      <ScrollView
+        contentContainerClassName="gap-6 px-5 py-6"
+        contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Card className="gap-5 p-5">
+          <View className="flex-row items-center gap-4">
+            <View className="h-14 w-14 items-center justify-center rounded-2xl bg-secondary" style={{ borderCurve: "continuous" }}>
+              <AppIcon name="clipboard-list" size={26} color={palette.primary} />
+            </View>
+            <View className="min-w-0 flex-1 gap-1">
+              <Text className="text-lg font-bold text-foreground">Household emergency plan</Text>
+              <Text className="text-sm leading-5 text-muted-foreground">
+                {completedSections} of {planSections.length} sections ready
+              </Text>
+            </View>
+            <View className="h-12 w-12 items-center justify-center rounded-full bg-secondary">
+              <Text className="font-extrabold text-primary" style={{ fontVariant: ["tabular-nums"] }}>
+                {Math.round((completedSections / planSections.length) * 100)}%
+              </Text>
+            </View>
+          </View>
+          <View className="h-2 overflow-hidden rounded-full bg-muted">
+            <View
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${(completedSections / planSections.length) * 100}%` }}
+            />
+          </View>
+          <View className="flex-row gap-3">
+            <Button variant="secondary" className="flex-1" onPress={() => setShowFull(true)}>
+              <AppIcon name="eye" size={18} color={palette.primary} />
+              <Text className="font-bold text-primary">Full plan</Text>
+            </Button>
+            <Button variant="secondary" className="flex-1" onPress={() => openAiModal("Full Plan", null)} accessibilityLabel="Ask AI to review full plan">
+              <EpicenterAiIcon size={18} />
+              <Text className="font-bold text-primary">AI review</Text>
+            </Button>
+          </View>
+        </Card>
+
+        <View className="gap-1">
+          <Text className="text-xl font-bold leading-6 text-foreground">Plan sections</Text>
+          <Text className="text-[13px] leading-[18px] text-muted-foreground">
+            Add practical instructions your household can follow.
+          </Text>
         </View>
 
-        <Section title="Evacuation Route" keyName="evacuateRoute" />
-        <Section title="Meet-up Points" keyName="meetUpPoints" />
-        <Section title="Aftermath Procedures" keyName="aftermathProcedures" />
-        <Section title="Other" keyName="other" />
+        <View className="gap-3">
+          {planSections.map(section => <Section key={section.keyName} {...section} />)}
+        </View>
 
         {showFull && <FullModal />}
       </ScrollView>
@@ -439,39 +553,67 @@ ${plan.other || ""}
         <View className="flex-1 bg-background" style={{
         paddingTop: topPadding
       }}>
-          
-          <View className="flex-1 p-[18px]">
-            <Text className={"text-[22px] font-extrabold text-primary mb-[6px]"}>AI Review</Text>
-            <Text className={"text-muted-foreground mb-[12px]"}>
-              Ask the AI to evaluate or improve your plan. Edit the prompt or
-              submit as-is.
-            </Text>
-            <Input value={aiPrompt} onChangeText={setAiPrompt} className={"min-h-[80px] border border-border p-[10px] rounded-[8px] bg-card mt-[8px]"} multiline placeholder="Enter instructions for the AI..." />
+          <View className="flex-1 gap-5 px-5 pb-6 pt-4">
+            <View className="flex-row items-center gap-3">
+              <View className="h-11 w-11 items-center justify-center rounded-xl bg-secondary" style={{ borderCurve: "continuous" }}>
+                <EpicenterAiIcon size={24} />
+              </View>
+              <View className="min-w-0 flex-1">
+                <Text className="text-xl font-extrabold text-foreground">AI plan review</Text>
+                <Text className="text-xs text-muted-foreground">
+                  {aiTarget ? "Reviewing one plan section" : "Reviewing the full plan"}
+                </Text>
+              </View>
+              <Button variant="ghost" size="icon" onPress={() => setAiVisible(false)} accessibilityLabel="Close AI review">
+                <AppIcon name="close" size={22} color={palette.foreground} />
+              </Button>
+            </View>
 
-            <View className="flex-1 mt-[12px]">
-              {aiLoading ? <ActivityIndicator size="large" color={palette.primary} /> : aiResponse ? <ScrollView contentContainerClassName="p-[8px]">
+            <View className="gap-2">
+              <Text className="text-sm font-semibold text-foreground">Review instructions</Text>
+              <Input
+                value={aiPrompt}
+                onChangeText={setAiPrompt}
+                className="min-h-[104px]"
+                multiline
+                placeholder="Enter instructions for the AI"
+              />
+            </View>
+
+            <Card className="flex-1 overflow-hidden p-4">
+              {aiLoading ? (
+                <View className="flex-1 items-center justify-center gap-3">
+                  <ActivityIndicator size="large" color={palette.primary} />
+                  <Text className="text-sm font-medium text-muted-foreground">Reviewing your plan...</Text>
+                </View>
+              ) : aiResponse ? (
+                <ScrollView contentContainerClassName="pb-2">
                   <Markdown style={markdownStyles}>
                     {decodeAiMarkdown(aiResponse)}
                   </Markdown>
-                </ScrollView> : <Text className={"text-[12px] text-muted-foreground mt-[4px]"}>
-                  No response yet. Press Ask AI to send your prompt.
-                </Text>}
-            </View>
+                </ScrollView>
+              ) : (
+                <View className="flex-1 items-center justify-center gap-3 px-4">
+                  <View className="h-12 w-12 items-center justify-center rounded-full bg-secondary">
+                    <EpicenterAiIcon size={26} />
+                  </View>
+                  <Text className="text-center text-sm leading-5 text-muted-foreground">
+                    Send the instructions above to get focused suggestions for your plan.
+                  </Text>
+                </View>
+              )}
+            </Card>
 
-            <View className="flex-row mt-[12px]">
-              <Button unstyled onPress={submitAi} className={["bg-primary py-[12px] rounded-[10px] items-center", "flex-1 mr-[8px] bg-primary"].filter(Boolean).join(" ")}>
-                <Text className={"text-primary-foreground font-extrabold"}>
-                  {aiLoading ? "Asking..." : "Ask AI"}
-                </Text>
+            <View className="flex-row gap-3">
+              <Button className="flex-1" onPress={submitAi} loading={aiLoading}>
+                <AppIcon name="send" size={17} color={palette.primaryForeground} />
+                <Text className="font-bold text-primary-foreground">Review plan</Text>
               </Button>
-              <Button unstyled onPress={applyAiSuggestion} className={["bg-card border border-border px-[10px] py-[6px] rounded-[8px]", "flex-1 items-center"].filter(Boolean).join(" ")}>
-                <Text className={"text-primary font-bold"}>Apply Suggestion</Text>
+              <Button variant="secondary" className="flex-1" onPress={applyAiSuggestion} disabled={!aiResponse || aiLoading}>
+                <AppIcon name="check" size={17} color={palette.primary} />
+                <Text className="font-bold text-primary">Apply</Text>
               </Button>
             </View>
-
-            <Button unstyled onPress={() => setAiVisible(false)} className={["bg-card border border-border px-[10px] py-[6px] rounded-[8px]", "mt-[12px] self-end"].filter(Boolean).join(" ")}>
-              <Text className={"text-primary font-bold"}>Close</Text>
-            </Button>
           </View>
         </View>
       </Modal>

@@ -1,15 +1,22 @@
 import { Button } from "../../components/ui/button";
 import { AppIcon } from "../../components/app-icon";
-import { EmptyState, StatusCard } from "../../components/app-ui";
+import {
+  EmptyState,
+  FormField,
+  SectionHeader,
+  StatusCard,
+} from "../../components/app-ui";
+import { Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import {
   SkeletonList,
   useDelayedSkeleton,
 } from "../../components/ui/skeleton";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from 'react';
-import { Alert, FlatList, Image, InputAccessoryView, Keyboard, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, Text, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, InputAccessoryView, Keyboard, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, Text, View } from 'react-native';
 const STORAGE_KEY = 'important_documents';
 export default function ImportantDocuments({
   navigation
@@ -152,82 +159,148 @@ export default function ImportantDocuments({
     }]);
   };
   return <View className="flex-1 bg-background">
-      
-      <ScrollView contentContainerClassName="p-[20px]" contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
-        <View className={"bg-card p-[20px] rounded-[16px] mb-[12px] shadow-sm border border-border"}>
-          <Text className={"text-muted-foreground mt-[6px]"}>Store photos or documents (e.g., IDs, insurance) locally. You can take a photo or choose from your library.</Text>
-
-          <View className="flex-row mt-[12px]">
-            <Button unstyled className={["py-[10px] px-[12px] bg-secondary rounded-[8px]", "mr-[8px]"].filter(Boolean).join(" ")} onPress={openCamera}>
-              <View className="flex-row items-center gap-2">
-                <AppIcon name="camera" size={17} className="text-primary" />
-                <Text className={"text-primary font-bold"}>Take Photo</Text>
-              </View>
+      <ScrollView
+        contentContainerClassName="gap-6 px-5 py-6"
+        contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        showsVerticalScrollIndicator={false}
+      >
+        <Card className="gap-5 p-5">
+          <View className="flex-row items-center gap-4">
+            <View className="h-14 w-14 items-center justify-center rounded-2xl bg-secondary" style={{ borderCurve: "continuous" }}>
+              <AppIcon name="file-document" size={26} className="text-primary" />
+            </View>
+            <View className="min-w-0 flex-1 gap-1">
+              <Text className="text-lg font-bold text-foreground">Your document wallet</Text>
+              <Text className="text-sm leading-5 text-muted-foreground">
+                {docs.length === 0
+                  ? "Keep photos of essential records in one place."
+                  : `${docs.length} ${docs.length === 1 ? "document" : "documents"} stored on this device.`}
+              </Text>
+            </View>
+          </View>
+          <View className="flex-row gap-3">
+            <Button variant="secondary" className="flex-1" onPress={openCamera}>
+              <AppIcon name="camera" size={18} className="text-primary" />
+              <Text className="font-bold text-primary">Take photo</Text>
             </Button>
-            <Button unstyled className={"py-[10px] px-[12px] bg-secondary rounded-[8px]"} onPress={pickFromLibrary}>
-              <View className="flex-row items-center gap-2">
-                <AppIcon name="images" size={17} className="text-primary" />
-                <Text className={"text-primary font-bold"}>Open Library</Text>
-              </View>
+            <Button variant="secondary" className="flex-1" onPress={pickFromLibrary}>
+              <AppIcon name="images" size={18} className="text-primary" />
+              <Text className="font-bold text-primary">Choose photo</Text>
             </Button>
           </View>
+        </Card>
 
-          {loading ? showSkeleton ? <SkeletonList count={3} className="mt-4" /> : <View className="h-40" /> : loadError ? <StatusCard className="mt-4" tone="danger" title="Documents unavailable" description={loadError} /> : docs.length === 0 ? <EmptyState className="mt-4 bg-muted/40" title="No documents yet" description="Add a photo of an ID, insurance policy, or other critical document." /> : <FlatList data={docs} keyExtractor={i => i.id} className="mt-[12px]" renderItem={({
-          item
-        }) => <View className={"flex-row items-center py-[12px] border-b border-border"}>
-                  {item.type && item.type.startsWith('image') ? <Image source={{
-            uri: item.uri
-          }} className={"w-[64px] h-[64px] rounded-[8px] bg-muted"} /> : <View className={"w-[64px] h-[64px] rounded-[8px] bg-muted justify-center items-center"}><Text className="text-muted-foreground">DOC</Text></View>}
-                  <View className="flex-1 ml-[12px]">
-                    <Text className={"font-bold text-secondary-foreground"}>{item.title}</Text>
-                    {item.notes ? <Text className={"text-muted-foreground mt-[4px]"}>{item.notes}</Text> : null}
-                    <View className="flex-row mt-[8px]">
-                      <Button unstyled onPress={() => handleView(item)} className={["py-[6px] px-[8px] rounded-[8px] bg-card border border-border", "mr-[8px]"].filter(Boolean).join(" ")}>
-                        <Text className={"text-primary font-bold"}>View</Text>
-                      </Button>
-                      <Button unstyled onPress={() => handleDelete(item.id)} className={"py-[6px] px-[8px] rounded-[8px] bg-card border border-border"}>
-                        <Text className={["text-primary font-bold", "text-destructive"].filter(Boolean).join(" ")}>Delete</Text>
-                      </Button>
+        <View className="gap-3">
+          <SectionHeader
+            title="Important documents"
+            description="IDs, insurance records, and other critical files."
+          />
+          {loading ? (
+            showSkeleton ? <SkeletonList count={3} /> : <View className="h-40" />
+          ) : loadError ? (
+            <StatusCard tone="danger" title="Documents unavailable" description={loadError} />
+          ) : docs.length === 0 ? (
+            <EmptyState
+              className="bg-card"
+              title="No documents yet"
+              description="Take or choose a photo of a document you may need quickly."
+            >
+              <View className="mt-5 h-12 w-12 items-center justify-center rounded-full bg-secondary">
+                <AppIcon name="file-document" size={22} className="text-primary" />
+              </View>
+            </EmptyState>
+          ) : (
+            <View className="gap-3">
+              {docs.map(item => (
+                <Card key={item.id} className="gap-4 p-4">
+                  <View className="flex-row gap-4">
+                    {item.type && item.type.startsWith('image') ? (
+                      <Image
+                        source={{ uri: item.uri }}
+                        contentFit="cover"
+                        className="h-[84px] w-[84px] rounded-xl bg-muted"
+                        style={{ borderCurve: "continuous" }}
+                      />
+                    ) : (
+                      <View className="h-[84px] w-[84px] items-center justify-center rounded-xl bg-muted" style={{ borderCurve: "continuous" }}>
+                        <AppIcon name="file-document" size={26} className="text-muted-foreground" />
+                      </View>
+                    )}
+                    <View className="min-w-0 flex-1 gap-1">
+                      <Text selectable numberOfLines={2} className="text-[17px] font-bold leading-[22px] text-foreground">
+                        {item.title}
+                      </Text>
+                      {item.notes ? (
+                        <Text selectable numberOfLines={2} className="text-[13px] leading-[18px] text-muted-foreground">
+                          {item.notes}
+                        </Text>
+                      ) : (
+                        <Text className="text-[13px] text-muted-foreground">No notes</Text>
+                      )}
+                      <Text className="mt-auto text-xs font-medium text-muted-foreground">
+                        Added {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "date unavailable"}
+                      </Text>
                     </View>
                   </View>
-                </View>} />}
+                  <View className="flex-row gap-2">
+                    <Button variant="secondary" size="sm" className="flex-1" onPress={() => handleView(item)}>
+                      <AppIcon name="eye" size={16} className="text-primary" />
+                      <Text className="font-bold text-primary">View</Text>
+                    </Button>
+                    <Button variant="ghost" size="sm" className="flex-1" onPress={() => handleDelete(item.id)}>
+                      <AppIcon name="trash-can-outline" size={16} className="text-destructive" />
+                      <Text className="font-bold text-destructive">Delete</Text>
+                    </Button>
+                  </View>
+                </Card>
+              ))}
+            </View>
+          )}
         </View>
-
       </ScrollView>
 
-      <Modal visible={showMetaModal} animationType="slide" transparent>
-        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-          <View className={"flex-1 justify-end bg-[rgba(0,0,0,0.35)]"}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'position'} keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 20}>
-              <View className={"bg-card p-[16px] rounded-tl-[12px] rounded-tr-[12px]"}>
-                <Text className={"font-extrabold text-[18px] mb-[8px] text-primary"}>Document Details</Text>
-                <Text className={"mt-[12px] font-semibold text-secondary-foreground"}>Title</Text>
-                <Input inputAccessoryViewID={'docAccessory'} placeholder="Title" value={meta.title} onChangeText={t => setMeta(m => ({
-                ...m,
-                title: t
-              }))} className={"border border-border rounded-[8px] p-[10px] mt-[8px] bg-card"} returnKeyType="next" onSubmitEditing={() => Keyboard.dismiss()} />
-                <Text className={"mt-[12px] font-semibold text-secondary-foreground"}>Notes</Text>
-                <Input inputAccessoryViewID={'docAccessory'} placeholder="Notes" value={meta.notes} onChangeText={t => setMeta(m => ({
-                ...m,
-                notes: t
-              }))} className={["border border-border rounded-[8px] p-[10px] mt-[8px] bg-card", "h-[80px]"].filter(Boolean).join(" ")} multiline textAlignVertical="top" returnKeyType="done" onSubmitEditing={() => Keyboard.dismiss()} />
-
-                <View className="flex-row justify-end mt-[12px]">
-                  <Button unstyled onPress={() => {
+      <Modal visible={showMetaModal} animationType="slide" transparent onRequestClose={() => setShowMetaModal(false)}>
+        <View className="flex-1 justify-end bg-black/40">
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+            <View className="rounded-t-[28px] border border-border bg-card px-5 pb-6 pt-3" style={{ borderCurve: "continuous" }}>
+              <View className="mb-4 h-1.5 w-10 self-center rounded-full bg-border" />
+              <View className="mb-5 gap-1">
+                <Text className="text-xl font-extrabold text-foreground">Document details</Text>
+                <Text className="text-sm leading-5 text-muted-foreground">
+                  Give this photo a clear name so it is easy to find.
+                </Text>
+              </View>
+              <View className="gap-4">
+                <FormField label="Title">
+                  <Input inputAccessoryViewID={'docAccessory'} placeholder="Example: Health insurance card" value={meta.title} onChangeText={t => setMeta(m => ({
+                    ...m,
+                    title: t
+                  }))} returnKeyType="next" />
+                </FormField>
+                <FormField label="Notes" description="Optional">
+                  <Input inputAccessoryViewID={'docAccessory'} placeholder="Policy number, owner, or reminder" value={meta.notes} onChangeText={t => setMeta(m => ({
+                    ...m,
+                    notes: t
+                  }))} className="min-h-[96px]" multiline returnKeyType="done" />
+                </FormField>
+              </View>
+              <View className="mt-6 flex-row gap-3">
+                <Button variant="secondary" className="flex-1" onPress={() => {
                   Keyboard.dismiss();
                   setShowMetaModal(false);
                   setPendingFile(null);
-                }} className={["py-[10px] px-[14px] rounded-[10px]", "bg-muted"].filter(Boolean).join(" ")}>
-                    <Text className="text-foreground font-bold">Cancel</Text>
-                  </Button>
-                  <Button unstyled onPress={confirmSavePending} className={["py-[10px] px-[14px] rounded-[10px]", "ml-[8px] bg-primary"].filter(Boolean).join(" ")}>
-                    <Text className="text-primary-foreground font-bold">Save</Text>
-                  </Button>
-                </View>
+                }}>
+                  <Text className="font-bold text-secondary-foreground">Cancel</Text>
+                </Button>
+                <Button className="flex-1" onPress={confirmSavePending}>
+                  <Text className="font-bold text-primary-foreground">Save document</Text>
+                </Button>
               </View>
-            </KeyboardAvoidingView>
-          </View>
-        </TouchableWithoutFeedback>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
       </Modal>
 
       {Platform.OS === 'ios' && <InputAccessoryView nativeID={'docAccessory'}>

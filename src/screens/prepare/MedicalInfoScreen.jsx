@@ -1,6 +1,12 @@
 import { Button } from "../../components/ui/button";
 import { AppIcon } from "../../components/app-icon";
-import { EmptyState, StatusCard } from "../../components/app-ui";
+import {
+  EmptyState,
+  FormField,
+  SectionHeader,
+  StatusCard,
+} from "../../components/app-ui";
+import { Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import {
   SkeletonList,
@@ -8,7 +14,7 @@ import {
 } from "../../components/ui/skeleton";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useRef, useState } from "react";
-import { Alert, Keyboard, Modal, ScrollView, Text, TouchableWithoutFeedback, useWindowDimensions, View } from "react-native";
+import { Alert, Keyboard, Modal, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { addDoc, collection, deleteDoc, doc, query as fsQuery, getDocs, updateDoc, where } from 'firebase/firestore';
 import { db } from '../../lib/firebaseConfig';
 import { getData } from '../../lib/storage/storageUtils';
@@ -255,109 +261,186 @@ export default function MedicalInfo({
     setEditingMedId(null);
     setActiveInputRef(null);
   };
+  const detailsFor = entry => [
+    { label: "Medications", value: entry.medications },
+    { label: "Allergies", value: entry.allergies },
+    { label: "Notes", value: entry.notes }
+  ].filter(detail => detail.value);
+
   return <View className="flex-1 bg-background">
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View className="flex-1">
-          
-
-          <ScrollView contentContainerClassName="p-[18px]" keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
-            <View className={"bg-card p-[20px] rounded-[16px] mb-[12px] shadow-sm border border-border"}>
-              <Text className={"text-muted-foreground mt-[6px]"}>
-                Manage one or more medical records to share in an emergency. These are stored locally on this device.
-              </Text>
-
-              <Button unstyled className={["mt-[12px] py-[10px] px-[12px] bg-secondary rounded-[8px] self-start", "mt-[12px]"].filter(Boolean).join(" ")} onPress={() => openMedicalEdit()}>
-                <View className="flex-row items-center gap-2">
-                  <AppIcon name="plus" size={17} className="text-primary" />
-                  <Text className={"text-primary font-bold"}>Add Medical Info</Text>
-                </View>
-              </Button>
-
-              {loading ? showSkeleton ? <SkeletonList count={3} className="mt-4" /> : <View className="h-40" /> : loadError ? <StatusCard className="mt-4" tone="danger" title="Medical information unavailable" description={loadError} /> : medicalList.length === 0 ? <EmptyState className="mt-4 bg-muted/40" title="No medical information saved" description="Add medications, allergies, blood type, or notes for emergency access." /> : <View className="mt-[12px]">
-                  <ScrollView style={{
-                maxHeight: Math.round(screenHeight * 0.55)
-              }} nestedScrollEnabled contentContainerClassName="pb-[8px]">
-                    {medicalList.map(entry => <View key={entry.id} className="mb-[12px] pb-[8px] border-b border-border">
-                        {entry.name && <Text className={"font-bold text-secondary-foreground mt-[12px]"}>{entry.name}</Text>}
-                        {entry.medications && <Text className={"text-muted-foreground mt-[4px] mb-[12px]"}>Medications: {entry.medications}</Text>}
-                        {entry.allergies && <Text className={"text-muted-foreground mt-[4px] mb-[12px]"}>Allergies: {entry.allergies}</Text>}
-                        {entry.bloodType && <Text className={"text-muted-foreground mt-[4px] mb-[12px]"}>Blood Type: {entry.bloodType}</Text>}
-                        {entry.notes && <Text className={"text-muted-foreground mt-[4px] mb-[12px]"}>{entry.notes}</Text>}
-                        <View className="flex-row mt-[8px]">
-                          <Button unstyled onPress={() => openMedicalEdit(entry)} className={["py-[8px] px-[12px] rounded-[8px] bg-muted", "mr-[8px]"].filter(Boolean).join(" ")}>
-                            <Text className={"text-primary font-semibold text-[14px]"}>Edit</Text>
-                          </Button>
-                          <Button unstyled onPress={() => handleDeleteMed(entry.id)} className={"py-[8px] px-[12px] rounded-[8px] bg-muted"}>
-                            <Text className={["text-primary font-semibold text-[14px]", "text-destructive"].filter(Boolean).join(" ")}>Delete</Text>
-                          </Button>
-                        </View>
-                        <Text className="text-muted-foreground mt-[6px] text-[12px]">
-                          Last updated: {entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : '—'}
-                        </Text>
-                      </View>)}
-                  </ScrollView>
-                </View>}
+      <ScrollView
+        contentContainerClassName="gap-6 px-5 py-6"
+        contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        showsVerticalScrollIndicator={false}
+      >
+        <Card className="gap-5 p-5">
+          <View className="flex-row items-center gap-4">
+            <View className="h-14 w-14 items-center justify-center rounded-2xl bg-secondary" style={{ borderCurve: "continuous" }}>
+              <AppIcon name="medical-bag" size={26} className="text-primary" />
             </View>
-          </ScrollView>
+            <View className="min-w-0 flex-1 gap-1">
+              <Text className="text-lg font-bold text-foreground">Critical details, together</Text>
+              <Text className="text-sm leading-5 text-muted-foreground">
+                {medicalList.length === 0
+                  ? "Keep essential health information easy to find."
+                  : `${medicalList.length} ${medicalList.length === 1 ? "medical profile" : "medical profiles"} saved.`}
+              </Text>
+            </View>
+          </View>
+          <Button className="min-h-12 rounded-xl" onPress={() => openMedicalEdit()}>
+            <AppIcon name="plus" size={19} className="text-primary-foreground" />
+            <Text className="text-base font-bold text-primary-foreground">Add medical profile</Text>
+          </Button>
+        </Card>
 
-          <Modal visible={showMedForm} animationType="slide" transparent>
-            <View className={"flex-1 justify-end bg-[rgba(0,0,0,0.35)]"}>
-              <View className={["bg-card p-[16px] rounded-tl-[12px] rounded-tr-[12px] rounded-bl-[12px] rounded-br-[12px]", "m-[16px]"].filter(Boolean).join(" ")} style={{
-              marginBottom: keyboardVisible ? keyboardHeight + 8 : 16,
-              maxHeight: MODAL_MAX - 275
-            }}>
-                <View className={"pb-[8px] border-b border-border mb-[6px]"}>
-                  <Text className={"font-extrabold text-[18px] mb-[8px] text-primary"}>
-                    {editingMedId ? 'Edit Medical Info' : 'Add Medical Info'}
-                  </Text>
-                </View>
-                <ScrollView ref={modalScrollRef} style={{
-                maxHeight: modalContentMaxHeight - 120
-              }} contentContainerClassName="pb-[12px] px-0" keyboardShouldPersistTaps="handled">
-                  <Text className={"font-semibold mt-[12px] mb-[4px] text-secondary-foreground text-[14px]"}>Name</Text>
-                  <Input ref={nameRef} value={medForm.name} onChangeText={t => setMedForm(p => ({
-                  ...p,
-                  name: t
-                }))} className={"border border-border rounded-[8px] p-[10px] mt-[8px] bg-card"} returnKeyType="next" onSubmitEditing={() => focusNext(0)} onFocus={() => handleInputFocus(nameRef, 0)} />
+        <View className="gap-3">
+          <SectionHeader
+            title="Medical profiles"
+            description="Information to reference or share in an emergency."
+          />
+          {loading ? (
+            showSkeleton ? <SkeletonList count={3} /> : <View className="h-40" />
+          ) : loadError ? (
+            <StatusCard tone="danger" title="Medical information unavailable" description={loadError} />
+          ) : medicalList.length === 0 ? (
+            <EmptyState
+              className="bg-card"
+              title="No medical information saved"
+              description="Add medications, allergies, blood type, or care notes."
+            >
+              <View className="mt-5 h-12 w-12 items-center justify-center rounded-full bg-secondary">
+                <AppIcon name="medical-bag" size={22} className="text-primary" />
+              </View>
+            </EmptyState>
+          ) : (
+            <View className="gap-3">
+              {medicalList.map(entry => (
+                <Card key={entry.id} className="gap-4 p-4">
+                  <View className="flex-row items-center gap-3">
+                    <View className="h-11 w-11 items-center justify-center rounded-xl bg-secondary" style={{ borderCurve: "continuous" }}>
+                      <AppIcon name="medical-bag" size={20} className="text-primary" />
+                    </View>
+                    <View className="min-w-0 flex-1">
+                      <Text selectable className="text-[17px] font-bold leading-[22px] text-foreground">
+                        {entry.name || "Unnamed profile"}
+                      </Text>
+                      <Text className="mt-0.5 text-xs text-muted-foreground">
+                        Updated {entry.updatedAt ? new Date(entry.updatedAt).toLocaleDateString() : "date unavailable"}
+                      </Text>
+                    </View>
+                    {entry.bloodType ? (
+                      <View className="rounded-full bg-secondary px-3 py-1.5">
+                        <Text selectable className="text-xs font-extrabold text-primary">{entry.bloodType}</Text>
+                      </View>
+                    ) : null}
+                  </View>
 
-                  <Text className={"font-semibold mt-[12px] mb-[4px] text-secondary-foreground text-[14px]"}>Medications</Text>
-                  <Input ref={medsRef} value={medForm.medications} onChangeText={t => setMedForm(p => ({
-                  ...p,
-                  medications: t
-                }))} className={"border border-border rounded-[8px] p-[10px] mt-[8px] bg-card"} returnKeyType="next" onSubmitEditing={() => focusNext(1)} onFocus={() => handleInputFocus(medsRef, 1)} />
+                  {detailsFor(entry).length ? (
+                    <View className="overflow-hidden rounded-xl border border-border" style={{ borderCurve: "continuous" }}>
+                      {detailsFor(entry).map((detail, index, list) => (
+                        <View
+                          key={detail.label}
+                          className={[
+                            "gap-1 px-4 py-3",
+                            index < list.length - 1 && "border-b border-border"
+                          ].filter(Boolean).join(" ")}
+                        >
+                          <Text className="text-xs font-semibold text-muted-foreground">{detail.label}</Text>
+                          <Text selectable className="text-[15px] leading-5 text-foreground">{detail.value}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ) : (
+                    <View className="rounded-xl bg-muted px-4 py-3">
+                      <Text className="text-sm text-muted-foreground">No additional medical details saved.</Text>
+                    </View>
+                  )}
 
-                  <Text className={"font-semibold mt-[12px] mb-[4px] text-secondary-foreground text-[14px]"}>Allergies</Text>
-                  <Input ref={allergiesRef} value={medForm.allergies} onChangeText={t => setMedForm(p => ({
-                  ...p,
-                  allergies: t
-                }))} className={"border border-border rounded-[8px] p-[10px] mt-[8px] bg-card"} returnKeyType="next" onSubmitEditing={() => focusNext(2)} onFocus={() => handleInputFocus(allergiesRef, 2)} />
-
-                  <Text className={"font-semibold mt-[12px] mb-[4px] text-secondary-foreground text-[14px]"}>Blood Type</Text>
-                  <Input ref={bloodRef} value={medForm.bloodType} onChangeText={t => setMedForm(p => ({
-                  ...p,
-                  bloodType: t
-                }))} className={"border border-border rounded-[8px] p-[10px] mt-[8px] bg-card"} returnKeyType="next" onSubmitEditing={() => focusNext(3)} onFocus={() => handleInputFocus(bloodRef, 3)} />
-
-                  <Text className={"font-semibold mt-[12px] mb-[4px] text-secondary-foreground text-[14px]"}>Notes</Text>
-                  <Input ref={notesRef} value={medForm.notes} onChangeText={t => setMedForm(p => ({
-                  ...p,
-                  notes: t
-                }))} className={["border border-border rounded-[8px] p-[10px] mt-[8px] bg-card", "min-h-[80px] align-top"].filter(Boolean).join(" ")} multiline numberOfLines={4} returnKeyType="done" onFocus={() => handleInputFocus(notesRef, 4)} />
-                </ScrollView>
-                <View className={"border-t border-border pt-[10px] pb-[8px] mt-[8px]"}>
-                  <View className="flex-row justify-end w-[100%]">
-                    <Button unstyled onPress={handleCancel} className={["py-[10px] px-[14px] rounded-[10px]", "bg-muted"].filter(Boolean).join(" ")}>
-                      <Text className="text-foreground font-bold">Cancel</Text>
+                  <View className="flex-row gap-2">
+                    <Button variant="secondary" size="sm" className="flex-1" onPress={() => openMedicalEdit(entry)}>
+                      <AppIcon name="pencil" size={16} className="text-primary" />
+                      <Text className="font-bold text-primary">Edit</Text>
                     </Button>
-                    <Button unstyled onPress={handleSaveMedical} className={["py-[10px] px-[14px] rounded-[10px]", "ml-[8px] bg-primary"].filter(Boolean).join(" ")}>
-                      <Text className="text-primary-foreground font-bold">Save</Text>
+                    <Button variant="ghost" size="sm" className="flex-1" onPress={() => handleDeleteMed(entry.id)}>
+                      <AppIcon name="trash-can-outline" size={16} className="text-destructive" />
+                      <Text className="font-bold text-destructive">Delete</Text>
                     </Button>
                   </View>
-                </View>
-              </View>
+                </Card>
+              ))}
             </View>
-          </Modal>
+          )}
         </View>
-      </TouchableWithoutFeedback>
+      </ScrollView>
+
+      <Modal visible={showMedForm} animationType="slide" transparent onRequestClose={handleCancel}>
+        <View className="flex-1 justify-end bg-black/40">
+          <View
+            className="rounded-t-[28px] border border-border bg-card px-5 pb-6 pt-3"
+            style={{
+              marginBottom: keyboardVisible ? keyboardHeight : 0,
+              maxHeight: MODAL_MAX,
+              borderCurve: "continuous"
+            }}
+          >
+            <View className="mb-4 h-1.5 w-10 self-center rounded-full bg-border" />
+            <View className="mb-5 gap-1">
+              <Text className="text-xl font-extrabold text-foreground">
+                {editingMedId ? 'Edit medical profile' : 'New medical profile'}
+              </Text>
+              <Text className="text-sm leading-5 text-muted-foreground">
+                Record only the information that would help during an emergency.
+              </Text>
+            </View>
+            <ScrollView
+              ref={modalScrollRef}
+              style={{ maxHeight: modalContentMaxHeight }}
+              contentContainerClassName="gap-4 pb-2"
+              keyboardShouldPersistTaps="handled"
+            >
+              <FormField label="Name">
+                <Input ref={nameRef} placeholder="Person's name" value={medForm.name} onChangeText={t => setMedForm(p => ({
+                  ...p,
+                  name: t
+                }))} returnKeyType="next" onSubmitEditing={() => focusNext(0)} onFocus={() => handleInputFocus(nameRef, 0)} />
+              </FormField>
+              <FormField label="Medications">
+                <Input ref={medsRef} placeholder="Medication and dosage" value={medForm.medications} onChangeText={t => setMedForm(p => ({
+                  ...p,
+                  medications: t
+                }))} returnKeyType="next" onSubmitEditing={() => focusNext(1)} onFocus={() => handleInputFocus(medsRef, 1)} />
+              </FormField>
+              <FormField label="Allergies">
+                <Input ref={allergiesRef} placeholder="Medication, food, or other allergies" value={medForm.allergies} onChangeText={t => setMedForm(p => ({
+                  ...p,
+                  allergies: t
+                }))} returnKeyType="next" onSubmitEditing={() => focusNext(2)} onFocus={() => handleInputFocus(allergiesRef, 2)} />
+              </FormField>
+              <FormField label="Blood type">
+                <Input ref={bloodRef} placeholder="Example: O+" value={medForm.bloodType} onChangeText={t => setMedForm(p => ({
+                  ...p,
+                  bloodType: t
+                }))} returnKeyType="next" onSubmitEditing={() => focusNext(3)} onFocus={() => handleInputFocus(bloodRef, 3)} />
+              </FormField>
+              <FormField label="Care notes">
+                <Input ref={notesRef} placeholder="Conditions, equipment, or other instructions" value={medForm.notes} onChangeText={t => setMedForm(p => ({
+                  ...p,
+                  notes: t
+                }))} className="min-h-[96px]" multiline numberOfLines={4} returnKeyType="done" onFocus={() => handleInputFocus(notesRef, 4)} />
+              </FormField>
+            </ScrollView>
+            <View className="mt-5 flex-row gap-3">
+              <Button variant="secondary" className="flex-1" onPress={handleCancel}>
+                <Text className="font-bold text-secondary-foreground">Cancel</Text>
+              </Button>
+              <Button className="flex-1" onPress={handleSaveMedical}>
+                <Text className="font-bold text-primary-foreground">Save profile</Text>
+              </Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>;
 }
