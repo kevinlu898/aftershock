@@ -758,7 +758,7 @@ const PrepareLessons = ({
           <AppIcon name="check-circle" size={38} color={palette.primary} />
         </View>
         <Text className="mb-2 text-center text-[26px] font-extrabold leading-8 text-foreground">Lesson complete</Text>
-        <Text className="mb-6 text-center text-[15px] leading-[22px] text-muted-foreground">Nice work. Your progress has been saved and you can review this lesson at any time.</Text>
+        <Text className="mb-6 text-center text-[15px] leading-[22px] text-muted-foreground">Nice work! Your progress has been saved and you can review this lesson at any time.</Text>
 
         <View className="gap-3">
           <Button onPress={() => {

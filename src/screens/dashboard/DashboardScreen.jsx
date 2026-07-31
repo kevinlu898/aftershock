@@ -247,7 +247,7 @@ export default function Dashboard() {
 
           {/* Your Feed */}
           <View className={"gap-[12px]"}>
-            <SectionHeader title="Local updates" description="Risk and news for informed decisions." />
+            <SectionHeader title="Local updates"/>
             <View className={"w-[100%] overflow-hidden rounded-[16px] border border-border bg-card shadow-sm"}>
               {feedItems.map((item, index) => (
                 <ListRow

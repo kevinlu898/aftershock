@@ -72,13 +72,8 @@ export default function ExportData({
 
         <Card>
           <Text className="text-muted-foreground text-base leading-6">
-            Send a copy of all your emergency data to your email. This will take a few moments to prepare your export. 
+            Send a copy of all your emergency data to your email. It will take a few moments to prepare your export. 
           </Text>
-
-          <StatusCard
-            title="Privacy note"
-            description="Your export contains preparedness and account information. Store it somewhere secure."
-          />
 
           <Button onPress={handleExport} loading={loading}>Request Export</Button>
         </Card>

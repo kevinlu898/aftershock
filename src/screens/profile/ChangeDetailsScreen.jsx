@@ -1,18 +1,17 @@
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import { FormField, StatusCard } from "../../components/app-ui";
+import { FormField } from "../../components/app-ui";
 import { Card } from "../../components/ui/card";
 import {
   ScreenSkeleton,
   useDelayedSkeleton,
 } from "../../components/ui/skeleton";
 import { useNavigation } from "@react-navigation/native";
-import { collection, getDocs, query, updateDoc, where } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
 import { db } from "../../lib/firebaseConfig";
-import { backendHash } from "../../lib/api";
-import { clearData, getData, storeData } from "../../lib/storage/storageUtils";
+import { getData } from "../../lib/storage/storageUtils";
 export default function ChangeDetails() {
   const navigation = useNavigation();
   const [firstName, setFirstName] = useState("");
@@ -20,8 +19,6 @@ export default function ChangeDetails() {
   const [zipcode, setZipcode] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const showSkeleton = useDelayedSkeleton(initialLoading);
   useEffect(() => {
@@ -45,53 +42,11 @@ export default function ChangeDetails() {
       }
     })();
   }, []);
-  const handleSave = async () => {
-    if (!currentPassword || currentPassword.length === 0) {
-      Alert.alert("Error", "Enter your current password to confirm.");
-      return;
-    }
-    setLoading(true);
-    try {
-      const username = await getData("username");
-      if (!username) {
-        Alert.alert("Error", "No username found.");
-        setLoading(false);
-        return;
-      }
-      const q = query(collection(db, "user"), where("username", "==", username));
-      const res = await getDocs(q);
-      if (res.empty) {
-        Alert.alert("Error", "User not found.");
-        setLoading(false);
-        return;
-      }
-      const docRef = res.docs[0].ref;
-      const userData = res.docs[0].data();
-      const ch = await backendHash(currentPassword);
-      if (!ch || userData.password_hash !== ch) {
-        Alert.alert("Error", "Current password is incorrect.");
-        setLoading(false);
-        return;
-      }
-      await updateDoc(docRef, {
-        first_name: firstName,
-        last_name: lastName,
-        zip_code: zipcode,
-        phone_number: phone,
-        email: email
-      });
-      await storeData("firstname", firstName);
-      await storeData("postalcode", zipcode);
-      await storeData("email", email);
-      await clearData("riskdata");
-      Alert.alert("Success", "Details updated.");
-      navigation.goBack();
-    } catch (err) {
-      console.error(err);
-      Alert.alert("Error", "Failed to save details.");
-    } finally {
-      setLoading(false);
-    }
+  const handleSave = () => {
+    navigation.navigate("ConfirmPassword", {
+      changeType: "details",
+      changes: { firstName, lastName, zipcode, phone, email },
+    });
   };
   if (initialLoading) {
     return showSkeleton ? <ScreenSkeleton cards={3} /> : <View className="flex-1 bg-background" />;
@@ -117,11 +72,7 @@ export default function ChangeDetails() {
               <Input placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
             </FormField>
 
-            <StatusCard title="Confirm changes" description="Enter your current password before saving.">
-              <Input placeholder="Current password" value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry accessibilityLabel="Confirm current password" />
-            </StatusCard>
-
-            <Button onPress={handleSave} loading={loading}>Save Changes</Button>
+            <Button onPress={handleSave}>Save Changes</Button>
           </Card>
         </View>
       </ScrollView>

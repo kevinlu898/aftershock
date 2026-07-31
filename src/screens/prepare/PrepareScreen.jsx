@@ -289,7 +289,7 @@ export default function PrepareScreen() {
     >
       <PageHeader
         title="Prepare with confidence"
-        description="Small lessons and practical steps to help you feel ready."
+        description="Quick lessons and practical steps to make sure you're ready."
       />
 
       <View
@@ -367,9 +367,6 @@ export default function PrepareScreen() {
         <View className="gap-1">
           <Text className="text-xl font-bold leading-6 text-foreground">
             Learning path
-          </Text>
-          <Text className="text-[13px] leading-[18px] text-muted-foreground">
-            Work through each module at your own pace.
           </Text>
         </View>
 

@@ -7,7 +7,6 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  Pressable,
   ScrollView,
   Text,
   View,
@@ -135,7 +134,10 @@ export default function EpicenterAI() {
   }, [messages, isThinking]);
 
   const persistSelectedChat = (chatId) => {
-    AsyncStorage.setItem("epicenter_ai_selected_chat", chatId).catch(() => {});
+    const operation = chatId
+      ? AsyncStorage.setItem("epicenter_ai_selected_chat", chatId)
+      : AsyncStorage.removeItem("epicenter_ai_selected_chat");
+    operation.catch(() => {});
   };
 
   const createNewChat = () => {
@@ -153,6 +155,16 @@ export default function EpicenterAI() {
     setInputValue(drafts[chatId] || "");
     setSidebarOpen(false);
     persistSelectedChat(chatId);
+  };
+
+  const toggleChatStar = (chatId) => {
+    setChats((current) => {
+      const next = current.map((chat) =>
+        chat.id === chatId ? { ...chat, starred: !chat.starred } : chat
+      );
+      saveChats(next);
+      return next;
+    });
   };
 
   const saveRequestCount = (date, count) =>
@@ -288,7 +300,7 @@ export default function EpicenterAI() {
 
   const deleteChat = () => {
     const chat = chats.find((item) => item.id === selectedChatId);
-    if (!chat || chats.length < 2) return;
+    if (!chat) return;
     Alert.alert("Delete conversation", `Delete “${chat.name}”? This can’t be undone.`, [
       { text: "Cancel", style: "cancel" },
       {
@@ -297,9 +309,14 @@ export default function EpicenterAI() {
         onPress: () => {
           const next = chats.filter((item) => item.id !== selectedChatId);
           setChats(next);
-          setSelectedChatId(next[0].id);
-          setMessages(next[0].messages || []);
-          persistSelectedChat(next[0].id);
+          setDrafts((current) => {
+            const { [selectedChatId]: _deletedDraft, ...remainingDrafts } = current;
+            return remainingDrafts;
+          });
+          setSelectedChatId(next[0]?.id || null);
+          setMessages(next[0]?.messages || []);
+          setInputValue("");
+          persistSelectedChat(next[0]?.id || null);
           saveChats(next);
         },
       },
@@ -400,8 +417,14 @@ export default function EpicenterAI() {
       </KeyboardAvoidingView>
 
       <Modal visible={sidebarOpen} transparent animationType="fade" onRequestClose={() => setSidebarOpen(false)}>
-        <View className="flex-1 flex-row bg-black/35" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
-          <View className="w-[86%] max-w-[360px] border-r border-border bg-background pt-3" style={{ boxShadow: "2px 0 12px rgba(0, 0, 0, 0.12)" }}>
+        <View className="flex-1 bg-background">
+          <View
+            className="flex-1 bg-background"
+            style={{
+              paddingTop: insets.top + 12,
+              paddingBottom: insets.bottom,
+            }}
+          >
             <View className="flex-row items-center justify-between px-4 pb-4">
               <View className="flex-row items-center gap-3"><View className="h-10 w-10 items-center justify-center rounded-xl bg-secondary"><Image source={require("../../../assets/images/filledEpicenter.png")} className="h-6 w-6 object-contain" /></View><Text className="text-[19px] font-bold text-foreground">Epicenter AI</Text></View>
               <Button unstyled onPress={() => setSidebarOpen(false)} className="h-10 w-10 items-center justify-center rounded-full active:bg-secondary" accessibilityLabel="Close conversations"><AppIcon name="close" size={20} color={palette.foreground} /></Button>
@@ -409,13 +432,19 @@ export default function EpicenterAI() {
             <View className="px-4 pb-4"><Button onPress={createNewChat} className="min-h-12 rounded-xl"><AppIcon name="plus" size={18} color={palette.primaryForeground} /><Text className="font-semibold text-primary-foreground">New chat</Text></Button></View>
             <Text className="mt-5 px-5 pb-2 text-[12px] font-bold text-muted-foreground">RECENT CHATS</Text>
             <ScrollView className="flex-1" contentContainerClassName="gap-1 px-3 pb-6" showsVerticalScrollIndicator={false}>
-              {chats.map((chat) => <Button key={chat.id} unstyled onPress={() => selectChat(chat.id)} className={["w-full items-start justify-start rounded-xl px-3 py-3", chat.id === selectedChatId ? "bg-secondary" : "active:bg-secondary"].join(" ")}>
-                <View className="min-w-0 gap-0.5"><Text numberOfLines={1} className={["text-[14px] font-semibold", chat.id === selectedChatId ? "text-primary" : "text-foreground"].join(" ")}>{chat.name}</Text><Text className="text-[12px] text-muted-foreground">{formatChatDate(chat.messages?.[chat.messages.length - 1]?.time || chat.createdAt)}</Text></View>
-              </Button>)}
+              {chats.map((chat) => (
+                <View key={chat.id} className={["flex-row items-center rounded-xl", chat.id === selectedChatId ? "bg-secondary" : ""].join(" ")}>
+                  <Button unstyled onPress={() => selectChat(chat.id)} className="min-w-0 flex-1 items-start justify-start px-3 py-3 active:bg-secondary">
+                    <View className="min-w-0 gap-0.5"><Text numberOfLines={1} className={["text-[14px] font-semibold", chat.id === selectedChatId ? "text-primary" : "text-foreground"].join(" ")}>{chat.name}</Text><Text className="text-[12px] text-muted-foreground">{formatChatDate(chat.messages?.[chat.messages.length - 1]?.time || chat.createdAt)}</Text></View>
+                  </Button>
+                  <Button unstyled onPress={() => toggleChatStar(chat.id)} className="mr-2 h-10 w-10 items-center justify-center rounded-full active:bg-background" accessibilityLabel={chat.starred ? "Remove chat star" : "Star chat"} accessibilityState={{ selected: Boolean(chat.starred) }}>
+                    <AppIcon name={chat.starred ? "star" : "star-outline"} size={19} color={chat.starred ? palette.warning : palette.mutedForeground} fill={chat.starred ? palette.warning : "none"} />
+                  </Button>
+                </View>
+              ))}
             </ScrollView>
-            <View className="border-t border-border p-3"><Button unstyled onPress={deleteChat} disabled={chats.length < 2} className="flex-row items-center gap-3 rounded-xl px-3 py-3 active:bg-secondary"><AppIcon name="trash-can-outline" size={18} color={chats.length < 2 ? palette.border : palette.destructive} /><Text className={chats.length < 2 ? "text-[14px] font-semibold text-muted-foreground" : "text-[14px] font-semibold text-destructive"}>Delete current chat</Text></Button></View>
+            <View className="border-t border-border p-3"><Button unstyled onPress={deleteChat} disabled={!selectedChat} className="flex-row items-center gap-3 rounded-xl px-3 py-3 active:bg-secondary"><AppIcon name="trash-can-outline" size={18} color={selectedChat ? palette.destructive : palette.border} /><Text className={selectedChat ? "text-[14px] font-semibold text-destructive" : "text-[14px] font-semibold text-muted-foreground"}>Delete current chat</Text></Button></View>
           </View>
-          <Pressable className="flex-1" onPress={() => setSidebarOpen(false)} accessibilityLabel="Close conversations" />
         </View>
       </Modal>
     </View>

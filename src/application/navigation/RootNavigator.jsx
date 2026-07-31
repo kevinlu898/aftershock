@@ -1,6 +1,4 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { ArrowLeft } from "lucide-react-native";
-import { Pressable } from "react-native";
 import LocalRiskScreen from "../../screens/dashboard/LocalRiskScreen";
 import NewsScreen from "../../screens/dashboard/NewsScreen";
 import HomeScreen from "../../screens/onboarding/HomeScreen";
@@ -13,6 +11,7 @@ import AccountCreationScreen from "../../screens/profile/AccountCreationScreen";
 import ChangeDetailsScreen from "../../screens/profile/ChangeDetailsScreen";
 import ChangePasswordScreen from "../../screens/profile/ChangePasswordScreen";
 import ChangeUsernameScreen from "../../screens/profile/ChangeUsernameScreen";
+import ConfirmPasswordScreen from "../../screens/profile/ConfirmPasswordScreen";
 import DeleteAccountScreen from "../../screens/profile/DeleteAccountScreen";
 import ExportDataScreen from "../../screens/profile/ExportDataScreen";
 import LoginScreen from "../../screens/profile/LoginScreen";
@@ -20,7 +19,6 @@ import PrivacyPolicyScreen from "../../screens/profile/PrivacyPolicyScreen";
 import TermsOfServiceScreen from "../../screens/profile/TermsOfServiceScreen";
 import MainTabNavigator from "./MainTabNavigator";
 import { useTheme } from "../../lib/theme";
-import { Icon } from "../../components/ui/icon";
 
 const Stack = createNativeStackNavigator();
 
@@ -29,6 +27,7 @@ const SCREENS = [
   ["Login", LoginScreen, { headerShown: false }],
   ["AccountCreation", AccountCreationScreen, { headerShown: false, title: "Create Account" }],
   ["ChangeUsername", ChangeUsernameScreen, { title: "Change Username" }],
+  ["ConfirmPassword", ConfirmPasswordScreen, { title: "Confirm Password" }],
   ["ChangePassword", ChangePasswordScreen, { title: "Change Password" }],
   ["DeleteAccount", DeleteAccountScreen, { title: "Delete Account" }],
   ["TermsOfService", TermsOfServiceScreen, { title: "Terms of Service" }],
@@ -50,7 +49,7 @@ export default function RootNavigator() {
   return (
     <Stack.Navigator
       initialRouteName="Home"
-      screenOptions={({ navigation }) => ({
+      screenOptions={{
         headerShown: true,
         headerBackButtonDisplayMode: "minimal",
         headerShadowVisible: false,
@@ -62,23 +61,7 @@ export default function RootNavigator() {
           fontWeight: "700",
         },
         contentStyle: { backgroundColor: palette.background },
-        headerLeft: () =>
-          navigation.canGoBack() ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              hitSlop={12}
-              onPress={() => navigation.goBack()}
-              style={({ pressed }) => ({
-                marginRight: 8,
-                opacity: pressed ? 0.55 : 1,
-                padding: 4,
-              })}
-            >
-              <Icon as={ArrowLeft} size={23} color={palette.primary} />
-            </Pressable>
-          ) : null,
-      })}
+      }}
     >
       {SCREENS.map(([name, component, options]) => (
         <Stack.Screen

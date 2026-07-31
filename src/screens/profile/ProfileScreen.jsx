@@ -157,7 +157,7 @@ export default function Profile() {
 
         <Card className="overflow-hidden p-0">
           <View className="px-5 pt-5">
-            <SectionHeader title="Emergency hub" description="Manage your plan, contacts, medical info, and documents." />
+            <SectionHeader title="Emergency information"  />
           </View>
           <View className="px-2 pb-2">
             <OptionRow icon={ClipboardList} title="Manage My Plan" subtitle="Review and update your emergency plan" onPress={() => navigation.navigate("myPlan")} />
@@ -184,15 +184,15 @@ export default function Profile() {
           </View>
           <View className="px-2 pb-2">
             <OptionRow icon={KeyRound} title="Change Password" onPress={() => navigation.navigate("ChangePassword")} />
-            <OptionRow icon={Contact} title="My Details" subtitle="View and update name, zip code, phone, and email" onPress={() => navigation.navigate("ChangeDetails")} />
-            <OptionRow icon={Download} title="Export Data" subtitle="Download your emergency plan and records" onPress={() => navigation.navigate("ExportData")} />
+            <OptionRow icon={Contact} title="My Details" onPress={() => navigation.navigate("ChangeDetails")} />
+            <OptionRow icon={Download} title="Export Data" onPress={() => navigation.navigate("ExportData")} />
             <Separator className="my-3" />
             <OptionRow icon={LifeBuoy} title="Help and Support" onPress={sendFeedback} />
             <OptionRow icon={ShieldCheck} title="Privacy Policy" onPress={() => navigation.navigate("PrivacyPolicy")} />
             <OptionRow icon={ScrollText} title="Terms of Service" onPress={() => navigation.navigate("TermsOfService")} />
             <Separator className="my-3" />
             <OptionRow icon={LogOut} title="Log Out" onPress={handleLogout} />
-            <OptionRow icon={Trash2} title="Delete Account" subtitle="Permanently remove your account and data" onPress={() => navigation.navigate("DeleteAccount")} isDestructive />
+            <OptionRow icon={Trash2} title="Delete Account" onPress={() => navigation.navigate("DeleteAccount")} isDestructive />
           </View>
         </Card>
 

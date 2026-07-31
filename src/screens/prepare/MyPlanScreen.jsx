@@ -490,7 +490,7 @@ ${plan.other || ""}
               <AppIcon name="clipboard-list" size={26} color={palette.primary} />
             </View>
             <View className="min-w-0 flex-1 gap-1">
-              <Text className="text-lg font-bold text-foreground">Household emergency plan</Text>
+              <Text className="text-lg font-bold text-foreground">Your Plan</Text>
               <Text className="text-sm leading-5 text-muted-foreground">
                 {completedSections} of {planSections.length} sections ready
               </Text>
@@ -520,7 +520,7 @@ ${plan.other || ""}
         </Card>
 
         <View className="gap-1">
-          <Text className="text-xl font-bold leading-6 text-foreground">Plan sections</Text>
+          <Text className="text-xl font-bold leading-6 text-foreground">Your plan</Text>
           <Text className="text-[13px] leading-[18px] text-muted-foreground">
             Add practical instructions your household can follow.
           </Text>

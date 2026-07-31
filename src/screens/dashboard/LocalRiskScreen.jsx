@@ -82,10 +82,7 @@ export default function LocalRisk({
       
       <ScrollView contentContainerClassName={"grow"} contentInsetAdjustmentBehavior="automatic">
         <View className="flex-1 gap-[20px] p-[20px]">
-          <PageHeader
-            title="Local risk snapshot"
-            description="Recent earthquake data and preparedness context for your saved area."
-          />
+          <PageHeader title="Local risk snapshot" />
           <Card>
             <Text className={"text-[18px] font-bold text-foreground"}>{place ?? "No recent events"}</Text>
             <View className={"flex-row justify-between mb-[10px] items-center"}>
