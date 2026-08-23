@@ -40,7 +40,26 @@
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Aftershock uses your location once to find your ZIP code for local earthquake risk."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#25745A"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Aftershock uses the camera so you can save photos of important documents.",
+          "photosPermission": "Aftershock accesses your photos so you can save copies of important documents."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

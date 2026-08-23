@@ -10,11 +10,14 @@ import {
   HeartPulse,
   KeyRound,
   LifeBuoy,
+  ListChecks,
   LogOut,
+  RotateCcw,
   ScrollText,
   ShieldCheck,
   Trash2,
 } from "lucide-react-native";
+import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Linking,
@@ -28,6 +31,11 @@ import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Separator } from "../../components/ui/separator";
 import { auth } from "../../lib/firebaseConfig";
+import {
+  events as onboardingEvents,
+  getPendingSteps,
+  resetOnboarding,
+} from "../../lib/onboardingState";
 import { useTheme } from "../../lib/theme";
 import { cn } from "../../lib/utils";
 
@@ -84,6 +92,28 @@ function PreferenceButton({ value, label }) {
 
 export default function Profile() {
   const navigation = useNavigation();
+  const [pendingSetup, setPendingSetup] = useState(0);
+
+  const refreshSetup = useCallback(() => {
+    getPendingSteps()
+      .then((steps) => setPendingSetup(steps.length))
+      .catch(() => setPendingSetup(0));
+  }, []);
+
+  useEffect(() => {
+    refreshSetup();
+    const off = onboardingEvents.on("changed", refreshSetup);
+    const unsub = navigation.addListener?.("focus", refreshSetup);
+    return () => {
+      off?.();
+      unsub?.();
+    };
+  }, [navigation, refreshSetup]);
+
+  const redoSetup = async () => {
+    await resetOnboarding();
+    navigation.navigate("Onboarding");
+  };
 
   const clearAllExceptImportant = async () => {
     try {
@@ -164,6 +194,11 @@ export default function Profile() {
             <OptionRow icon={ContactRound} title="Emergency Contacts" subtitle="Add or edit emergency contacts" onPress={() => navigation.navigate("contactInfo")} />
             <OptionRow icon={HeartPulse} title="Medical Information" subtitle="Allergies, medications, health notes" onPress={() => navigation.navigate("medicalInfo")} />
             <OptionRow icon={FileText} title="Important Documents" subtitle="Store copies of IDs and insurance policies" onPress={() => navigation.navigate("importantDocuments")} />
+            {pendingSetup > 0 ? (
+              <OptionRow icon={ListChecks} title="Finish setting up" subtitle={`${pendingSetup} step${pendingSetup === 1 ? "" : "s"} left`} onPress={() => navigation.navigate("Onboarding")} />
+            ) : (
+              <OptionRow icon={RotateCcw} title="Redo setup" subtitle="Walk through the setup steps again" onPress={redoSetup} />
+            )}
           </View>
         </Card>
 

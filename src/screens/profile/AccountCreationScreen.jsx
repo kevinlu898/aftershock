@@ -29,14 +29,11 @@ export default function AccountFlow() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [zipCode, setZipCode] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
   const [termsAgree, setTermsAgree] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const emailRef = useRef(null);
   const confirmPasswordRef = useRef(null);
-  const phoneRef = useRef(null);
 
   const normalizedEmail = email.trim().toLowerCase();
 
@@ -69,39 +66,31 @@ export default function AccountFlow() {
     if (await validateIdentity()) setStep(2);
   };
 
-  const handlePasswordNext = () => {
+  const validatePassword = () => {
     if (!password || !confirmPassword) {
       Alert.alert("Missing password", "Enter and confirm your password.");
-      return;
+      return false;
     }
     if (password.length < 8) {
       Alert.alert("Password too short", "Use at least 8 characters.");
-      return;
+      return false;
     }
     if (!/[A-Z]/.test(password) || !/[a-z]/.test(password)) {
       Alert.alert(
         "Password needs more variety",
         "Include uppercase and lowercase letters."
       );
-      return;
+      return false;
     }
     if (password !== confirmPassword) {
       Alert.alert("Passwords do not match", "Re-enter your password confirmation.");
-      return;
+      return false;
     }
-    setStep(3);
+    return true;
   };
 
   const handleCreateAccount = async () => {
-    const digitsOnlyPhone = phoneNumber.replace(/\D/g, "");
-    if (!/^\d{5}$/.test(zipCode)) {
-      Alert.alert("Invalid zip code", "Enter a valid 5-digit zip code.");
-      return;
-    }
-    if (!/^\d{10}$/.test(digitsOnlyPhone)) {
-      Alert.alert("Invalid phone number", "Enter a valid 10-digit phone number.");
-      return;
-    }
+    if (!validatePassword()) return;
     if (!termsAgree) {
       Alert.alert(
         "Agreement required",
@@ -112,26 +101,17 @@ export default function AccountFlow() {
 
     setSubmitting(true);
     try {
-      const existingPhone = await getDocs(
-        query(
-          collection(db, "user"),
-          where("phone_number", "==", digitsOnlyPhone)
-        )
-      );
-      if (!existingPhone.empty) {
-        Alert.alert("Phone number already used", "Use another phone number.");
-        return;
-      }
-
       const passwordHash = await backendHash(password);
+      // zip_code is filled in by the onboarding location step, which is the
+      // only place it is asked for now.
       await addDoc(collection(db, "user"), {
         username: normalizedEmail,
         email: normalizedEmail,
         password_hash: passwordHash,
         first_name: name.trim(),
         last_name: "",
-        zip_code: zipCode,
-        phone_number: digitsOnlyPhone,
+        zip_code: "",
+        phone_number: "",
       });
 
       await Promise.all([
@@ -139,10 +119,10 @@ export default function AccountFlow() {
         storeData("username", normalizedEmail),
         storeData("email", normalizedEmail),
         storeData("firstname", name.trim()),
-        storeData("postalcode", zipCode),
       ]);
       Alert.alert("Account created", `Welcome, ${name.trim()}!`);
-      navigation.replace("MainApp");
+      // A brand-new account has never onboarded, so skip the gate.
+      navigation.replace("Onboarding");
     } catch (error) {
       console.error("Error creating account", error);
       Alert.alert("Account not created", "Please try again.");
@@ -168,14 +148,13 @@ export default function AccountFlow() {
         >
           <View className="w-full max-w-[420px] self-center gap-5 pb-8">
             <Badge variant="secondary" className="self-start">
-              <Text>{`Step ${step} of 3`}</Text>
+              <Text>{`Step ${step} of 2`}</Text>
             </Badge>
 
             {step === 1 ? (
               <>
                 <PageHeader
                   title="Create your account"
-                  description="Tell us how to address you and where to send account information."
                 />
                 <View className="gap-4">
                   <FormField label="Name">
@@ -246,43 +225,7 @@ export default function AccountFlow() {
                       onChangeText={setConfirmPassword}
                       secureTextEntry
                       returnKeyType="done"
-                      onSubmitEditing={handlePasswordNext}
-                    />
-                  </FormField>
-                </View>
-                <Button onPress={handlePasswordNext}>Continue</Button>
-              </>
-            ) : null}
-
-            {step === 3 ? (
-              <>
-                <BackButton onPress={() => setStep(2)} />
-                <PageHeader
-                  title="Contact details"
-                  description="Use the location and phone number you want associated with your preparedness plan."
-                />
-                <View className="gap-4">
-                  <FormField label="Zip code">
-                    <Input
-                      className="h-12 py-0"
-                      placeholder="5-digit zip code"
-                      value={zipCode}
-                      onChangeText={setZipCode}
-                      keyboardType="number-pad"
-                      maxLength={5}
-                      returnKeyType="next"
-                      onSubmitEditing={() => phoneRef.current?.focus()}
-                    />
-                  </FormField>
-                  <FormField label="Phone number">
-                    <Input
-                      ref={phoneRef}
-                      className="h-12 py-0"
-                      placeholder="10-digit phone number"
-                      value={phoneNumber}
-                      onChangeText={setPhoneNumber}
-                      keyboardType="phone-pad"
-                      returnKeyType="done"
+                      onSubmitEditing={handleCreateAccount}
                     />
                   </FormField>
                 </View>

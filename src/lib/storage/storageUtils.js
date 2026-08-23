@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { addDoc, collection, getDocs, or, query, where, } from "firebase/firestore";
 import { aiResponse } from "../api";
 import { db } from "../firebaseConfig";
+import { seedCompletionFromRemote } from "../onboardingState";
 
 export const storeData = async (key, value) => {
   try {
@@ -37,14 +38,20 @@ export const fillData = async (username) => {
 
     const querySnapshot = await getDocs(queryToCheck);
 
-    querySnapshot.forEach((doc) => {
-      const firstname = doc.data().first_name;
-      storeData("firstname", firstname);
-      const email = doc.data().email || null;
-      if (email) storeData("email", email);
-      const postal_code = doc.data().zip_code;
-      storeData("postalcode", postal_code);
-    });
+    // Awaited rather than fire-and-forget: LoginScreen routes through BootGate
+    // as soon as this resolves, and the gate reads the values written here.
+    for (const doc of querySnapshot.docs) {
+      const data = doc.data();
+      if (data.first_name) await storeData("firstname", data.first_name);
+      if (data.email) await storeData("email", data.email);
+      if (data.zip_code) await storeData("postalcode", String(data.zip_code));
+      // Onboarding completion lives on the account, not the device, because
+      // logout wipes local storage. Re-seed it here so returning users aren't
+      // marched through setup again.
+      if (data.onboarding_completed_at) {
+        await seedCompletionFromRemote(data.onboarding_completed_at);
+      }
+    }
   } catch (e) {
     console.log("Error finding first name:", e);
   }

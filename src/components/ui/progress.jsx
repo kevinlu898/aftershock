@@ -15,7 +15,13 @@ function Progress({
   indicatorClassName,
   ...props
 }) {
-  const normalizedValue = Math.max(0, Math.min(1, Number(value) || 0)) * 100;
+  // Rounded to a whole percent on purpose. The primitive forwards this into
+  // accessibilityValue.now, which Fabric types as an integer, so a fractional
+  // percent (1 of 6 lessons gives 16.666...) throws "Loss of precision during
+  // arithmetic conversion". Whole percents are visually identical on a bar.
+  const normalizedValue = Math.round(
+    Math.max(0, Math.min(1, Number(value) || 0)) * 100
+  );
 
   return (
     <ProgressPrimitive.Root

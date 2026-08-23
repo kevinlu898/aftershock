@@ -1,7 +1,9 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LocalRiskScreen from "../../screens/dashboard/LocalRiskScreen";
 import NewsScreen from "../../screens/dashboard/NewsScreen";
+import BootGateScreen from "../../screens/onboarding/BootGateScreen";
 import HomeScreen from "../../screens/onboarding/HomeScreen";
+import OnboardingScreen from "../../screens/onboarding/OnboardingScreen";
 import ContactInfoScreen from "../../screens/prepare/ContactInfoScreen";
 import ImportantDocumentsScreen from "../../screens/prepare/ImportantDocumentsScreen";
 import MedicalInfoScreen from "../../screens/prepare/MedicalInfoScreen";
@@ -23,7 +25,9 @@ import { useTheme } from "../../lib/theme";
 const Stack = createNativeStackNavigator();
 
 const SCREENS = [
+  ["BootGate", BootGateScreen, { headerShown: false }],
   ["Home", HomeScreen, { headerShown: false }],
+  ["Onboarding", OnboardingScreen, { headerShown: false, gestureEnabled: false }],
   ["Login", LoginScreen, { headerShown: false }],
   ["AccountCreation", AccountCreationScreen, { headerShown: false, title: "Create Account" }],
   ["ChangeUsername", ChangeUsernameScreen, { title: "Change Username" }],
@@ -48,7 +52,7 @@ export default function RootNavigator() {
   const { palette } = useTheme();
   return (
     <Stack.Navigator
-      initialRouteName="Home"
+      initialRouteName="BootGate"
       screenOptions={{
         headerShown: true,
         headerBackButtonDisplayMode: "minimal",

@@ -31,7 +31,9 @@ export default function LoginPage() {
       await storeData("username", accountIdentifier);
       await storeData("email", normalizedEmail);
       await fillData(accountIdentifier);
-      navigation.replace("MainApp");
+      // Let the gate decide: already-onboarded accounts go straight to the app,
+      // everyone else lands in setup.
+      navigation.replace("BootGate");
     } else {
       Alert.alert("Login failed", "Check your email and password.");
     }
@@ -45,11 +47,10 @@ export default function LoginPage() {
               <PageHeader
                 align="center"
                 title="Log in to Aftershock"
-                description="Access your preparedness plan and emergency information."
+                description="Continue your earthquake preparedness journey."
               />
             </View>
 
-            <Card className={"w-[100%] max-w-[420px] self-center gap-[18px]"}>
               <FormField label="Email">
                 <Input className="h-12 py-0" placeholder="Enter your email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoCorrect={false} returnKeyType="next" />
               </FormField>
@@ -63,7 +64,6 @@ export default function LoginPage() {
               <Button variant="ghost" onPress={() => navigation.replace("AccountCreation")}>
                 <Text className={"text-primary text-center font-semibold text-sm"}>Create an account</Text>
               </Button>
-            </Card>
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>

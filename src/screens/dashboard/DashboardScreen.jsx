@@ -15,6 +15,7 @@ import {
   SectionHeader,
   StatusCard,
 } from "../../components/app-ui";
+import { SetupNudgeCard } from "../../components/dashboard/SetupNudgeCard";
 import { getData } from "../../lib/storage/storageUtils";
 import { getPrepareModules } from "../../lib/prepareModules";
 import { useTheme } from "../../lib/theme";
@@ -215,6 +216,9 @@ export default function Dashboard() {
               </Text>
             </View>
           </View>
+
+          {/* Unfinished setup steps, if any */}
+          <SetupNudgeCard />
 
           {/* Quick action cards */}
           <View className={"gap-[12px]"}>
