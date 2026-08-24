@@ -18,15 +18,14 @@ import {
   Trash2,
 } from "lucide-react-native";
 import { useCallback, useEffect, useState } from "react";
+import { Alert, Linking, Platform, ScrollView, View } from "react-native";
+import { Text } from "../../components/ui/text";
 import {
-  Alert,
-  Linking,
-  Platform,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
-import { ListRow, PageHeader, SectionHeader } from "../../components/app-ui";
+  ListRow,
+  PageHeader,
+  Screen,
+  SectionHeader,
+} from "../../components/app-ui";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { Separator } from "../../components/ui/separator";
@@ -37,6 +36,7 @@ import {
   resetOnboarding,
 } from "../../lib/onboardingState";
 import { useTheme } from "../../lib/theme";
+import { useToast } from "../../components/ui/toast";
 import { cn } from "../../lib/utils";
 
 function OptionRow({
@@ -70,8 +70,9 @@ function PreferenceButton({ value, label }) {
       unstyled
       accessibilityRole="radio"
       accessibilityState={{ selected }}
+      accessibilityLabel={`${label} theme`}
       className={cn(
-        "min-h-9 flex-1 items-center justify-center rounded-lg border px-2 py-2",
+        "min-h-11 flex-1 items-center justify-center rounded-lg border px-2 py-2",
         selected
           ? "border-primary/30 bg-secondary"
           : "border-transparent bg-transparent active:bg-muted"
@@ -80,7 +81,7 @@ function PreferenceButton({ value, label }) {
     >
       <Text
         className={cn(
-          "text-[13px] font-medium",
+          "text-footnote font-medium",
           selected ? "font-semibold text-primary" : "text-muted-foreground"
         )}
       >
@@ -92,6 +93,7 @@ function PreferenceButton({ value, label }) {
 
 export default function Profile() {
   const navigation = useNavigation();
+  const toast = useToast();
   const [pendingSetup, setPendingSetup] = useState(0);
 
   const refreshSetup = useCallback(() => {
@@ -156,8 +158,11 @@ export default function Profile() {
             await signOut(auth);
             await clearAllExceptImportant();
             navigation.replace("Login");
-          } catch (_error) {
-            Alert.alert("Error", "Failed to log out.");
+          } catch (error) {
+            console.warn("Failed to log out", error);
+            toast.error("Couldn’t log you out", {
+              description: "Check your connection and try again.",
+            });
           }
         },
       },
@@ -169,12 +174,14 @@ export default function Profile() {
       "Aftershock Feedback/Support"
     )}`;
     Linking.openURL(url).catch(() =>
-      Alert.alert("Error", "Unable to open mail client.")
+      toast.error("No mail app available", {
+        description: "Email us at aftershockapp@gmail.com.",
+      })
     );
   };
 
   return (
-    <View className="flex-1 bg-background">
+    <Screen>
       <ScrollView
         contentContainerClassName="grow gap-5 px-5 py-6"
         contentInsetAdjustmentBehavior="automatic"
@@ -190,10 +197,10 @@ export default function Profile() {
             <SectionHeader title="Emergency information"  />
           </View>
           <View className="px-2 pb-2">
-            <OptionRow icon={ClipboardList} title="Manage My Plan" subtitle="Review and update your emergency plan" onPress={() => navigation.navigate("myPlan")} />
-            <OptionRow icon={ContactRound} title="Emergency Contacts" subtitle="Add or edit emergency contacts" onPress={() => navigation.navigate("contactInfo")} />
-            <OptionRow icon={HeartPulse} title="Medical Information" subtitle="Allergies, medications, health notes" onPress={() => navigation.navigate("medicalInfo")} />
-            <OptionRow icon={FileText} title="Important Documents" subtitle="Store copies of IDs and insurance policies" onPress={() => navigation.navigate("importantDocuments")} />
+            <OptionRow icon={ClipboardList} title="Manage My Plan" subtitle="Review and update your emergency plan" onPress={() => navigation.navigate("MyPlan")} />
+            <OptionRow icon={ContactRound} title="Emergency Contacts" subtitle="Add or edit emergency contacts" onPress={() => navigation.navigate("ContactInfo")} />
+            <OptionRow icon={HeartPulse} title="Medical Information" subtitle="Allergies, medications, health notes" onPress={() => navigation.navigate("MedicalInfo")} />
+            <OptionRow icon={FileText} title="Important Documents" subtitle="Store copies of IDs and insurance policies" onPress={() => navigation.navigate("ImportantDocuments")} />
             {pendingSetup > 0 ? (
               <OptionRow icon={ListChecks} title="Finish setting up" subtitle={`${pendingSetup} step${pendingSetup === 1 ? "" : "s"} left`} onPress={() => navigation.navigate("Onboarding")} />
             ) : (
@@ -206,7 +213,10 @@ export default function Profile() {
           <View className="px-5 pt-5">
             <SectionHeader title="Appearance" description="Choose the theme used on this device." />
           </View>
-          <View className="mx-4 mb-5 mt-1 flex-row rounded-xl bg-muted/60 p-1">
+          <View
+            className="mx-4 mb-5 mt-1 flex-row rounded-xl bg-muted/60 p-1"
+            accessibilityRole="radiogroup"
+          >
             <PreferenceButton value="system" label="System" />
             <PreferenceButton value="light" label="Light" />
             <PreferenceButton value="dark" label="Dark" />
@@ -236,6 +246,6 @@ export default function Profile() {
           <Text className="mt-1 text-xs text-muted-foreground">Emergency Preparedness App</Text>
         </View>
       </ScrollView>
-    </View>
+    </Screen>
   );
 }

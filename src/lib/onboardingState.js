@@ -47,7 +47,6 @@ const readJsonArray = async (key) => {
   }
 };
 
-
 export const ONBOARDING_STEPS = [
   {
     id: "location",
@@ -71,7 +70,7 @@ export const ONBOARDING_STEPS = [
     title: "Emergency contacts",
     icon: "phone",
     nudgeTitle: "Add an emergency contact",
-    route: "contactInfo",
+    route: "ContactInfo",
     hasData: async () => (await readJsonArray("emergency_contacts")).length > 0,
   },
   {
@@ -79,7 +78,7 @@ export const ONBOARDING_STEPS = [
     title: "Medical info",
     icon: "medical-bag",
     nudgeTitle: "Add your medical details",
-    route: "medicalInfo",
+    route: "MedicalInfo",
     hasData: async () => (await readJsonArray("medical_info")).length > 0,
   },
 ];
@@ -202,7 +201,6 @@ export const updateUserDoc = async (fields) => {
     return false;
   }
 };
-
 
 export const saveZipToAccount = (zip) => updateUserDoc({ zip_code: zip });
 

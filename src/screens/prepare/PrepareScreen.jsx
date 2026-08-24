@@ -1,20 +1,20 @@
 import { useNavigation } from "@react-navigation/native";
-import { useEffect, useMemo, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
-import { PageHeader, StatusCard } from "../../components/app-ui";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { RefreshControl, ScrollView, View } from "react-native";
+import { Text } from "../../components/ui/text";
+import { ErrorState, PageHeader } from "../../components/app-ui";
 import { AppIcon } from "../../components/app-icon";
 import { Button } from "../../components/ui/button";
 import { Progress } from "../../components/ui/progress";
 import {
   ScreenSkeleton,
-  useDelayedSkeleton,
-} from "../../components/ui/skeleton";
+  useDelayedSkeleton } from "../../components/ui/skeleton";
 import {
   findFirstIncompletePageIndex,
   getLessonCurrentPageIndex,
-  getPrepareModules,
-} from "../../lib/prepareModules";
+  getPrepareModules } from "../../lib/prepareModules";
 import { events } from "../../lib/prepareCompletion";
+import { useRefresh } from "../../hooks/useRefresh";
 import { useTheme } from "../../lib/theme";
 
 const getModuleAction = (progress) => {
@@ -39,11 +39,8 @@ function ModuleCard({ module, expanded, onToggle, onOpenLesson }) {
 
   return (
     <View
-      className="overflow-hidden rounded-[20px] border border-border bg-card"
-      style={{
-        borderCurve: "continuous",
-        boxShadow: "0 2px 12px rgba(23, 32, 28, 0.05)",
-      }}
+      className="overflow-hidden rounded-[20px] border border-border bg-card shadow-card"
+      style={{ borderCurve: "continuous" }}
     >
       <Button
         unstyled
@@ -56,8 +53,7 @@ function ModuleCard({ module, expanded, onToggle, onOpenLesson }) {
           className="h-12 w-12 items-center justify-center rounded-2xl"
           style={{
             backgroundColor: `${activeColor}18`,
-            borderCurve: "continuous",
-          }}
+            borderCurve: "continuous" }}
         >
           <AppIcon name={module.icon} size={23} color={activeColor} />
         </View>
@@ -65,11 +61,11 @@ function ModuleCard({ module, expanded, onToggle, onOpenLesson }) {
         <View className="min-w-0 flex-1 gap-2">
           <View className="flex-row items-start justify-between gap-3">
             <View className="min-w-0 flex-1 gap-0.5">
-              <Text className="text-[17px] font-bold leading-[22px] text-foreground">
+              <Text className="text-callout font-bold text-foreground">
                 {module.title}
               </Text>
               <Text
-                className="text-[13px] leading-[18px] text-muted-foreground"
+                className="text-footnote text-muted-foreground"
                 numberOfLines={1}
               >
                 {module.description}
@@ -97,7 +93,7 @@ function ModuleCard({ module, expanded, onToggle, onOpenLesson }) {
       {expanded ? (
         <View className="border-t border-border px-[18px] pb-[18px] pt-2">
           <View className="flex-row items-center justify-between py-3">
-            <Text className="text-[13px] font-semibold text-muted-foreground">
+            <Text className="text-footnote font-semibold text-muted-foreground">
               {completedLessons} of {module.lessons.length} lessons complete
             </Text>
             {module.progress === 1 ? (
@@ -107,7 +103,7 @@ function ModuleCard({ module, expanded, onToggle, onOpenLesson }) {
                   size={16}
                   color={palette.primary}
                 />
-                <Text className="text-[13px] font-semibold text-primary">
+                <Text className="text-footnote font-semibold text-primary">
                   Complete
                 </Text>
               </View>
@@ -149,7 +145,7 @@ function ModuleCard({ module, expanded, onToggle, onOpenLesson }) {
                 <View className="min-w-0 flex-1">
                   <Text
                     className={[
-                      "text-[15px] font-semibold leading-5 text-foreground",
+                      "text-body font-semibold leading-5 text-foreground",
                       lesson.completed && "text-muted-foreground",
                     ]
                       .filter(Boolean)
@@ -199,7 +195,7 @@ export default function PrepareScreen() {
   const navigation = useNavigation();
   const { palette } = useTheme();
 
-  const fetchModules = async () => {
+  const fetchModules = useCallback(async () => {
     try {
       setLoadError(null);
       const nextModules = (await getPrepareModules()) || [];
@@ -210,7 +206,9 @@ export default function PrepareScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const { refreshing, onRefresh } = useRefresh(fetchModules);
 
   useEffect(() => {
     fetchModules();
@@ -221,7 +219,7 @@ export default function PrepareScreen() {
       focusOff && focusOff();
       eventOff && eventOff();
     };
-  }, [navigation]);
+  }, [navigation, fetchModules]);
 
   const lessonCount = useMemo(
     () => modules.reduce((total, module) => total + module.lessons.length, 0),
@@ -252,12 +250,11 @@ export default function PrepareScreen() {
     if (!module || !lesson) return;
     const saved = await getLessonCurrentPageIndex(lesson.id);
     const pageIndex = saved ?? findFirstIncompletePageIndex(lesson);
-    navigation.navigate("prepareLessons", {
+    navigation.navigate("PrepareLesson", {
       lessonId: lesson.id,
       moduleId: module.id,
       lessonData: lesson,
-      initialPageIndex: pageIndex,
-    });
+      initialPageIndex: pageIndex });
   };
 
   if (loading) {
@@ -270,13 +267,11 @@ export default function PrepareScreen() {
 
   if (loadError) {
     return (
-      <View className="flex-1 justify-center bg-background p-5">
-        <StatusCard
-          tone="danger"
-          title="Prepare is unavailable"
-          description={loadError}
-        />
-      </View>
+      <ErrorState
+        title="Prepare is unavailable"
+        description={loadError}
+        onRetry={fetchModules}
+      />
     );
   }
 
@@ -286,18 +281,20 @@ export default function PrepareScreen() {
       contentInsetAdjustmentBehavior="automatic"
       contentContainerClassName="gap-7 px-5 pb-10 pt-6"
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={palette.primary}
+          colors={[palette.primary]}
+        />
+      }
     >
-      <PageHeader
-        title="Prepare with confidence"
-        description="Quick lessons and practical steps to make sure you're ready."
-      />
+      <PageHeader title="Prepare" />
 
       <View
-        className="overflow-hidden rounded-[24px] bg-primary p-5"
-        style={{
-          borderCurve: "continuous",
-          boxShadow: "0 8px 24px rgba(23, 32, 28, 0.12)",
-        }}
+        className="overflow-hidden rounded-[24px] bg-primary p-5 shadow-overlay"
+        style={{ borderCurve: "continuous" }}
       >
         <View className="flex-row items-start justify-between gap-5">
           <View className="min-w-0 flex-1 gap-1">
@@ -305,7 +302,7 @@ export default function PrepareScreen() {
               Your readiness
             </Text>
             <Text
-              className="text-[34px] font-extrabold leading-[40px] text-primary-foreground"
+              className="text-display-xl font-extrabold text-primary-foreground"
               style={{ fontVariant: ["tabular-nums"] }}
             >
               {Math.round(overallProgress * 100)}%
@@ -348,7 +345,7 @@ export default function PrepareScreen() {
                 {overallProgress === 1 ? "Review a lesson" : "Up next"}
               </Text>
               <Text
-                className="text-[15px] font-bold text-foreground"
+                className="text-body font-bold text-foreground"
                 numberOfLines={1}
               >
                 {nextLesson.title}
@@ -366,7 +363,7 @@ export default function PrepareScreen() {
       <View className="gap-4">
         <View className="gap-1">
           <Text className="text-xl font-bold leading-6 text-foreground">
-            Learning path
+            Get started
           </Text>
         </View>
 

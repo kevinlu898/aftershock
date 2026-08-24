@@ -1,81 +1,165 @@
+import { useCallback, useEffect, useState } from "react";
+import { Linking, RefreshControl, ScrollView, View } from "react-native";
+import { AppIcon } from "../../components/app-icon";
+import {
+  EmptyState,
+  ErrorState,
+  PageHeader,
+  Screen,
+} from "../../components/app-ui";
 import { Button } from "../../components/ui/button";
+import { Card } from "../../components/ui/card";
 import {
   ScreenSkeleton,
   useDelayedSkeleton,
 } from "../../components/ui/skeleton";
-import { EmptyState, PageHeader } from "../../components/app-ui";
-import { AppIcon } from "../../components/app-icon";
-import { Card } from "../../components/ui/card";
-import { useEffect, useState } from "react";
-import { Linking, ScrollView, Text, View } from "react-native";
+import { Text } from "../../components/ui/text";
+import { useRefresh } from "../../hooks/useRefresh";
 import { fetchNews } from "../../lib/api";
-export default function News({
-  navigation
-}) {
+import { formatCachedAt, readCache, writeCache } from "../../lib/cache";
+import { useTheme } from "../../lib/theme";
+
+const CACHE_KEY = "news";
+
+export default function News() {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [cachedAt, setCachedAt] = useState(null);
   const showSkeleton = useDelayedSkeleton(loading);
+  const { palette } = useTheme();
+
   const today = new Date();
   const formattedDate = today.toLocaleDateString(undefined, {
     year: "numeric",
     month: "long",
-    day: "numeric"
+    day: "numeric",
   });
-  useEffect(() => {
-    let mounted = true;
-    const fetchData = async () => {
-      try {
-        const newsData = await fetchNews();
-        if (!mounted) return;
-        setNews(Array.isArray(newsData) ? newsData : []);
-      } catch (e) {
-        console.warn("Failed to fetch news", e);
-        if (mounted) setError(e?.message || "Unable to load news.");
-      } finally {
-        if (mounted) setLoading(false);
+
+  const load = useCallback(async () => {
+    try {
+      const newsData = await fetchNews();
+      const list = Array.isArray(newsData) ? newsData : [];
+      setNews(list);
+      setError(null);
+      setCachedAt(null);
+      writeCache(CACHE_KEY, list);
+    } catch (fetchError) {
+      console.warn("Failed to fetch news", fetchError);
+      const cached = await readCache(CACHE_KEY);
+      if (cached?.value?.length) {
+        setNews(cached.value);
+        setCachedAt(cached.cachedAt);
+        setError(null);
+      } else {
+        setError(fetchError?.message || "Unable to load news.");
       }
-    };
-    fetchData();
-    return () => {
-      mounted = false;
-    };
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const { refreshing, onRefresh } = useRefresh(load);
+
   if (loading) {
-    return showSkeleton ? <ScreenSkeleton cards={4} /> : <View className="flex-1 bg-background" />;
+    return showSkeleton ? (
+      <ScreenSkeleton cards={4} />
+    ) : (
+      <View className="flex-1 bg-background" />
+    );
   }
-  return <View className="flex-1 bg-background">
-      
-      <ScrollView contentContainerClassName={"grow"} contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false}>
-        <View className={"flex-1 gap-[16px] p-[20px]"}>
+
+  if (error) {
+    return (
+      <ErrorState
+        title="News is unavailable"
+        description={error}
+        onRetry={load}
+      />
+    );
+  }
+
+  const openStory = async (url) => {
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) await Linking.openURL(url);
+    } catch (openError) {
+      console.warn("Failed to open URL", openError);
+    }
+  };
+
+  return (
+    <Screen>
+      <ScrollView
+        contentContainerClassName="grow"
+        contentInsetAdjustmentBehavior="automatic"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={palette.primary}
+            colors={[palette.primary]}
+          />
+        }
+      >
+        <View className="flex-1 gap-4 p-5">
           <PageHeader
             title="News and updates"
             description="Relevant earthquake reporting from around the world."
           />
-          <Text className="text-[13px] text-muted-foreground">{formattedDate}</Text>
-          {error ? <EmptyState title="News is unavailable" description={error} /> : null}
-          {!error && news.length === 0 ? <EmptyState title="No news available" description="Check back soon for the latest earthquake reporting." /> : null}
-          {news.map((story, idx) => <Card key={story.id ?? story.title ?? idx}>
-              <Text className={"text-[18px] font-extrabold leading-[24px] text-foreground"}>{story.title}</Text>
-              {story.summary ? <Text className={"text-[14px] text-muted-foreground leading-[20px]"}>{story.summary}</Text> : null}
-              {!story.summary && story.description ? <Text className={"text-[14px] text-muted-foreground leading-[20px]"}>{story.description}</Text> : null}
-              {story.url ? <Button variant="outline" onPress={async () => {
-            try {
-              const supported = await Linking.canOpenURL(story.url);
-              if (supported) {
-                await Linking.openURL(story.url);
-              } else {
-                console.warn("Can't open URL:", story.url);
-              }
-            } catch (e) {
-              console.warn("Failed to open URL:", e);
-            }
-          }} className={"self-start"}>
-                  <Text className={"font-bold text-primary"}>Read more</Text>
+
+          {cachedAt ? (
+            <View className="flex-row items-center gap-2 rounded-xl bg-muted px-3 py-2">
+              <AppIcon name="wifi-off" size={14} className="text-muted-foreground" />
+              <Text className="text-footnote text-muted-foreground">
+                Showing saved stories from {formatCachedAt(cachedAt)}. Pull down
+                to retry.
+              </Text>
+            </View>
+          ) : (
+            <Text className="text-footnote text-muted-foreground">
+              {formattedDate}
+            </Text>
+          )}
+
+          {news.length === 0 ? (
+            <EmptyState
+              title="No news available"
+              description="Check back soon for the latest earthquake reporting."
+            />
+          ) : null}
+
+          {news.map((story, index) => (
+            <Card key={story.id ?? story.title ?? index}>
+              <Text className="text-title-sm font-extrabold text-foreground">
+                {story.title}
+              </Text>
+              {story.summary || story.description ? (
+                <Text className="text-body-sm text-muted-foreground">
+                  {story.summary || story.description}
+                </Text>
+              ) : null}
+              {story.url ? (
+                <Button
+                  variant="outline"
+                  onPress={() => openStory(story.url)}
+                  className="self-start"
+                  accessibilityLabel={`Read more: ${story.title}`}
+                  accessibilityHint="Opens the article in your browser"
+                >
+                  <Text className="font-bold text-primary">Read more</Text>
                   <AppIcon name="external-link" size={17} className="text-primary" />
-                </Button> : null}
-            </Card>)}
+                </Button>
+              ) : null}
+            </Card>
+          ))}
         </View>
       </ScrollView>
-    </View>;
+    </Screen>
+  );
 }

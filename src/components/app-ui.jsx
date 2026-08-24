@@ -6,6 +6,7 @@ import {
 } from "lucide-react-native";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { cn } from "../lib/utils";
+import { useTheme } from "../lib/theme";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import {
@@ -42,14 +43,19 @@ export function FormField({
 }) {
   return (
     <View className={cn("gap-2", className)}>
-      {label ? <Label className="text-sm font-semibold">{label}</Label> : null}
+      {label ? <Label className="text-body-sm font-semibold">{label}</Label> : null}
       {children}
       {error ? (
-        <Text selectable className="text-[13px] font-medium leading-[18px] text-destructive">
+        <Text
+          selectable
+          accessibilityLiveRegion="polite"
+          role="alert"
+          className="text-footnote font-medium text-destructive"
+        >
           {error}
         </Text>
       ) : description ? (
-        <Text className="text-[13px] leading-[18px] text-muted-foreground">
+        <Text className="text-footnote text-muted-foreground">
           {description}
         </Text>
       ) : null}
@@ -58,9 +64,10 @@ export function FormField({
 }
 
 export function Spinner({ className, ...props }) {
+  const { palette } = useTheme();
   return (
     <View className={cn("items-center justify-center p-6", className)}>
-      <ActivityIndicator color="#25745A" {...props} />
+      <ActivityIndicator color={palette.primary} {...props} />
     </View>
   );
 }
@@ -131,7 +138,7 @@ export function PageHeader({
         role="heading"
         aria-level={1}
         className={cn(
-          "text-[28px] font-extrabold leading-[34px] text-foreground",
+          "text-display-lg font-extrabold text-foreground",
           centered && "text-center"
         )}
       >
@@ -140,7 +147,7 @@ export function PageHeader({
       {description ? (
         <Text
           className={cn(
-            "max-w-[560px] text-base leading-6 text-muted-foreground",
+            "max-w-[560px] text-body-lg text-muted-foreground",
             centered && "text-center"
           )}
         >
@@ -157,9 +164,11 @@ export function BackButton({ onPress, className, ...props }) {
     <Button
       variant="ghost"
       size="sm"
-      className={cn("-ml-3 self-start", className)}
+      className={cn("min-h-12 -ml-3 self-start", className)}
       onPress={onPress}
       accessibilityLabel="Go back"
+      accessibilityHint="Returns to the previous screen"
+      hitSlop={8}
       {...props}
     >
       <Icon as={ArrowLeft} size={19} />
@@ -187,12 +196,12 @@ export function SectionHeader({
         <Text
           role="heading"
           aria-level={2}
-          className="text-xl font-bold leading-6 text-foreground"
+          className="text-title font-bold text-foreground"
         >
           {title}
         </Text>
         {description ? (
-          <Text className="text-[13px] leading-[18px] text-muted-foreground">
+          <Text className="text-footnote text-muted-foreground">
             {description}
           </Text>
         ) : null}
@@ -234,7 +243,7 @@ export function ListRow({
       <View className="min-w-0 flex-1 gap-0.5">
         <Text
           className={cn(
-            "text-base font-semibold leading-5",
+            "text-body-lg font-semibold",
             destructive ? "text-destructive" : "text-foreground"
           )}
         >
@@ -243,14 +252,14 @@ export function ListRow({
         {subtitle ? (
           <Text
             numberOfLines={2}
-            className="text-[13px] leading-[18px] text-muted-foreground"
+            className="text-footnote text-muted-foreground"
           >
             {subtitle}
           </Text>
         ) : null}
       </View>
       {value ? (
-        <Text className="text-sm font-medium text-muted-foreground">
+        <Text className="text-body-sm font-medium text-muted-foreground">
           {value}
         </Text>
       ) : null}
@@ -325,9 +334,9 @@ export function StatusCard({
         />
       </View>
       <View className="flex-1 gap-1.5">
-        <Text className="text-base font-bold">{title}</Text>
+        <Text className="text-body-lg font-bold">{title}</Text>
         {description ? (
-          <Text className="text-sm leading-5 text-muted-foreground">
+          <Text className="text-body-sm text-muted-foreground">
             {description}
           </Text>
         ) : null}
@@ -337,25 +346,74 @@ export function StatusCard({
   );
 }
 
-export function EmptyState({ title, description, className, children }) {
+export function EmptyState({
+  title,
+  description,
+  icon,
+  action,
+  variant = "card",
+  className,
+  children,
+}) {
+  const Wrapper = variant === "plain" ? View : Card;
+
   return (
-    <Card className={cn("items-center px-5 py-10", className)}>
-      <Text className="text-center text-lg font-bold">{title}</Text>
+    <Wrapper
+      className={cn(
+        "items-center gap-3",
+        variant === "plain" ? "px-5 py-8" : "px-5 py-10",
+        className
+      )}
+    >
+      {icon ? (
+        <View className="h-12 w-12 items-center justify-center rounded-full bg-secondary">
+          <Icon as={icon} size={24} className="text-muted-foreground" />
+        </View>
+      ) : null}
+      {title ? (
+        <Text className="text-center text-title-sm font-bold">{title}</Text>
+      ) : null}
       {description ? (
-        <Text className="mt-2 text-center text-muted-foreground">
+        <Text className="text-center text-body text-muted-foreground">
           {description}
         </Text>
       ) : null}
       {children}
-    </Card>
+      {action ? <View className="mt-1">{action}</View> : null}
+    </Wrapper>
   );
 }
 
 export function LoadingState({ label = "Loading..." }) {
+  const { palette } = useTheme();
   return (
-    <View className="items-center justify-center gap-3 p-8">
-      <ActivityIndicator color="#25745A" />
+    <View
+      className="items-center justify-center gap-3 p-8"
+      accessibilityRole="progressbar"
+      accessibilityLabel={label}
+    >
+      <ActivityIndicator color={palette.primary} />
       <Text className="text-muted-foreground">{label}</Text>
+    </View>
+  );
+}
+
+export function ErrorState({
+  title = "Something went wrong",
+  description,
+  onRetry,
+  retryLabel = "Try again",
+  className,
+}) {
+  return (
+    <View className={cn("flex-1 justify-center bg-background p-5", className)}>
+      <StatusCard tone="danger" title={title} description={description}>
+        {onRetry ? (
+          <Button className="mt-3 self-start" onPress={onRetry}>
+            {retryLabel}
+          </Button>
+        ) : null}
+      </StatusCard>
     </View>
   );
 }

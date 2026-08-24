@@ -68,16 +68,27 @@ User message:
 `;
 }
 
-export async function aiResponse(prompt) {
+export async function checkConnectivity({ timeoutMs = 4000 } = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const data = await requestJson("/ai", {
-      body: JSON.stringify({ question: buildEpicenterAIPrompt(prompt) }),
+    await fetch(API_BASE_URL, {
+      method: "HEAD",
+      signal: controller.signal,
     });
-    return data.answer;
-  } catch (error) {
-    console.error("AI request failed:", error);
-    return undefined;
+    return true;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
   }
+}
+
+export async function aiResponse(prompt) {
+  const data = await requestJson("/ai", {
+    body: JSON.stringify({ question: buildEpicenterAIPrompt(prompt) }),
+  });
+  return data.answer;
 }
 
 export async function backendHash(message) {

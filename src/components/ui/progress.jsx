@@ -4,6 +4,7 @@ import { Platform, View } from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
+  ReduceMotion,
   useAnimatedStyle,
   useDerivedValue,
   withSpring,
@@ -72,7 +73,7 @@ function NativeIndicator({
     return {
       width: withSpring(
         `${interpolate(progress.value, [0, 100], [1, 100], Extrapolation.CLAMP)}%`,
-        { overshootClamping: true }
+        { overshootClamping: true, reduceMotion: ReduceMotion.System }
       ),
     };
   }, [value]);

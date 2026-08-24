@@ -14,14 +14,8 @@ const Tab = createBottomTabNavigator();
 
 const TAB_ICONS = {
   Dashboard: { outline: "home", filled: "home" },
-  Prepare: {
-    outline: "clipboard-list",
-    filled: "clipboard-list",
-  },
-  Emergency: {
-    outline: "alert-circle",
-    filled: "alert-circle",
-  },
+  Prepare: { outline: "clipboard-list", filled: "clipboard-list" },
+  Emergency: { outline: "alert-circle", filled: "alert-circle" },
   EpicenterAI: {
     outline: require("../../../assets/images/outlineEpicenter.png"),
     filled: require("../../../assets/images/filledEpicenter1.png"),
@@ -29,29 +23,45 @@ const TAB_ICONS = {
   Profile: { outline: "account", filled: "account" },
 };
 
+const TAB_LABELS = {
+  Dashboard: "Dashboard",
+  Prepare: "Prepare",
+  Emergency: "Emergency",
+  EpicenterAI: "Epicenter AI",
+  Profile: "Profile",
+};
+
 const TabIcon = ({ routeName, focused, color }) => {
   const iconSet = TAB_ICONS[routeName];
   const icon = focused ? iconSet?.filled : iconSet?.outline;
 
-  if (typeof icon === "string") {
-    return (
+  const glyph =
+    typeof icon === "string" ? (
       <AppIcon
         name={icon}
         color={color}
-        size={25}
+        size={24}
         strokeWidth={focused ? 2.6 : 2}
       />
-    );
-  }
-  if (icon) {
-    return (
+    ) : icon ? (
       <Image
         source={icon}
-        style={{ width: 28, height: 28, tintColor: color, resizeMode: "contain" }}
+        style={{ width: 26, height: 26, tintColor: color, resizeMode: "contain" }}
+        accessibilityLabel=""
       />
-    );
-  }
-  return null;
+    ) : null;
+
+  return (
+    <View
+      className={[
+        "h-9 min-w-[56px] items-center justify-center rounded-xl",
+        focused ? "bg-secondary" : "bg-transparent",
+      ].join(" ")}
+      style={{ borderCurve: "continuous" }}
+    >
+      {glyph}
+    </View>
+  );
 };
 
 export default function MainTabNavigator() {
@@ -75,9 +85,8 @@ export default function MainTabNavigator() {
         screenOptions={({ route }) => ({
           headerShown: false,
           tabBarShowLabel: false,
-          tabBarIcon: (props) => (
-            <TabIcon routeName={route.name} {...props} />
-          ),
+          tabBarIcon: (props) => <TabIcon routeName={route.name} {...props} />,
+          tabBarAccessibilityLabel: TAB_LABELS[route.name],
           tabBarActiveTintColor: palette.primary,
           tabBarInactiveTintColor: palette.mutedForeground,
           tabBarStyle: {
@@ -91,10 +100,7 @@ export default function MainTabNavigator() {
           tabBarItemStyle: { borderRadius: 14 },
         })}
       >
-        <Tab.Screen
-          name="Dashboard"
-          component={DashboardScreen}
-        />
+        <Tab.Screen name="Dashboard" component={DashboardScreen} />
         <Tab.Screen name="Prepare" component={PrepareScreen} />
         <Tab.Screen name="Emergency" component={EmergencyScreen} />
         <Tab.Screen

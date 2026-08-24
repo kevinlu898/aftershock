@@ -60,10 +60,26 @@ const ARIA_LEVEL = {
 
 const TextClassContext = React.createContext(undefined);
 
+const DEFAULT_MAX_SCALE = 1.8;
+const DISPLAY_MAX_SCALE = 1.4;
+
+const DISPLAY_VARIANTS = new Set(['h1', 'h2', 'h3', 'lead']);
+
+const DISPLAY_CLASS_RE = /text-(display|title-lg|title|title-sm)\b/;
+
+function resolveMaxScale(variant, className) {
+  if (DISPLAY_VARIANTS.has(variant)) return DISPLAY_MAX_SCALE;
+  if (typeof className === 'string' && DISPLAY_CLASS_RE.test(className)) {
+    return DISPLAY_MAX_SCALE;
+  }
+  return DEFAULT_MAX_SCALE;
+}
+
 function Text({
   className,
   asChild = false,
   variant = 'default',
+  maxFontSizeMultiplier,
   ...props
 }) {
   const textClass = React.useContext(TextClassContext);
@@ -73,8 +89,11 @@ function Text({
       className={cn(textVariants({ variant }), textClass, className)}
       role={variant ? ROLE[variant] : undefined}
       aria-level={variant ? ARIA_LEVEL[variant] : undefined}
+      maxFontSizeMultiplier={
+        maxFontSizeMultiplier ?? resolveMaxScale(variant, className)
+      }
       {...props} />
   );
 }
 
-export { Text, TextClassContext };
+export { DEFAULT_MAX_SCALE, DISPLAY_MAX_SCALE, Text, TextClassContext };

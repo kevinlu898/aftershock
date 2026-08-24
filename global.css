@@ -24,6 +24,7 @@
     --destructive: 201 50 50;
     --destructive-foreground: 255 255 255;
     --warning: 185 107 19;
+    --shadow-color: 23 32 28;
     --radius: 0.875rem;
   }
 
@@ -48,5 +49,6 @@
     --destructive: 240 106 106;
     --destructive-foreground: 13 23 19;
     --warning: 242 166 90;
+    --shadow-color: 0 0 0;
   }
 }

@@ -1,11 +1,13 @@
 import { cn } from '../../lib/utils';
-import { Platform, TextInput, useColorScheme } from 'react-native';
+import { Platform, TextInput } from 'react-native';
+import { useTheme } from '../../lib/theme';
+import { DEFAULT_MAX_SCALE } from './text';
 
 function Input({
   className,
   ...props
 }) {
-  const colorScheme = useColorScheme();
+  const { palette } = useTheme();
   return (
     <TextInput
       className={cn(
@@ -26,9 +28,9 @@ function Input({
         className
       )}
       placeholderTextColor={
-        props.placeholderTextColor ||
-        (colorScheme === 'dark' ? '#A6BDB3' : '#5D786C')
+        props.placeholderTextColor || palette.mutedForeground
       }
+      maxFontSizeMultiplier={props.maxFontSizeMultiplier ?? DEFAULT_MAX_SCALE}
       textAlignVertical={props.multiline ? 'top' : 'center'}
       {...props} />
   );

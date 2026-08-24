@@ -2,7 +2,10 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppIcon } from "../../components/app-icon";
-import { StatusCard } from "../../components/app-ui";
+import {
+  ErrorState,
+  Screen,
+} from "../../components/app-ui";
 import { Card } from "../../components/ui/card";
 import {
   ScreenSkeleton,
@@ -11,7 +14,8 @@ import {
 import { Image } from "expo-image";
 import { addDoc, collection, query as fsQuery, getDocs, where } from "firebase/firestore";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, InputAccessoryView, Keyboard, Modal, Platform, ScrollView, StatusBar, Text, View } from "react-native";
+import { ActivityIndicator, Alert, InputAccessoryView, Keyboard, Modal, Platform, ScrollView, Share, StatusBar, View } from "react-native";
+import { Text } from "../../components/ui/text";
 import Markdown from "react-native-markdown-display";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
@@ -19,6 +23,10 @@ import { db } from "../../lib/firebaseConfig";
 import { aiResponse as getAiResponse } from "../../lib/api";
 import { getData } from "../../lib/storage/storageUtils";
 import { useTheme } from "../../lib/theme";
+import { useReduceMotion } from "../../hooks/useReduceMotion";
+import { useToast } from "../../components/ui/toast";
+import haptics from "../../lib/haptics";
+import { htmlToPlainText, PLAN_SECTIONS } from "../../lib/plan";
 import PlanSectionEditor from "../../components/prepare/PlanSectionEditor";
 const STORAGE_KEY = "my_plan";
 
@@ -50,6 +58,8 @@ export default function MyPlan({
       fontWeight: "800"
     }
   };
+  const toast = useToast();
+  const reduceMotion = useReduceMotion();
   const [plan, setPlan] = useState({
     evacuateRoute: "",
     meetUpPoints: "",
@@ -64,8 +74,7 @@ export default function MyPlan({
   const [currentFocusedKey, setCurrentFocusedKey] = useState(null);
 
   // Load data
-  useEffect(() => {
-    const load = async () => {
+  const loadPlan = useCallback(async () => {
       try {
         const raw = await AsyncStorage.getItem(STORAGE_KEY);
         if (raw) {
@@ -108,9 +117,11 @@ export default function MyPlan({
       } finally {
         setLoading(false);
       }
-    };
-    load();
   }, []);
+
+  useEffect(() => {
+    loadPlan();
+  }, [loadPlan]);
 
   // Store data
   const savePlan = useCallback(async next => {
@@ -133,11 +144,65 @@ export default function MyPlan({
         });
       } catch (e) {
         console.warn("myPlan: firestore save failed", e);
+        toast.warning("Saved on this device only", {
+          description: "We couldn’t back your plan up to your account.",
+        });
+        return;
       }
+      haptics.success();
+      toast.success("Plan saved");
     } catch (e) {
       console.warn("Failed to save plan", e);
+      toast.error("Couldn’t save your plan", {
+        description: "There may not be enough space on this device.",
+      });
     }
-  }, []);
+  }, [toast]);
+  const sharePlan = useCallback(async () => {
+    const body = PLAN_SECTIONS.map(({ key, title }) => {
+      const text = htmlToPlainText(plan[key]);
+      return text ? `${title.toUpperCase()}\n${text}` : null;
+    })
+      .filter(Boolean)
+      .join("\n\n");
+
+    if (!body) {
+      toast.warning("Nothing to share yet", {
+        description: "Fill in at least one section of your plan first.",
+      });
+      return;
+    }
+
+    try {
+      await Share.share({ message: `MY EMERGENCY PLAN\n\n${body}` });
+    } catch (error) {
+      console.warn("Failed to share plan", error);
+      toast.error("Couldn’t open the share sheet");
+    }
+  }, [plan, toast]);
+
+  useEffect(() => {
+    const hasOpenEditor = Object.values(editing).some(Boolean);
+    if (!hasOpenEditor) return undefined;
+
+    const unsubscribe = navigation.addListener?.("beforeRemove", (event) => {
+      event.preventDefault();
+      Alert.alert(
+        "Finish editing?",
+        "You still have a section open. Save it before leaving.",
+        [
+          { text: "Keep editing", style: "cancel" },
+          {
+            text: "Discard",
+            style: "destructive",
+            onPress: () => navigation.dispatch(event.data.action),
+          },
+        ]
+      );
+    });
+    return unsubscribe;
+  }, [editing, navigation]);
+
   const toggleEdit = key => {
     if (editing[key]) {
       const api = editorsApi.current[key];
@@ -167,8 +232,8 @@ export default function MyPlan({
             <AppIcon name={icon} size={20} color={palette.primary} />
           </View>
           <View className="min-w-0 flex-1 gap-0.5">
-            <Text className="text-[17px] font-bold leading-[22px] text-foreground">{title}</Text>
-            <Text className={hasContent ? "text-xs font-semibold text-primary" : "text-xs font-medium text-muted-foreground"}>
+            <Text className="text-callout font-bold text-foreground">{title}</Text>
+            <Text className={hasContent ? "text-caption font-semibold text-primary" : "text-caption font-medium text-muted-foreground"}>
               {hasContent ? "Ready" : "Not started"}
             </Text>
           </View>
@@ -229,7 +294,7 @@ export default function MyPlan({
                 accessibilityLabel={`Ask AI to review ${title}`}
               >
                 <EpicenterAiIcon size={16} />
-                <Text className="text-[13px] font-bold text-primary">AI review</Text>
+                <Text className="text-footnote font-bold text-primary">AI review</Text>
               </Button>
             </View>
           </View>
@@ -411,7 +476,7 @@ ${plan.other || ""}
       const safe = content || "<p><em>No content</em></p>";
       return `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1" /><style>body{font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial; color:${palette.foreground}; padding:12px; background:${palette.card};} img{max-width:100%;height:auto;} p{line-height:1.5;}</style></head><body>${safe}</body></html>`;
     };
-    return <Modal visible={showFull} animationType="slide">
+    return <Modal visible={showFull} animationType={reduceMotion ? "none" : "slide"}>
         <View className="flex-1 bg-background" style={{
         paddingTop: topPadding
       }}>
@@ -451,7 +516,7 @@ ${plan.other || ""}
             </Card>
 
             <Button onPress={() => setShowFull(false)}>
-              <Text className="text-base font-bold text-primary-foreground">Done</Text>
+              <Text className="text-body-lg font-bold text-primary-foreground">Done</Text>
             </Button>
           </View>
         </View>
@@ -462,9 +527,15 @@ ${plan.other || ""}
   }
   if (loadError) {
     return (
-      <View className="flex-1 justify-center bg-background p-5">
-        <StatusCard tone="danger" title="Plan unavailable" description={loadError} />
-      </View>
+      <ErrorState
+        title="Plan unavailable"
+        description={loadError}
+        onRetry={() => {
+          setLoadError(null);
+          setLoading(true);
+          loadPlan();
+        }}
+      />
     );
   }
   const planSections = [
@@ -477,7 +548,7 @@ ${plan.other || ""}
     Boolean(decodeAiMarkdown((plan[keyName] || "").replace(/<[^>]+>/g, "")).trim())
   ).length;
 
-  return <View className="flex-1 bg-background">
+  return <Screen>
       <ScrollView
         contentContainerClassName="gap-6 px-5 py-6"
         contentInsetAdjustmentBehavior="automatic"
@@ -490,8 +561,8 @@ ${plan.other || ""}
               <AppIcon name="clipboard-list" size={26} color={palette.primary} />
             </View>
             <View className="min-w-0 flex-1 gap-1">
-              <Text className="text-lg font-bold text-foreground">Your Plan</Text>
-              <Text className="text-sm leading-5 text-muted-foreground">
+              <Text className="text-title-sm font-bold text-foreground">Your Plan</Text>
+              <Text className="text-body-sm text-muted-foreground">
                 {completedSections} of {planSections.length} sections ready
               </Text>
             </View>
@@ -517,11 +588,22 @@ ${plan.other || ""}
               <Text className="font-bold text-primary">AI review</Text>
             </Button>
           </View>
+
+          <Button
+            variant="outline"
+            onPress={sharePlan}
+            disabled={completedSections === 0}
+            accessibilityLabel="Share my emergency plan"
+            accessibilityHint="Opens the share sheet with your plan as text"
+          >
+            <AppIcon name="external-link" size={18} color={palette.primary} />
+            <Text className="font-bold text-primary">Share with my household</Text>
+          </Button>
         </Card>
 
         <View className="gap-1">
-          <Text className="text-xl font-bold leading-6 text-foreground">Your plan</Text>
-          <Text className="text-[13px] leading-[18px] text-muted-foreground">
+          <Text className="text-title font-bold text-foreground">Your plan</Text>
+          <Text className="text-footnote text-muted-foreground">
             Add practical instructions your household can follow.
           </Text>
         </View>
@@ -549,7 +631,7 @@ ${plan.other || ""}
         </InputAccessoryView>}
 
       {/* AI Modal */}
-      <Modal visible={aiVisible} animationType="slide" onRequestClose={() => setAiVisible(false)}>
+      <Modal visible={aiVisible} animationType={reduceMotion ? "none" : "slide"} onRequestClose={() => setAiVisible(false)}>
         <View className="flex-1 bg-background" style={{
         paddingTop: topPadding
       }}>
@@ -617,5 +699,5 @@ ${plan.other || ""}
           </View>
         </View>
       </Modal>
-    </View>;
+    </Screen>;
 }

@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -8,7 +8,7 @@ import {
   Modal,
   Platform,
   ScrollView,
-  Text,
+  Share,
   View,
 } from "react-native";
 import Markdown from "react-native-markdown-display";
@@ -17,7 +17,13 @@ import { AppIcon } from "../../components/app-icon";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { SkeletonList, useDelayedSkeleton } from "../../components/ui/skeleton";
+import { Text } from "../../components/ui/text";
+import { Screen } from "../../components/app-ui";
+import { useToast } from "../../components/ui/toast";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
+import { useReduceMotion } from "../../hooks/useReduceMotion";
 import { aiResponse } from "../../lib/api";
+import haptics from "../../lib/haptics";
 import { useTheme } from "../../lib/theme";
 
 const QUICK_PROMPTS = [
@@ -29,6 +35,10 @@ const QUICK_PROMPTS = [
   "Teach me basic earthquake first aid",
 ];
 
+const DAILY_LIMIT = 10;
+const CONNECTION_ERROR_TEXT =
+  "⚠️ **Connection issue**\n\nI’m having trouble connecting. Check your internet connection, then tap Regenerate to try again.";
+
 const chatNameFromPrompt = (prompt) => {
   const cleaned = prompt.replace(/\s+/g, " ").trim();
   if (!cleaned) return "New conversation";
@@ -36,16 +46,37 @@ const chatNameFromPrompt = (prompt) => {
   return words.slice(0, 6).join(" ") + (words.length > 6 ? "…" : "");
 };
 
-const isGenericChatName = (name) => !name || name === "New conversation" || /^Chat\s*\d+$/i.test(name);
+const isGenericChatName = (name) =>
+  !name || name === "New conversation" || /^Chat\s*\d+$/i.test(name);
+
+async function copyOrShare(text) {
+  try {
+    const ExpoClipboard = require("expo-clipboard");
+    if (ExpoClipboard?.setStringAsync) {
+      await ExpoClipboard.setStringAsync(text);
+      return "copied";
+    }
+  } catch {
+  }
+  try {
+    await Share.share({ message: text });
+    return "shared";
+  } catch {
+    return null;
+  }
+}
 
 export default function EpicenterAI() {
   const { palette } = useTheme();
   const insets = useSafeAreaInsets();
+  const toast = useToast();
+  const reduceMotion = useReduceMotion();
+  const { isOnline, recheck, reportFailure, reportSuccess } = useOnlineStatus();
+
   const [inputValue, setInputValue] = useState("");
   const [drafts, setDrafts] = useState({});
   const [messages, setMessages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
-  const [isOnline, setIsOnline] = useState(true);
   const [inputHeight, setInputHeight] = useState(44);
   const [requestCount, setRequestCount] = useState(0);
   const [requestDate, setRequestDate] = useState(null);
@@ -53,20 +84,30 @@ export default function EpicenterAI() {
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [chatLoading, setChatLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [starredOnly, setStarredOnly] = useState(false);
   const scrollViewRef = useRef(null);
   const showChatSkeleton = useDelayedSkeleton(chatLoading);
 
-  const markdownStyles = {
-    body: { color: palette.foreground, fontSize: 15, lineHeight: 22 },
-    strong: { color: palette.foreground, fontWeight: "700" },
-    paragraph: { marginBottom: 8 },
-  };
+  const markdownStyles = useMemo(
+    () => ({
+      body: { color: palette.foreground, fontSize: 15, lineHeight: 22 },
+      strong: { color: palette.foreground, fontWeight: "700" },
+      paragraph: { marginBottom: 8 },
+    }),
+    [palette]
+  );
 
-  const saveChats = async (nextChats) => {
+  const saveChats = useCallback(async (nextChats) => {
     try {
-      await AsyncStorage.setItem("epicenter_ai_chats", JSON.stringify(nextChats));
-    } catch (_error) {}
-  };
+      await AsyncStorage.setItem(
+        "epicenter_ai_chats",
+        JSON.stringify(nextChats)
+      );
+    } catch (error) {
+      console.warn("epicenterAI: failed to persist chats", error);
+    }
+  }, []);
 
   useEffect(() => {
     AsyncStorage.getItem("epicenter_ai_request_count")
@@ -93,19 +134,25 @@ export default function EpicenterAI() {
           chat.messages?.some((message) => message.from === "user")
         );
         const namedChats = storedChats.map((chat) => {
-          const firstPrompt = chat.messages?.find((message) => message.from === "user")?.text;
+          const firstPrompt = chat.messages?.find(
+            (message) => message.from === "user"
+          )?.text;
           return isGenericChatName(chat.name) && firstPrompt
             ? { ...chat, name: chatNameFromPrompt(firstPrompt) }
             : chat;
         });
         storedChats = namedChats;
         setChats(storedChats);
-        const storedSelected = await AsyncStorage.getItem("epicenter_ai_selected_chat");
-        const selected = storedChats.find((chat) => chat.id === storedSelected) || storedChats[0];
+        const storedSelected = await AsyncStorage.getItem(
+          "epicenter_ai_selected_chat"
+        );
+        const selected =
+          storedChats.find((chat) => chat.id === storedSelected) ||
+          storedChats[0];
         setSelectedChatId(selected?.id || null);
         setMessages(selected?.messages || []);
         if (JSON.stringify(namedChats) !== raw) await saveChats(storedChats);
-      } catch (_error) {
+      } catch {
         setChats([]);
         setSelectedChatId(null);
         setMessages([]);
@@ -114,7 +161,7 @@ export default function EpicenterAI() {
       }
     };
     loadChats();
-  }, []);
+  }, [saveChats]);
 
   useEffect(() => {
     if (!selectedChatId || chatLoading) return;
@@ -125,13 +172,16 @@ export default function EpicenterAI() {
       saveChats(next);
       return next;
     });
-  }, [messages, selectedChatId, chatLoading]);
+  }, [messages, selectedChatId, chatLoading, saveChats]);
 
   useEffect(() => {
     if (!scrollViewRef.current) return;
-    const timer = setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 80);
+    const timer = setTimeout(
+      () => scrollViewRef.current?.scrollToEnd({ animated: !reduceMotion }),
+      80
+    );
     return () => clearTimeout(timer);
-  }, [messages, isThinking]);
+  }, [messages, isThinking, reduceMotion]);
 
   const persistSelectedChat = (chatId) => {
     const operation = chatId
@@ -158,6 +208,7 @@ export default function EpicenterAI() {
   };
 
   const toggleChatStar = (chatId) => {
+    haptics.selection();
     setChats((current) => {
       const next = current.map((chat) =>
         chat.id === chatId ? { ...chat, starred: !chat.starred } : chat
@@ -168,12 +219,18 @@ export default function EpicenterAI() {
   };
 
   const saveRequestCount = (date, count) =>
-    AsyncStorage.setItem("epicenter_ai_request_count", JSON.stringify({ date, count })).catch(() => {});
+    AsyncStorage.setItem(
+      "epicenter_ai_request_count",
+      JSON.stringify({ date, count })
+    ).catch(() => {});
 
   const formatTime = (iso) => {
     try {
-      return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-    } catch (_error) {
+      return new Date(iso).toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+      });
+    } catch {
       return "";
     }
   };
@@ -185,62 +242,110 @@ export default function EpicenterAI() {
       const today = new Date();
       if (date.toDateString() === today.toDateString()) return "Today";
       return date.toLocaleDateString([], { month: "short", day: "numeric" });
-    } catch (_error) {
+    } catch {
       return "";
     }
   };
 
-  const copyToClipboard = async (text) => {
-    try {
-      const ExpoClipboard = require("expo-clipboard");
-      await ExpoClipboard?.setStringAsync?.(text);
-    } catch (_error) {
-      Alert.alert("Copy not available", "Copying is not supported on this device.");
-    }
+  const handleCopy = async (text) => {
+    const result = await copyOrShare(text);
+    if (result === "copied") toast.success("Copied");
+    else if (!result) toast.error("Couldn’t copy that response");
   };
 
   const toggleStar = (index) => {
-    setMessages((current) => current.map((message, i) => (i === index ? { ...message, starred: !message.starred } : message)));
+    haptics.selection();
+    setMessages((current) =>
+      current.map((message, i) =>
+        i === index ? { ...message, starred: !message.starred } : message
+      )
+    );
   };
 
   const handleQuickPrompt = (prompt) => {
     setInputValue(prompt);
-    if (selectedChatId) setDrafts((current) => ({ ...current, [selectedChatId]: prompt }));
+    if (selectedChatId)
+      setDrafts((current) => ({ ...current, [selectedChatId]: prompt }));
   };
 
-  const canMakeRequest = () => {
+  const reserveRequest = () => {
     const today = new Date().toISOString().slice(0, 10);
     const currentCount = requestDate === today ? requestCount : 0;
-    if (currentCount >= 10) {
-      Alert.alert("Daily limit reached", "You have reached your daily limit of 10 AI prompts. Please try again tomorrow.");
+    if (currentCount >= DAILY_LIMIT) {
+      toast.warning("Daily limit reached", {
+        description: `You've used all ${DAILY_LIMIT} AI prompts for today. They reset tomorrow.`,
+      });
       return null;
     }
     const nextCount = currentCount + 1;
     setRequestCount(nextCount);
     setRequestDate(today);
     saveRequestCount(today, nextCount);
-    return true;
+    return () => {
+      setRequestCount(currentCount);
+      saveRequestCount(today, currentCount);
+    };
   };
 
   const regenerateResponse = async (messageIndex) => {
-    const userMessage = [...messages.slice(0, messageIndex)].reverse().find((message) => message.from === "user");
-    if (!userMessage || !selectedChatId || !canMakeRequest()) return;
-    const thinking = { from: "bot", text: "Thinking…", time: new Date().toISOString(), temp: true };
-    setMessages((current) => current.map((message, index) => (index === messageIndex ? thinking : message)));
+    const userMessage = [...messages.slice(0, messageIndex)]
+      .reverse()
+      .find((message) => message.from === "user");
+    if (!userMessage || !selectedChatId || isThinking) return;
+    const release = reserveRequest();
+    if (!release) return;
+
+    const thinking = {
+      from: "bot",
+      text: "Thinking…",
+      time: new Date().toISOString(),
+      temp: true,
+    };
+    setMessages((current) =>
+      current.map((message, index) =>
+        index === messageIndex ? thinking : message
+      )
+    );
     setIsThinking(true);
     try {
-      const context = messages.filter((message) => message.from === "user").slice(-8)
-        .map((message) => `User: ${message.text.replace(/\n/g, " ")}`).join("\n");
-      const response = await aiResponse(`Conversation history:\n${context}\n\nCurrent question: ${userMessage.text}`);
-      setMessages((current) => current.map((message, index) => (
-        index === messageIndex ? { from: "bot", text: response || "I couldn’t generate a response. Please try again.", time: new Date().toISOString() } : message
-      )));
-      setIsOnline(true);
-    } catch (_error) {
-      setMessages((current) => current.map((message, index) => (
-        index === messageIndex ? { from: "bot", text: "⚠️ **Connection issue**\n\nI’m having trouble connecting. Please check your internet connection and try again.", time: new Date().toISOString() } : message
-      )));
-      setIsOnline(false);
+      const context = messages
+        .filter((message) => message.from === "user")
+        .slice(-8)
+        .map((message) => `User: ${message.text.replace(/\n/g, " ")}`)
+        .join("\n");
+      const response = await aiResponse(
+        `Conversation history:\n${context}\n\nCurrent question: ${userMessage.text}`
+      );
+      setMessages((current) =>
+        current.map((message, index) =>
+          index === messageIndex
+            ? {
+                from: "bot",
+                text:
+                  response ||
+                  "I couldn’t generate a response. Please try again.",
+                time: new Date().toISOString(),
+              }
+            : message
+        )
+      );
+      reportSuccess();
+    } catch (error) {
+      console.warn("epicenterAI: regenerate failed", error);
+      release();
+      setMessages((current) =>
+        current.map((message, index) =>
+          index === messageIndex
+            ? {
+                from: "bot",
+                text: CONNECTION_ERROR_TEXT,
+                time: new Date().toISOString(),
+              }
+            : message
+        )
+      );
+      reportFailure();
+      haptics.error();
     } finally {
       setIsThinking(false);
     }
@@ -249,21 +354,43 @@ export default function EpicenterAI() {
   const handleSubmission = async () => {
     const text = inputValue.trim();
     if (!text || isThinking) return;
-    if (!isOnline) {
-      Alert.alert("Offline", "Please check your internet connection and try again.");
-      return;
-    }
-    if (!canMakeRequest()) return;
+
+    const release = reserveRequest();
+    if (!release) return;
+
     const userMessage = { from: "user", text, time: new Date().toISOString() };
-    const thinking = { from: "bot", text: "Thinking…", time: new Date().toISOString(), temp: true };
+    const thinking = {
+      from: "bot",
+      text: "Thinking…",
+      time: new Date().toISOString(),
+      temp: true,
+    };
     const chatId = selectedChatId || `chat_${Date.now()}`;
     const chatAtSend = chats.find((chat) => chat.id === chatId);
-    const nextMessages = [...(chatAtSend?.messages || []), userMessage, thinking];
+    const nextMessages = [
+      ...(chatAtSend?.messages || []),
+      userMessage,
+      thinking,
+    ];
     const nextChat = chatAtSend
-      ? { ...chatAtSend, name: isGenericChatName(chatAtSend.name) ? chatNameFromPrompt(text) : chatAtSend.name, messages: nextMessages }
-      : { id: chatId, name: chatNameFromPrompt(text), createdAt: new Date().toISOString(), messages: nextMessages };
+      ? {
+          ...chatAtSend,
+          name: isGenericChatName(chatAtSend.name)
+            ? chatNameFromPrompt(text)
+            : chatAtSend.name,
+          messages: nextMessages,
+        }
+      : {
+          id: chatId,
+          name: chatNameFromPrompt(text),
+          createdAt: new Date().toISOString(),
+          messages: nextMessages,
+        };
+
     setChats((current) => {
-      const next = chatAtSend ? current.map((chat) => (chat.id === chatId ? nextChat : chat)) : [nextChat, ...current];
+      const next = chatAtSend
+        ? current.map((chat) => (chat.id === chatId ? nextChat : chat))
+        : [nextChat, ...current];
       saveChats(next);
       return next;
     });
@@ -274,25 +401,50 @@ export default function EpicenterAI() {
     setInputHeight(44);
     setDrafts((current) => ({ ...current, [chatId]: "" }));
     setIsThinking(true);
+
     try {
-      const allUserMessages = [...(chatAtSend?.messages || []).filter((message) => message.from === "user"), userMessage];
-      const context = allUserMessages.slice(-8).map((message) => `User: ${message.text.replace(/\n/g, " ")}`).join("\n");
-      const response = await aiResponse(`Conversation history:\n${context}\n\nCurrent question: ${text}`);
+      const allUserMessages = [
+        ...(chatAtSend?.messages || []).filter(
+          (message) => message.from === "user"
+        ),
+        userMessage,
+      ];
+      const context = allUserMessages
+        .slice(-8)
+        .map((message) => `User: ${message.text.replace(/\n/g, " ")}`)
+        .join("\n");
+      const response = await aiResponse(
+        `Conversation history:\n${context}\n\nCurrent question: ${text}`
+      );
       setMessages((current) => {
         const next = [...current];
         const index = next.map((message) => message.temp).lastIndexOf(true);
-        if (index >= 0) next[index] = { from: "bot", text: response || "I couldn’t generate a response. Please try again.", time: new Date().toISOString() };
+        if (index >= 0)
+          next[index] = {
+            from: "bot",
+            text:
+              response || "I couldn’t generate a response. Please try again.",
+            time: new Date().toISOString(),
+          };
         return next;
       });
-      setIsOnline(true);
-    } catch (_error) {
+      reportSuccess();
+    } catch (error) {
+      console.warn("epicenterAI: request failed", error);
+      release();
       setMessages((current) => {
         const next = [...current];
         const index = next.map((message) => message.temp).lastIndexOf(true);
-        if (index >= 0) next[index] = { from: "bot", text: "⚠️ **Connection issue**\n\nI’m having trouble connecting. Please check your internet connection and try again.", time: new Date().toISOString() };
+        if (index >= 0)
+          next[index] = {
+            from: "bot",
+            text: CONNECTION_ERROR_TEXT,
+            time: new Date().toISOString(),
+          };
         return next;
       });
-      setIsOnline(false);
+      reportFailure();
+      haptics.error();
     } finally {
       setIsThinking(false);
     }
@@ -301,152 +453,628 @@ export default function EpicenterAI() {
   const deleteChat = () => {
     const chat = chats.find((item) => item.id === selectedChatId);
     if (!chat) return;
-    Alert.alert("Delete conversation", `Delete “${chat.name}”? This can’t be undone.`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => {
-          const next = chats.filter((item) => item.id !== selectedChatId);
-          setChats(next);
-          setDrafts((current) => {
-            const { [selectedChatId]: _deletedDraft, ...remainingDrafts } = current;
-            return remainingDrafts;
-          });
-          setSelectedChatId(next[0]?.id || null);
-          setMessages(next[0]?.messages || []);
-          setInputValue("");
-          persistSelectedChat(next[0]?.id || null);
-          saveChats(next);
+    Alert.alert(
+      "Delete conversation",
+      `Delete “${chat.name}”? This can’t be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            const next = chats.filter((item) => item.id !== selectedChatId);
+            setChats(next);
+            setDrafts((current) => {
+              const { [selectedChatId]: _removed, ...rest } = current;
+              return rest;
+            });
+            setSelectedChatId(next[0]?.id || null);
+            setMessages(next[0]?.messages || []);
+            setInputValue("");
+            persistSelectedChat(next[0]?.id || null);
+            saveChats(next);
+            toast.success("Conversation deleted");
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   const selectedChat = chats.find((chat) => chat.id === selectedChatId);
-  const inputDisabled = isThinking || !isOnline;
+
+  const visibleChats = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return chats
+      .filter((chat) => {
+        if (starredOnly && !chat.starred) return false;
+        if (!query) return true;
+        if (chat.name?.toLowerCase().includes(query)) return true;
+        return chat.messages?.some((message) =>
+          message.text?.toLowerCase().includes(query)
+        );
+      })
+      .sort((a, b) => {
+        if (Boolean(a.starred) !== Boolean(b.starred)) return a.starred ? -1 : 1;
+        const aTime =
+          a.messages?.[a.messages.length - 1]?.time || a.createdAt || "";
+        const bTime =
+          b.messages?.[b.messages.length - 1]?.time || b.createdAt || "";
+        return String(bTime).localeCompare(String(aTime));
+      });
+  }, [chats, search, starredOnly]);
+
+  const starredMessages = useMemo(
+    () =>
+      chats.flatMap((chat) =>
+        (chat.messages || [])
+          .filter((message) => message.starred)
+          .map((message) => ({
+            chatId: chat.id,
+            chatName: chat.name,
+            text: message.text,
+            time: message.time,
+          }))
+      ),
+    [chats]
+  );
+
+  const sendDisabled = !inputValue.trim() || isThinking;
 
   return (
-    <View className="flex-1 bg-background">
-      <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : "height"}>
+    <Screen>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
         <View className="flex-1">
           <View className="flex-row items-center gap-3 border-b border-border bg-background px-4 py-3">
-            <Button unstyled onPress={() => setSidebarOpen(true)} className="h-10 w-10 items-center justify-center rounded-full active:bg-secondary" accessibilityLabel="Open conversations">
+            <Button
+              unstyled
+              onPress={() => setSidebarOpen(true)}
+              className="h-11 w-11 items-center justify-center rounded-full active:bg-secondary"
+              accessibilityLabel="Open conversations"
+              accessibilityHint="Shows your saved chats and starred answers"
+              hitSlop={6}
+            >
               <AppIcon name="menu" size={22} color={palette.foreground} />
             </Button>
             <View className="min-w-0 flex-1">
-              <Text numberOfLines={1} className="text-[16px] font-bold text-foreground">{selectedChat?.name || "New chat"}</Text>
-              <Text className="text-[12px] text-muted-foreground">{isOnline ? "Earthquake safety assistant" : "Offline"}</Text>
+              <Text
+                numberOfLines={1}
+                className="text-body-lg font-bold text-foreground"
+              >
+                {selectedChat?.name || "New chat"}
+              </Text>
+              <Text className="text-caption text-muted-foreground">
+                {isOnline ? "Earthquake safety assistant" : "Offline"}
+              </Text>
             </View>
-            <Button unstyled onPress={createNewChat} className="h-10 w-10 items-center justify-center rounded-full bg-primary" accessibilityLabel="Start a new conversation">
+            <Button
+              unstyled
+              onPress={createNewChat}
+              className="h-11 w-11 items-center justify-center rounded-full bg-primary"
+              accessibilityLabel="Start a new conversation"
+              hitSlop={6}
+            >
               <AppIcon name="plus" size={20} color={palette.primaryForeground} />
             </Button>
           </View>
 
-          <ScrollView ref={scrollViewRef} className="flex-1 bg-background" contentContainerClassName="gap-6 px-4 py-5" contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive" showsVerticalScrollIndicator={false}>
-            {chatLoading ? (showChatSkeleton ? <SkeletonList count={4} /> : <View className="h-64" />) : messages.length === 0 ? (
+          <ScrollView
+            ref={scrollViewRef}
+            className="flex-1 bg-background"
+            contentContainerClassName="gap-6 px-4 py-5"
+            contentInsetAdjustmentBehavior="automatic"
+            keyboardDismissMode="interactive"
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {chatLoading ? (
+              showChatSkeleton ? <SkeletonList count={4} /> : <View className="h-64" />
+            ) : messages.length === 0 ? (
               <View className="gap-2 pt-2">
                 <View className="mb-5 items-center gap-2 px-5 pt-2">
-                  <View className="h-14 w-14 items-center justify-center rounded-2xl bg-secondary"><Image source={require("../../../assets/images/filledEpicenter.png")} className="h-9 w-9 object-contain" /></View>
-                  <Text className="text-center text-[22px] font-bold text-foreground">Epicenter AI</Text>
-                  <Text className="text-center text-[14px] leading-5 text-muted-foreground">Your earthquake safety guide for plans, preparation, and quick answers.</Text>
+                  <View className="h-14 w-14 items-center justify-center rounded-2xl bg-secondary">
+                    <Image
+                      source={require("../../../assets/images/filledEpicenter.png")}
+                      className="h-9 w-9 object-contain"
+                      accessibilityLabel=""
+                    />
+                  </View>
+                  <Text className="text-center text-title-lg font-bold text-foreground">
+                    Epicenter AI
+                  </Text>
+                  <Text className="text-center text-body-sm text-muted-foreground">
+                    Your earthquake safety guide for plans, preparation, and
+                    quick answers.
+                  </Text>
                 </View>
-                <View className="flex-row items-center gap-2"><View className="h-8 w-8 items-center justify-center rounded-full bg-secondary"><AppIcon name="lightbulb" size={16} color={palette.primary} /></View><Text className="text-[13px] font-semibold text-muted-foreground">Try asking</Text></View>
+                <View className="flex-row items-center gap-2">
+                  <View className="h-8 w-8 items-center justify-center rounded-full bg-secondary">
+                    <AppIcon name="lightbulb" size={16} color={palette.primary} />
+                  </View>
+                  <Text className="text-footnote font-semibold text-muted-foreground">
+                    Try asking
+                  </Text>
+                </View>
                 {QUICK_PROMPTS.map((prompt) => (
-                  <Button key={prompt} unstyled onPress={() => handleQuickPrompt(prompt)} disabled={inputDisabled} className="flex-row items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 active:bg-secondary" style={{ borderCurve: "continuous" }}>
-                    <Text className="flex-1 text-left text-[14px] font-medium leading-5 text-foreground">{prompt}</Text>
-                    <AppIcon name="chevron-right" size={17} color={palette.mutedForeground} />
+                  <Button
+                    key={prompt}
+                    unstyled
+                    onPress={() => handleQuickPrompt(prompt)}
+                    disabled={isThinking}
+                    className="min-h-12 flex-row items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 active:bg-secondary"
+                    style={{ borderCurve: "continuous" }}
+                  >
+                    <Text className="flex-1 text-left text-body-sm font-medium text-foreground">
+                      {prompt}
+                    </Text>
+                    <AppIcon
+                      name="chevron-right"
+                      size={17}
+                      color={palette.mutedForeground}
+                    />
                   </Button>
                 ))}
               </View>
-            ) : messages.map((message, index) => {
-              const isUser = message.from === "user";
-              if (isUser) return (
-                <View key={`${message.time}-${index}`} className="items-end">
-                  <View className={["max-w-[86%] rounded-[22px] rounded-br-md bg-primary px-4 py-3", message.starred && "border border-warning/50"].filter(Boolean).join(" ")} style={{ borderCurve: "continuous" }}>
-                    <Text selectable className="text-[15px] leading-[22px] text-primary-foreground">{message.text}</Text>
-                  </View>
-                  <View className="mt-1 flex-row items-center gap-1 pr-1">
-                    <Text className="text-[11px] text-muted-foreground">{formatTime(message.time)}</Text>
-                    <Button unstyled className="h-7 w-7 items-center justify-center rounded-full active:bg-secondary" onPress={() => toggleStar(index)} accessibilityLabel="Save message">
-                      <AppIcon name={message.starred ? "star" : "star-outline"} size={15} color={message.starred ? palette.warning : palette.mutedForeground} fill={message.starred ? palette.warning : "none"} />
-                    </Button>
-                  </View>
-                </View>
-              );
+            ) : (
+              messages.map((message, index) => {
+                const isUser = message.from === "user";
+                if (isUser) {
+                  return (
+                    <View key={`${message.time}-${index}`} className="items-end">
+                      <View
+                        className={[
+                          "max-w-[86%] rounded-[22px] rounded-br-md bg-primary px-4 py-3",
+                          message.starred && "border border-warning/50",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                        style={{ borderCurve: "continuous" }}
+                      >
+                        <Text
+                          selectable
+                          className="text-body text-primary-foreground"
+                        >
+                          {message.text}
+                        </Text>
+                      </View>
+                      <View className="mt-1 flex-row items-center gap-1 pr-1">
+                        <Text className="text-caption text-muted-foreground">
+                          {formatTime(message.time)}
+                        </Text>
+                        <Button
+                          unstyled
+                          className="h-11 w-11 items-center justify-center rounded-full active:bg-secondary"
+                          onPress={() => toggleStar(index)}
+                          accessibilityLabel={
+                            message.starred ? "Remove star" : "Star message"
+                          }
+                          accessibilityState={{ selected: Boolean(message.starred) }}
+                        >
+                          <AppIcon
+                            name={message.starred ? "star" : "star-outline"}
+                            size={16}
+                            color={
+                              message.starred
+                                ? palette.warning
+                                : palette.mutedForeground
+                            }
+                            fill={message.starred ? palette.warning : "none"}
+                          />
+                        </Button>
+                      </View>
+                    </View>
+                  );
+                }
 
-              return (
-                <View key={`${message.time}-${index}`} className={message.starred ? "rounded-2xl bg-warning/10 p-3" : ""}>
-                  <View className="flex-row items-center gap-2">
-                    <View className="h-9 w-9 items-center justify-center rounded-xl bg-secondary" style={{ borderCurve: "continuous" }}>
-                      <Image source={isOnline ? require("../../../assets/images/filledEpicenter.png") : require("../../../assets/images/outlineEpicenter.png")} className="h-6 w-6 object-contain" />
+                return (
+                  <View
+                    key={`${message.time}-${index}`}
+                    className={message.starred ? "rounded-2xl bg-warning/10 p-3" : ""}
+                  >
+                    <View className="flex-row items-center gap-2">
+                      <View
+                        className="h-9 w-9 items-center justify-center rounded-xl bg-secondary"
+                        style={{ borderCurve: "continuous" }}
+                      >
+                        <Image
+                          source={
+                            isOnline
+                              ? require("../../../assets/images/filledEpicenter.png")
+                              : require("../../../assets/images/outlineEpicenter.png")
+                          }
+                          className="h-6 w-6 object-contain"
+                          accessibilityLabel=""
+                        />
+                      </View>
+                      <Text className="text-footnote font-bold text-foreground">
+                        Epicenter AI
+                      </Text>
+                      <Text className="text-caption text-muted-foreground">
+                        {formatTime(message.time)}
+                      </Text>
                     </View>
-                    <Text className="text-[13px] font-bold text-foreground">Epicenter AI</Text>
-                    <Text className="text-[11px] text-muted-foreground">{formatTime(message.time)}</Text>
+                    {message.temp ? (
+                      <View
+                        className="flex-row items-center gap-2 py-3"
+                        accessibilityLiveRegion="polite"
+                      >
+                        <ActivityIndicator size="small" color={palette.primary} />
+                        <Text className="text-body text-muted-foreground">
+                          Thinking…
+                        </Text>
+                      </View>
+                    ) : (
+                      <Markdown style={markdownStyles}>
+                        {message.text || ""}
+                      </Markdown>
+                    )}
+                    {!message.temp ? (
+                      <View className="mt-2 flex-row items-center gap-1">
+                        <Button
+                          unstyled
+                          className="h-11 w-11 items-center justify-center rounded-full active:bg-secondary"
+                          onPress={() => handleCopy(message.text || "")}
+                          accessibilityLabel="Copy response"
+                        >
+                          <AppIcon
+                            name="content-copy"
+                            size={17}
+                            color={palette.mutedForeground}
+                          />
+                        </Button>
+                        <Button
+                          unstyled
+                          className="h-11 w-11 items-center justify-center rounded-full active:bg-secondary"
+                          onPress={() => regenerateResponse(index)}
+                          disabled={isThinking}
+                          accessibilityLabel="Regenerate response"
+                        >
+                          <AppIcon
+                            name="autorenew"
+                            size={17}
+                            color={palette.mutedForeground}
+                          />
+                        </Button>
+                        <Button
+                          unstyled
+                          className="h-11 w-11 items-center justify-center rounded-full active:bg-secondary"
+                          onPress={() => toggleStar(index)}
+                          accessibilityLabel={
+                            message.starred ? "Remove star" : "Star response"
+                          }
+                          accessibilityState={{ selected: Boolean(message.starred) }}
+                        >
+                          <AppIcon
+                            name={message.starred ? "star" : "star-outline"}
+                            size={17}
+                            color={
+                              message.starred
+                                ? palette.warning
+                                : palette.mutedForeground
+                            }
+                            fill={message.starred ? palette.warning : "none"}
+                          />
+                        </Button>
+                      </View>
+                    ) : null}
                   </View>
-                  {message.temp ? (
-                    <View className="flex-row items-center gap-2 py-3"><ActivityIndicator size="small" color={palette.primary} /><Text className="text-[15px] text-muted-foreground">Thinking…</Text></View>
-                  ) : (
-                    <Markdown style={markdownStyles}>{message.text || ""}</Markdown>
-                  )}
-                  {!message.temp ? (
-                    <View className="mt-2 flex-row items-center gap-1">
-                      <Button unstyled className="h-9 w-9 items-center justify-center rounded-full active:bg-secondary" onPress={() => copyToClipboard(message.text || "")} accessibilityLabel="Copy response"><AppIcon name="content-copy" size={17} color={palette.mutedForeground} /></Button>
-                      <Button unstyled className="h-9 w-9 items-center justify-center rounded-full active:bg-secondary" onPress={() => regenerateResponse(index)} disabled={isThinking} accessibilityLabel="Regenerate response"><AppIcon name="autorenew" size={17} color={palette.mutedForeground} /></Button>
-                      <Button unstyled className="h-9 w-9 items-center justify-center rounded-full active:bg-secondary" onPress={() => toggleStar(index)} accessibilityLabel="Save response"><AppIcon name={message.starred ? "star" : "star-outline"} size={17} color={message.starred ? palette.warning : palette.mutedForeground} fill={message.starred ? palette.warning : "none"} /></Button>
-                    </View>
-                  ) : null}
-                </View>
-              );
-            })}
+                );
+              })
+            )}
           </ScrollView>
 
           <View className="border-t border-border bg-background px-4 pb-3 pt-3">
-            {!isOnline ? <View className="mb-2 flex-row items-center justify-center gap-2"><AppIcon name="wifi-off" size={14} color={palette.destructive} /><Text className="text-[12px] font-medium text-destructive">Offline. Check your connection.</Text></View> : null}
-            <View className="flex-row items-end gap-2 rounded-[24px] border border-border bg-card p-2" style={{ borderCurve: "continuous" }}>
-              <Input value={inputValue} onChangeText={(value) => { setInputValue(value); if (selectedChatId) setDrafts((current) => ({ ...current, [selectedChatId]: value })); }} placeholder="Ask about earthquake safety" className="max-h-28 min-h-11 flex-1 border-0 bg-transparent px-2 py-2 text-[15px] shadow-none" style={{ height: inputHeight }} onContentSizeChange={(event) => setInputHeight(Math.min(112, Math.max(44, event.nativeEvent.contentSize.height)))} multiline returnKeyType="send" blurOnSubmit={false} maxLength={500} editable={!inputDisabled} />
+            {!isOnline ? (
+              <View
+                className="mb-2 flex-row items-center justify-center gap-2"
+                accessibilityLiveRegion="polite"
+              >
+                <AppIcon name="wifi-off" size={14} color={palette.destructive} />
+                <Text className="text-caption font-medium text-destructive">
+                  You appear to be offline.
+                </Text>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="min-h-11 px-3 py-1"
+                  onPress={async () => {
+                    const online = await recheck();
+                    toast[online ? "success" : "warning"](
+                      online ? "Back online" : "Still offline"
+                    );
+                  }}
+                  accessibilityLabel="Check connection again"
+                >
+                  <Text className="text-caption font-bold text-primary">
+                    Retry
+                  </Text>
+                </Button>
+              </View>
+            ) : null}
+
+            <View
+              className="flex-row items-end gap-2 rounded-[24px] border border-border bg-card p-2"
+              style={{ borderCurve: "continuous" }}
+            >
+              <Input
+                value={inputValue}
+                onChangeText={(value) => {
+                  setInputValue(value);
+                  if (selectedChatId)
+                    setDrafts((current) => ({
+                      ...current,
+                      [selectedChatId]: value,
+                    }));
+                }}
+                placeholder="Ask about earthquake safety"
+                className="max-h-28 min-h-11 flex-1 border-0 bg-transparent px-2 py-2 shadow-none"
+                style={{ height: inputHeight }}
+                onContentSizeChange={(event) =>
+                  setInputHeight(
+                    Math.min(
+                      112,
+                      Math.max(44, event.nativeEvent.contentSize.height)
+                    )
+                  )
+                }
+                multiline
+                returnKeyType="send"
+                blurOnSubmit={false}
+                maxLength={500}
+                editable={!isThinking}
+              />
               <View className="pb-0.5">
-                <Button unstyled onPress={handleSubmission} disabled={!inputValue.trim() || inputDisabled} className={["h-10 w-10 items-center justify-center rounded-full bg-primary", (!inputValue.trim() || inputDisabled) && "opacity-40"].filter(Boolean).join(" ")} accessibilityLabel="Send message">
-                  {isThinking ? <ActivityIndicator color={palette.primaryForeground} size="small" /> : <AppIcon name="send" size={18} color={palette.primaryForeground} />}
+                <Button
+                  unstyled
+                  onPress={handleSubmission}
+                  disabled={sendDisabled}
+                  className={[
+                    "h-11 w-11 items-center justify-center rounded-full bg-primary",
+                    sendDisabled && "opacity-40",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  accessibilityLabel="Send message"
+                >
+                  {isThinking ? (
+                    <ActivityIndicator
+                      color={palette.primaryForeground}
+                      size="small"
+                    />
+                  ) : (
+                    <AppIcon
+                      name="send"
+                      size={18}
+                      color={palette.primaryForeground}
+                    />
+                  )}
                 </Button>
               </View>
             </View>
-            <Text className="px-2 pt-2 text-center text-[11px] text-muted-foreground">Epicenter AI can make mistakes. Check official guidance in an emergency.</Text>
+            <Text className="px-2 pt-2 text-center text-xs text-muted-foreground">
+              Epicenter AI can make mistakes. Check official guidance in an
+              emergency.
+            </Text>
           </View>
         </View>
       </KeyboardAvoidingView>
 
-      <Modal visible={sidebarOpen} transparent animationType="fade" onRequestClose={() => setSidebarOpen(false)}>
-        <View className="flex-1 bg-background">
-          <View
-            className="flex-1 bg-background"
-            style={{
-              paddingTop: insets.top + 12,
-              paddingBottom: insets.bottom,
-            }}
-          >
-            <View className="flex-row items-center justify-between px-4 pb-4">
-              <View className="flex-row items-center gap-3"><View className="h-10 w-10 items-center justify-center rounded-xl bg-secondary"><Image source={require("../../../assets/images/filledEpicenter.png")} className="h-6 w-6 object-contain" /></View><Text className="text-[19px] font-bold text-foreground">Epicenter AI</Text></View>
-              <Button unstyled onPress={() => setSidebarOpen(false)} className="h-10 w-10 items-center justify-center rounded-full active:bg-secondary" accessibilityLabel="Close conversations"><AppIcon name="close" size={20} color={palette.foreground} /></Button>
+      <Modal
+        visible={sidebarOpen}
+        transparent
+        animationType={reduceMotion ? "none" : "fade"}
+        onRequestClose={() => setSidebarOpen(false)}
+      >
+        <View
+          className="flex-1 bg-background"
+          style={{ paddingTop: insets.top + 12, paddingBottom: insets.bottom }}
+        >
+          <View className="flex-row items-center justify-between px-4 pb-4">
+            <View className="flex-row items-center gap-3">
+              <View className="h-10 w-10 items-center justify-center rounded-xl bg-secondary">
+                <Image
+                  source={require("../../../assets/images/filledEpicenter.png")}
+                  className="h-6 w-6 object-contain"
+                  accessibilityLabel=""
+                />
+              </View>
+              <Text
+                role="heading"
+                aria-level={1}
+                className="text-title-sm font-bold text-foreground"
+              >
+                Epicenter AI
+              </Text>
             </View>
-            <View className="px-4 pb-4"><Button onPress={createNewChat} className="min-h-12 rounded-xl"><AppIcon name="plus" size={18} color={palette.primaryForeground} /><Text className="font-semibold text-primary-foreground">New chat</Text></Button></View>
-            <Text className="mt-5 px-5 pb-2 text-[12px] font-bold text-muted-foreground">RECENT CHATS</Text>
-            <ScrollView className="flex-1" contentContainerClassName="gap-1 px-3 pb-6" showsVerticalScrollIndicator={false}>
-              {chats.map((chat) => (
-                <View key={chat.id} className={["flex-row items-center rounded-xl", chat.id === selectedChatId ? "bg-secondary" : ""].join(" ")}>
-                  <Button unstyled onPress={() => selectChat(chat.id)} className="min-w-0 flex-1 items-start justify-start px-3 py-3 active:bg-secondary">
-                    <View className="min-w-0 gap-0.5"><Text numberOfLines={1} className={["text-[14px] font-semibold", chat.id === selectedChatId ? "text-primary" : "text-foreground"].join(" ")}>{chat.name}</Text><Text className="text-[12px] text-muted-foreground">{formatChatDate(chat.messages?.[chat.messages.length - 1]?.time || chat.createdAt)}</Text></View>
+            <Button
+              unstyled
+              onPress={() => setSidebarOpen(false)}
+              className="h-11 w-11 items-center justify-center rounded-full active:bg-secondary"
+              accessibilityLabel="Close conversations"
+              hitSlop={6}
+            >
+              <AppIcon name="close" size={20} color={palette.foreground} />
+            </Button>
+          </View>
+
+          <View className="gap-3 px-4 pb-4">
+            <Button onPress={createNewChat} className="min-h-12 rounded-xl">
+              <AppIcon name="plus" size={18} color={palette.primaryForeground} />
+              <Text className="font-semibold text-primary-foreground">
+                New chat
+              </Text>
+            </Button>
+
+            <Input
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Search conversations"
+              returnKeyType="search"
+              autoCorrect={false}
+              accessibilityLabel="Search conversations"
+              clearButtonMode="while-editing"
+            />
+
+            <View className="flex-row gap-2">
+              <Button
+                variant={starredOnly ? "default" : "secondary"}
+                size="sm"
+                className="min-h-11"
+                onPress={() => setStarredOnly((v) => !v)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: starredOnly }}
+                accessibilityLabel="Show starred conversations only"
+              >
+                <AppIcon
+                  name={starredOnly ? "star" : "star-outline"}
+                  size={15}
+                  color={
+                    starredOnly ? palette.primaryForeground : palette.primary
+                  }
+                  fill={starredOnly ? palette.primaryForeground : "none"}
+                />
+                <Text
+                  className={
+                    starredOnly
+                      ? "font-bold text-primary-foreground"
+                      : "font-bold text-primary"
+                  }
+                >
+                  Starred
+                </Text>
+              </Button>
+            </View>
+          </View>
+
+          <ScrollView
+            className="flex-1"
+            contentContainerClassName="gap-1 px-3 pb-6"
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <Text className="px-2 pb-2 pt-2 text-caption font-bold text-muted-foreground">
+              {starredOnly ? "STARRED CHATS" : "RECENT CHATS"}
+            </Text>
+
+            {visibleChats.length === 0 ? (
+              <Text className="px-2 py-4 text-body-sm text-muted-foreground">
+                {search.trim() || starredOnly
+                  ? "Nothing matches that."
+                  : "No conversations yet."}
+              </Text>
+            ) : (
+              visibleChats.map((chat) => (
+                <View
+                  key={chat.id}
+                  className={[
+                    "flex-row items-center rounded-xl",
+                    chat.id === selectedChatId ? "bg-secondary" : "",
+                  ].join(" ")}
+                >
+                  <Button
+                    unstyled
+                    onPress={() => selectChat(chat.id)}
+                    className="min-h-12 min-w-0 flex-1 items-start justify-center px-3 py-3 active:bg-secondary"
+                    accessibilityLabel={`Open ${chat.name}`}
+                  >
+                    <View className="min-w-0 gap-0.5">
+                      <Text
+                        numberOfLines={1}
+                        className={[
+                          "text-body-sm font-semibold",
+                          chat.id === selectedChatId
+                            ? "text-primary"
+                            : "text-foreground",
+                        ].join(" ")}
+                      >
+                        {chat.name}
+                      </Text>
+                      <Text className="text-caption text-muted-foreground">
+                        {formatChatDate(
+                          chat.messages?.[chat.messages.length - 1]?.time ||
+                            chat.createdAt
+                        )}
+                      </Text>
+                    </View>
                   </Button>
-                  <Button unstyled onPress={() => toggleChatStar(chat.id)} className="mr-2 h-10 w-10 items-center justify-center rounded-full active:bg-background" accessibilityLabel={chat.starred ? "Remove chat star" : "Star chat"} accessibilityState={{ selected: Boolean(chat.starred) }}>
-                    <AppIcon name={chat.starred ? "star" : "star-outline"} size={19} color={chat.starred ? palette.warning : palette.mutedForeground} fill={chat.starred ? palette.warning : "none"} />
+                  <Button
+                    unstyled
+                    onPress={() => toggleChatStar(chat.id)}
+                    className="mr-2 h-11 w-11 items-center justify-center rounded-full active:bg-background"
+                    accessibilityLabel={
+                      chat.starred ? "Remove chat star" : "Star chat"
+                    }
+                    accessibilityState={{ selected: Boolean(chat.starred) }}
+                  >
+                    <AppIcon
+                      name={chat.starred ? "star" : "star-outline"}
+                      size={19}
+                      color={
+                        chat.starred ? palette.warning : palette.mutedForeground
+                      }
+                      fill={chat.starred ? palette.warning : "none"}
+                    />
                   </Button>
                 </View>
-              ))}
-            </ScrollView>
-            <View className="border-t border-border p-3"><Button unstyled onPress={deleteChat} disabled={!selectedChat} className="flex-row items-center gap-3 rounded-xl px-3 py-3 active:bg-secondary"><AppIcon name="trash-can-outline" size={18} color={selectedChat ? palette.destructive : palette.border} /><Text className={selectedChat ? "text-[14px] font-semibold text-destructive" : "text-[14px] font-semibold text-muted-foreground"}>Delete current chat</Text></Button></View>
+              ))
+            )}
+
+            {starredMessages.length ? (
+              <>
+                <Text className="px-2 pb-2 pt-6 text-caption font-bold text-muted-foreground">
+                  STARRED ANSWERS
+                </Text>
+                {starredMessages.map((item, index) => (
+                  <Button
+                    key={`${item.chatId}-${item.time}-${index}`}
+                    unstyled
+                    onPress={() => selectChat(item.chatId)}
+                    className="min-h-12 items-start gap-0.5 rounded-xl px-3 py-3 active:bg-secondary"
+                    accessibilityLabel={`Starred answer in ${item.chatName}`}
+                  >
+                    <Text
+                      numberOfLines={2}
+                      className="text-body-sm text-foreground"
+                    >
+                      {item.text}
+                    </Text>
+                    <Text className="text-caption text-muted-foreground">
+                      {item.chatName}
+                    </Text>
+                  </Button>
+                ))}
+              </>
+            ) : null}
+          </ScrollView>
+
+          <View className="border-t border-border p-3">
+            <Button
+              unstyled
+              onPress={deleteChat}
+              disabled={!selectedChat}
+              className="min-h-12 flex-row items-center gap-3 rounded-xl px-3 py-3 active:bg-secondary"
+              accessibilityLabel="Delete current chat"
+            >
+              <AppIcon
+                name="trash-can-outline"
+                size={18}
+                color={selectedChat ? palette.destructive : palette.border}
+              />
+              <Text
+                className={
+                  selectedChat
+                    ? "text-body-sm font-semibold text-destructive"
+                    : "text-body-sm font-semibold text-muted-foreground"
+                }
+              >
+                Delete current chat
+              </Text>
+            </Button>
           </View>
         </View>
       </Modal>
-    </View>
+    </Screen>
   );
 }

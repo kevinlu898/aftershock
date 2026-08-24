@@ -38,14 +38,14 @@ const SCREENS = [
   ["PrivacyPolicy", PrivacyPolicyScreen, { title: "Privacy Policy" }],
   ["ChangeDetails", ChangeDetailsScreen, { title: "My Details" }],
   ["MainApp", MainTabNavigator, { headerShown: false }],
-  ["prepareLessons", PrepareLessonScreen, { headerShown: false }],
+  ["PrepareLesson", PrepareLessonScreen, { headerShown: false }],
   ["LocalRisk", LocalRiskScreen, { title: "Local Risk" }],
   ["News", NewsScreen, { title: "Earthquake News" }],
-  ["myPlan", MyPlanScreen, { title: "My Plan" }],
-  ["medicalInfo", MedicalInfoScreen, { title: "Medical Information" }],
-  ["contactInfo", ContactInfoScreen, { title: "Emergency Contacts" }],
+  ["MyPlan", MyPlanScreen, { title: "My Plan" }],
+  ["MedicalInfo", MedicalInfoScreen, { title: "Medical Information" }],
+  ["ContactInfo", ContactInfoScreen, { title: "Emergency Contacts" }],
   ["ExportData", ExportDataScreen, { title: "Export Data" }],
-  ["importantDocuments", ImportantDocumentsScreen, { title: "Important Documents" }],
+  ["ImportantDocuments", ImportantDocumentsScreen, { title: "Important Documents" }],
 ];
 
 export default function RootNavigator() {

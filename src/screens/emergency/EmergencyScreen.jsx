@@ -1,25 +1,47 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Image,
   Modal,
   Pressable,
+  RefreshControl,
   ScrollView,
-  Text,
   useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { AppIcon } from "../../components/app-icon";
-import { PageHeader, StatusCard } from "../../components/app-ui";
+import { APP_ICONS, AppIcon } from "../../components/app-icon";
+import { EmptyState, ErrorState, PageHeader } from "../../components/app-ui";
 import { Button } from "../../components/ui/button";
+import { CheckIndicator } from "../../components/ui/checkbox";
+import {
+  FLASHLIGHT_FAILURE_MESSAGES,
+  useFlashlight,
+} from "../../components/ui/flashlight";
 import {
   ScreenSkeleton,
   useDelayedSkeleton,
 } from "../../components/ui/skeleton";
+import { Text } from "../../components/ui/text";
+import { useToast } from "../../components/ui/toast";
+import {
+  callNumber,
+  EMERGENCY_SERVICES_NUMBER,
+  isDialable,
+} from "../../lib/contact";
+import haptics from "../../lib/haptics";
 import { getData } from "../../lib/storage/storageUtils";
 import { useTheme } from "../../lib/theme";
+import { useRefresh } from "../../hooks/useRefresh";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
+import { useModalAccessibility } from "../../hooks/useModalAccessibility";
+import { useReduceMotion } from "../../hooks/useReduceMotion";
+import { loadPlanSections } from "../../lib/plan";
+import {
+  LOCATION_FAILURE_MESSAGES,
+  shareCurrentLocation,
+} from "../../lib/shareLocation";
 
 const POST_SHAKING_STEPS = [
   "Check yourself and others for injuries.",
@@ -58,25 +80,13 @@ const CARD_TITLES = {
   contacts: "Emergency contacts",
   medical: "Medical information",
   documents: "Important documents",
+  plan: "My emergency plan",
   checklist: "After the shaking stops",
   aftershocks: "During aftershocks",
   supplies: "Food and water",
 };
 
-function EmptyState({ icon, children }) {
-  const { palette } = useTheme();
-
-  return (
-    <View className="items-center gap-3 px-5 py-8">
-      <View className="h-12 w-12 items-center justify-center rounded-full bg-secondary">
-        <AppIcon name={icon} size={24} color={palette.mutedForeground} />
-      </View>
-      <Text className="text-center text-[15px] leading-5 text-muted-foreground">
-        {children}
-      </Text>
-    </View>
-  );
-}
+const CHECKLIST_STORAGE_KEY = "emergency_post_shaking_checklist_v1";
 
 function InformationList({ items }) {
   return (
@@ -84,9 +94,7 @@ function InformationList({ items }) {
       {items.map((item, index) => (
         <View key={index} className="flex-row items-start gap-3">
           <View className="mt-[8px] h-2 w-2 rounded-full bg-primary" />
-          <Text className="flex-1 text-[16px] leading-6 text-foreground">
-            {item}
-          </Text>
+          <Text className="flex-1 text-body-lg text-foreground">{item}</Text>
         </View>
       ))}
     </View>
@@ -140,10 +148,10 @@ function EmergencyCard({
           className={[
             "font-bold",
             isPrimary
-              ? "text-[19px] leading-6 text-foreground"
+              ? "text-title-sm text-foreground"
               : isWide
-                ? "text-[19px] leading-6 text-foreground"
-                : "text-[17px] leading-[22px] text-foreground",
+                ? "text-title-sm text-foreground"
+                : "text-callout text-foreground",
           ].join(" ")}
         >
           {title}
@@ -165,6 +173,12 @@ function EmergencyDialog({ activeCard, onOpenChange, children }) {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const { palette } = useTheme();
+  const reduceMotion = useReduceMotion();
+  const titleRef = useRef(null);
+  useModalAccessibility(Boolean(activeCard), {
+    title: activeCard?.title,
+    focusRef: titleRef,
+  });
   const dialogWidth = Math.max(280, Math.min(width - 32, 520));
   const dialogMaxHeight = Math.min(
     height - insets.top - insets.bottom - 32,
@@ -175,7 +189,7 @@ function EmergencyDialog({ activeCard, onOpenChange, children }) {
     <Modal
       visible={Boolean(activeCard)}
       transparent
-      animationType="fade"
+      animationType={reduceMotion ? "none" : "fade"}
       statusBarTranslucent
       onRequestClose={() => onOpenChange(false)}
     >
@@ -190,6 +204,7 @@ function EmergencyDialog({ activeCard, onOpenChange, children }) {
         accessibilityLabel="Close popup"
       >
         <Pressable
+          accessibilityViewIsModal
           className="overflow-hidden rounded-2xl border border-border bg-card"
           style={{
             width: dialogWidth,
@@ -199,14 +214,21 @@ function EmergencyDialog({ activeCard, onOpenChange, children }) {
           onPress={(event) => event.stopPropagation()}
         >
           <View className="min-h-[64px] flex-row items-center border-b border-border px-5 py-4">
-            <Text className="min-w-0 flex-1 pr-3 text-[22px] font-bold leading-7 text-foreground">
+            <Text
+              ref={titleRef}
+              accessible
+              role="heading"
+              aria-level={2}
+              className="min-w-0 flex-1 pr-3 text-title-lg font-bold text-foreground"
+            >
               {activeCard?.title || ""}
             </Text>
             <Button
               unstyled
-              className="h-10 w-10 items-center justify-center rounded-full active:bg-muted"
+              className="h-11 w-11 items-center justify-center rounded-full active:bg-muted"
               onPress={() => onOpenChange(false)}
               accessibilityLabel="Close popup"
+              hitSlop={8}
             >
               <AppIcon
                 name="close"
@@ -228,14 +250,28 @@ function EmergencyDialog({ activeCard, onOpenChange, children }) {
   );
 }
 
-function EmergencyContactsList({ contacts }) {
+function EmergencyContactsList({ contacts, offline, onAdd, onCallFailed }) {
   const { palette } = useTheme();
 
   if (!contacts.length) {
     return (
-      <EmptyState icon="account-alert">
-        No emergency contacts saved.
-      </EmptyState>
+      <EmptyState
+        variant="plain"
+        icon={APP_ICONS["account-alert"]}
+        title={offline ? "Contacts couldn’t be loaded" : "No emergency contacts saved"}
+        description={
+          offline
+            ? "You appear to be offline and no contacts are saved on this device yet. Reconnect to sync them."
+            : "Add the people you would call first, so they are one tap away."
+        }
+        action={
+          offline ? null : (
+            <Button size="sm" onPress={onAdd}>
+              Add a contact
+            </Button>
+          )
+        }
+      />
     );
   }
 
@@ -243,56 +279,108 @@ function EmergencyContactsList({ contacts }) {
     <View className="w-full gap-3">
       {contacts.map((contact, index) => {
         const name = contact.name || contact.raw?.name || "Unnamed";
-        const phone =
+        const rawPhone =
           contact.phone ||
           contact.contact ||
           contact.raw?.phone ||
           contact.raw?.contact ||
-          "No phone number";
+          null;
         const relation =
           contact.relation || contact.raw?.relation || contact.raw?.rel || "";
+        const dialable = isDialable(rawPhone);
 
-        return (
-          <View
-            key={contact.id || index}
-            className="min-h-[72px] flex-row items-center gap-3 rounded-xl bg-muted p-4"
-            style={{ borderCurve: "continuous" }}
-          >
+        const body = (
+          <>
             <View className="h-10 w-10 items-center justify-center rounded-full bg-card">
               <AppIcon name="account" size={20} color={palette.primary} />
             </View>
             <View className="min-w-0 flex-1 gap-1">
-              <Text className="text-[16px] font-bold text-foreground">
+              <Text className="text-body-lg font-bold text-foreground">
                 {name}
               </Text>
               {relation ? (
-                <Text className="text-[14px] text-muted-foreground">
+                <Text className="text-body-sm text-muted-foreground">
                   {relation}
                 </Text>
               ) : null}
               <Text
-                selectable
-                className="text-[16px] font-semibold text-primary"
+                selectable={!dialable}
+                className="text-body-lg font-semibold text-primary"
               >
-                {phone}
+                {rawPhone || "No phone number"}
               </Text>
             </View>
-            <AppIcon name="phone" size={21} color={palette.primary} />
-          </View>
+            {dialable ? (
+              <View className="h-11 w-11 items-center justify-center rounded-full bg-primary">
+                <AppIcon
+                  name="phone"
+                  size={20}
+                  color={palette.primaryForeground}
+                />
+              </View>
+            ) : null}
+          </>
+        );
+
+        if (!dialable) {
+          return (
+            <View
+              key={contact.id || index}
+              className="min-h-[72px] flex-row items-center gap-3 rounded-xl bg-muted p-4"
+              style={{ borderCurve: "continuous" }}
+            >
+              {body}
+            </View>
+          );
+        }
+
+        return (
+          <Button
+            unstyled
+            key={contact.id || index}
+            className="min-h-[72px] w-full flex-row items-center gap-3 rounded-xl bg-muted p-4 active:opacity-80"
+            style={{ borderCurve: "continuous" }}
+            onPress={async () => {
+              const started = await callNumber(rawPhone);
+              if (!started) onCallFailed?.(name);
+            }}
+            accessibilityLabel={`Call ${name}${relation ? `, ${relation}` : ""}, ${rawPhone}`}
+            accessibilityHint="Opens your phone app with this number ready to dial"
+          >
+            {body}
+          </Button>
         );
       })}
     </View>
   );
 }
 
-function MedicalInfoList({ medicalList }) {
+function MedicalInfoList({ medicalList, offline, onAdd }) {
   const { palette } = useTheme();
 
   if (!medicalList.length) {
     return (
-      <EmptyState icon="medical-bag">
-        No medical information saved.
-      </EmptyState>
+      <EmptyState
+        variant="plain"
+        icon={APP_ICONS["medical-bag"]}
+        title={
+          offline
+            ? "Medical information couldn’t be loaded"
+            : "No medical information saved"
+        }
+        description={
+          offline
+            ? "You appear to be offline and nothing is saved on this device yet. Reconnect to sync it."
+            : "Allergies, medications and blood type are what responders ask for first."
+        }
+        action={
+          offline ? null : (
+            <Button size="sm" onPress={onAdd}>
+              Add medical information
+            </Button>
+          )
+        }
+      />
     );
   }
 
@@ -318,7 +406,7 @@ function MedicalInfoList({ medicalList }) {
                 size={20}
                 color={palette.destructive}
               />
-              <Text className="flex-1 text-[17px] font-bold text-foreground">
+              <Text className="flex-1 text-callout font-bold text-foreground">
                 {record.name || record.raw?.name || "Medical record"}
               </Text>
             </View>
@@ -326,20 +414,17 @@ function MedicalInfoList({ medicalList }) {
               <View className="gap-4">
                 {details.map(([label, value]) => (
                   <View key={label} className="gap-1">
-                    <Text className="text-[13px] font-semibold uppercase text-muted-foreground">
+                    <Text className="text-footnote font-semibold uppercase text-muted-foreground">
                       {label}
                     </Text>
-                    <Text
-                      selectable
-                      className="text-[16px] leading-6 text-foreground"
-                    >
+                    <Text selectable className="text-body-lg text-foreground">
                       {String(value)}
                     </Text>
                   </View>
                 ))}
               </View>
             ) : (
-              <Text className="text-[15px] text-muted-foreground">
+              <Text className="text-body text-muted-foreground">
                 No details saved.
               </Text>
             )}
@@ -350,14 +435,22 @@ function MedicalInfoList({ medicalList }) {
   );
 }
 
-function DocumentsList({ documents }) {
+function DocumentsList({ documents, onAdd }) {
   const { palette } = useTheme();
 
   if (!documents.length) {
     return (
-      <EmptyState icon="file-document">
-        No important documents saved.
-      </EmptyState>
+      <EmptyState
+        variant="plain"
+        icon={APP_ICONS["file-document"]}
+        title="No important documents saved"
+        description="Photos of IDs, insurance policies and prescriptions are stored on this device and stay available offline."
+        action={
+          <Button size="sm" onPress={onAdd}>
+            Add a document
+          </Button>
+        }
+      />
     );
   }
 
@@ -392,7 +485,7 @@ function DocumentsList({ documents }) {
             )}
             <Text
               selectable
-              className="min-w-0 flex-1 text-[16px] font-semibold leading-5 text-foreground"
+              className="min-w-0 flex-1 text-body-lg font-semibold text-foreground"
             >
               {document.title || document.fileName || uri || "Document"}
             </Text>
@@ -403,11 +496,71 @@ function DocumentsList({ documents }) {
   );
 }
 
-function Checklist({ items, onToggle }) {
-  const { palette } = useTheme();
+function PlanList({ sections, onEdit }) {
+  if (!sections.length) {
+    return (
+      <EmptyState
+        variant="plain"
+        icon={APP_ICONS["clipboard-list"]}
+        title="No plan written yet"
+        description="Where you will meet, how you will get out, who does what. Writing it down now is what makes it usable later."
+        action={
+          <Button size="sm" onPress={onEdit}>
+            Write my plan
+          </Button>
+        }
+      />
+    );
+  }
+
+  return (
+    <View className="w-full gap-4">
+      {sections.map((section) => (
+        <View
+          key={section.key}
+          className="gap-2 rounded-xl bg-muted p-4"
+          style={{ borderCurve: "continuous" }}
+        >
+          <Text className="text-footnote font-semibold uppercase text-muted-foreground">
+            {section.title}
+          </Text>
+          <Text selectable className="text-body-lg text-foreground">
+            {section.body}
+          </Text>
+        </View>
+      ))}
+      <Button variant="outline" onPress={onEdit}>
+        Edit my plan
+      </Button>
+    </View>
+  );
+}
+
+function Checklist({ items, onToggle, onReset }) {
+  const completed = items.filter((item) => item.completed).length;
 
   return (
     <View className="w-full gap-3">
+      <View className="flex-row items-center justify-between gap-3">
+        <Text
+          className="text-footnote font-semibold text-muted-foreground"
+          accessibilityLiveRegion="polite"
+        >
+          {completed} of {items.length} done
+        </Text>
+        {completed > 0 ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={onReset}
+            accessibilityLabel="Reset checklist"
+            accessibilityHint="Clears every tick so the list is ready for the next earthquake"
+          >
+            <Text className="font-semibold text-primary">Reset</Text>
+          </Button>
+        ) : null}
+      </View>
+
       {items.map((item) => (
         <Button
           unstyled
@@ -418,25 +571,10 @@ function Checklist({ items, onToggle }) {
           accessibilityState={{ checked: item.completed }}
           accessibilityLabel={item.text}
         >
-          <View
-            className={[
-              "mt-[1px] h-6 w-6 items-center justify-center rounded-md border-2 border-muted-foreground bg-card",
-              item.completed && "border-primary bg-primary",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-          >
-            {item.completed ? (
-              <AppIcon
-                name="check"
-                size={16}
-                color={palette.primaryForeground}
-              />
-            ) : null}
-          </View>
+          <CheckIndicator checked={item.completed} className="mt-[1px]" />
           <Text
             className={[
-              "flex-1 text-[16px] font-medium leading-6 text-foreground",
+              "flex-1 text-body-lg font-medium text-foreground",
               item.completed && "text-muted-foreground line-through",
             ]
               .filter(Boolean)
@@ -450,17 +588,23 @@ function Checklist({ items, onToggle }) {
   );
 }
 
-export default function Emergency() {
+export default function Emergency({ route }) {
   const navigation = useNavigation();
+  const { palette } = useTheme();
   const [activeCardId, setActiveCardId] = useState(null);
   const [emergencyActive, setEmergencyActive] = useState(false);
   const [emergencyContacts, setEmergencyContacts] = useState([]);
   const [medicalList, setMedicalList] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [checklist, setChecklist] = useState(POST_SHAKING_STEPS);
+  const [planSections, setPlanSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const showSkeleton = useDelayedSkeleton(loading);
+  const toast = useToast();
+  const { isOnline } = useOnlineStatus();
+
+  const syncUnavailable = !isOnline;
 
   const loadEmergencyData = useCallback(async () => {
     try {
@@ -533,6 +677,25 @@ export default function Emergency() {
       } else {
         setDocuments([]);
       }
+
+      setPlanSections(await loadPlanSections());
+
+      try {
+        const savedChecklist = await AsyncStorage.getItem(
+          CHECKLIST_STORAGE_KEY
+        );
+        const completedIds = savedChecklist ? JSON.parse(savedChecklist) : [];
+        if (Array.isArray(completedIds)) {
+          setChecklist(
+            POST_SHAKING_STEPS.map((item) => ({
+              ...item,
+              completed: completedIds.includes(item.id),
+            }))
+          );
+        }
+      } catch (error) {
+        console.warn("Emergency: failed to restore checklist", error);
+      }
     } catch (error) {
       console.warn("Emergency: failed to load emergency data", error);
       setLoadError("Saved emergency information could not be loaded.");
@@ -551,13 +714,97 @@ export default function Emergency() {
     }, [loadEmergencyData])
   );
 
-  const toggleChecklistItem = (id) => {
-    setChecklist((current) =>
-      current.map((item) =>
-        item.id === id ? { ...item, completed: !item.completed } : item
-      )
-    );
-  };
+  const { refreshing, onRefresh } = useRefresh(loadEmergencyData);
+
+  const requestedCard = route?.params?.card;
+  useEffect(() => {
+    if (requestedCard && CARD_TITLES[requestedCard]) {
+      setActiveCardId(requestedCard);
+      navigation.setParams({ card: undefined });
+    }
+  }, [requestedCard, navigation]);
+
+  const persistChecklist = useCallback(async (items) => {
+    try {
+      await AsyncStorage.setItem(
+        CHECKLIST_STORAGE_KEY,
+        JSON.stringify(items.filter((i) => i.completed).map((i) => i.id))
+      );
+    } catch (error) {
+      console.warn("Emergency: failed to persist checklist", error);
+    }
+  }, []);
+
+  const toggleChecklistItem = useCallback(
+    (id) => {
+      haptics.selection();
+      setChecklist((current) => {
+        const next = current.map((item) =>
+          item.id === id ? { ...item, completed: !item.completed } : item
+        );
+        persistChecklist(next);
+        return next;
+      });
+    },
+    [persistChecklist]
+  );
+
+  const resetChecklist = useCallback(() => {
+    haptics.light();
+    const next = POST_SHAKING_STEPS.map((item) => ({
+      ...item,
+      completed: false,
+    }));
+    setChecklist(next);
+    persistChecklist(next);
+  }, [persistChecklist]);
+
+  const callEmergencyServices = useCallback(async () => {
+    const started = await callNumber(EMERGENCY_SERVICES_NUMBER);
+    if (!started) {
+      toast.error("Couldn’t open the dialer", {
+        description: `Dial ${EMERGENCY_SERVICES_NUMBER} directly from your phone app.`,
+      });
+    }
+  }, [toast]);
+
+  const [sharingLocation, setSharingLocation] = useState(false);
+  const { on: torchOn, toggle: toggleTorch } = useFlashlight();
+
+  const handleFlashlight = useCallback(async () => {
+    haptics.light();
+    const result = await toggleTorch();
+    if (!result.ok) {
+      const message =
+        FLASHLIGHT_FAILURE_MESSAGES[result.reason] ||
+        FLASHLIGHT_FAILURE_MESSAGES.denied;
+      toast.error(message.title, { description: message.description });
+    }
+  }, [toggleTorch, toast]);
+
+  const shareLocation = useCallback(async () => {
+    setSharingLocation(true);
+    try {
+      const result = await shareCurrentLocation();
+      if (!result.ok) {
+        const message =
+          LOCATION_FAILURE_MESSAGES[result.reason] ||
+          LOCATION_FAILURE_MESSAGES.unavailable;
+        toast.error(message.title, { description: message.description });
+      }
+    } finally {
+      setSharingLocation(false);
+    }
+  }, [toast]);
+
+  const handleCallFailed = useCallback(
+    (name) => {
+      toast.error(`Couldn’t call ${name}`, {
+        description: "Your device wouldn’t open the dialer for that number.",
+      });
+    },
+    [toast]
+  );
 
   if (loading) {
     return showSkeleton ? (
@@ -569,13 +816,11 @@ export default function Emergency() {
 
   if (loadError) {
     return (
-      <View className="flex-1 justify-center bg-background p-5">
-        <StatusCard
-          tone="danger"
-          title="Emergency information unavailable"
-          description={loadError}
-        />
-      </View>
+      <ErrorState
+        title="Emergency information unavailable"
+        description={loadError}
+        onRetry={loadEmergencyData}
+      />
     );
   }
 
@@ -583,12 +828,40 @@ export default function Emergency() {
     ? { id: activeCardId, title: CARD_TITLES[activeCardId] }
     : null;
 
+  const goTo = (route) => {
+    setActiveCardId(null);
+    navigation.navigate(route);
+  };
+
   const activeCardContent = {
-    contacts: <EmergencyContactsList contacts={emergencyContacts} />,
-    medical: <MedicalInfoList medicalList={medicalList} />,
-    documents: <DocumentsList documents={documents} />,
+    contacts: (
+      <EmergencyContactsList
+        contacts={emergencyContacts}
+        offline={syncUnavailable}
+        onAdd={() => goTo("ContactInfo")}
+        onCallFailed={handleCallFailed}
+      />
+    ),
+    medical: (
+      <MedicalInfoList
+        medicalList={medicalList}
+        offline={syncUnavailable}
+        onAdd={() => goTo("MedicalInfo")}
+      />
+    ),
+    documents: (
+      <DocumentsList
+        documents={documents}
+        onAdd={() => goTo("ImportantDocuments")}
+      />
+    ),
+    plan: <PlanList sections={planSections} onEdit={() => goTo("MyPlan")} />,
     checklist: (
-      <Checklist items={checklist} onToggle={toggleChecklistItem} />
+      <Checklist
+        items={checklist}
+        onToggle={toggleChecklistItem}
+        onReset={resetChecklist}
+      />
     ),
     aftershocks: <InformationList items={AFTERSHOCKS} />,
     supplies: <InformationList items={FOOD_AND_WATER} />,
@@ -601,8 +874,75 @@ export default function Emergency() {
         contentContainerClassName="gap-8 px-5 pb-10 pt-6"
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={palette.primary}
+            colors={[palette.primary]}
+          />
+        }
       >
         <PageHeader title="Emergency hub" />
+
+        <Button
+          size="lg"
+          variant="destructive"
+          className="min-h-[60px] gap-3"
+          onPress={callEmergencyServices}
+          accessibilityLabel={`Call emergency services on ${EMERGENCY_SERVICES_NUMBER}`}
+          accessibilityHint="Opens your phone app ready to dial"
+        >
+          <AppIcon name="phone" size={22} color="#FFFFFF" />
+          <Text className="text-title-sm font-extrabold text-white">
+            Call {EMERGENCY_SERVICES_NUMBER}
+          </Text>
+        </Button>
+
+        <View className="-mt-4 flex-row gap-3">
+          <Button
+            variant="outline"
+            size="lg"
+            className="min-h-14 flex-1 gap-2 px-3"
+            onPress={shareLocation}
+            loading={sharingLocation}
+            accessibilityLabel="Share my location"
+            accessibilityHint="Opens the share sheet with your coordinates and a map link"
+          >
+            <AppIcon name="map-marker-radius" size={19} className="text-primary" />
+            <Text className="text-body-sm font-bold text-primary">
+              Share location
+            </Text>
+          </Button>
+
+          <Button
+            variant={torchOn ? "default" : "outline"}
+            size="lg"
+            className="min-h-14 flex-1 gap-2 px-3"
+            onPress={handleFlashlight}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: torchOn }}
+            accessibilityLabel={
+              torchOn ? "Turn off flashlight" : "Turn on flashlight"
+            }
+            accessibilityHint="Uses the camera flash as a torch"
+          >
+            <AppIcon
+              name="flashlight"
+              size={19}
+              color={torchOn ? palette.primaryForeground : palette.primary}
+            />
+            <Text
+              className={
+                torchOn
+                  ? "text-body-sm font-bold text-primary-foreground"
+                  : "text-body-sm font-bold text-primary"
+              }
+            >
+              {torchOn ? "Light on" : "Flashlight"}
+            </Text>
+          </Button>
+        </View>
 
         {emergencyActive ? (
           <View
@@ -614,10 +954,10 @@ export default function Emergency() {
                 <AppIcon name="alert-circle" size={24} color="#FFFFFF" />
               </View>
               <View className="min-w-0 flex-1 gap-2">
-                <Text className="text-[20px] font-extrabold leading-6 text-destructive-foreground">
+                <Text className="text-title font-extrabold text-destructive-foreground">
                   Earthquake detected
                 </Text>
-                <Text className="text-[17px] font-bold leading-6 text-destructive-foreground">
+                <Text className="text-callout font-bold text-destructive-foreground">
                   Drop, Cover, and Hold On.
                 </Text>
               </View>
@@ -637,10 +977,18 @@ export default function Emergency() {
           <Text
             role="heading"
             aria-level={2}
-            className="text-[20px] font-bold leading-6 text-foreground"
+            className="text-title font-bold text-foreground"
           >
             Your information
           </Text>
+
+          <EmergencyCard
+            title={CARD_TITLES.plan}
+            icon="clipboard-list"
+            size="wide"
+            onPress={() => setActiveCardId("plan")}
+          />
+
           <View className="flex-row gap-4">
             <EmergencyCard
               title={CARD_TITLES.contacts}
@@ -667,7 +1015,7 @@ export default function Emergency() {
           <Text
             role="heading"
             aria-level={2}
-            className="text-[20px] font-bold leading-6 text-foreground"
+            className="text-title font-bold text-foreground"
           >
             What to do
           </Text>

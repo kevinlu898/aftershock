@@ -64,9 +64,6 @@ export function SetupNudgeCard() {
           <Text className="text-base font-bold text-foreground">
             {`Finish setting up: ${done} of ${STEP_COUNT}`}
           </Text>
-          <Text className="text-sm leading-5 text-muted-foreground">
-            A few minutes now saves time later.
-          </Text>
         </View>
       </View>
 

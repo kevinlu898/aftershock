@@ -59,6 +59,13 @@
           "cameraPermission": "Aftershock uses the camera so you can save photos of important documents.",
           "photosPermission": "Aftershock accesses your photos so you can save copies of important documents."
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Aftershock uses the camera flash as an emergency flashlight.",
+          "recordAudioAndroid": false
+        }
       ]
     ],
     "experiments": {

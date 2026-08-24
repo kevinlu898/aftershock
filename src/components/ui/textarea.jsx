@@ -1,5 +1,7 @@
 import { cn } from '../../lib/utils';
-import { Platform, TextInput, useColorScheme } from 'react-native';
+import { Platform, TextInput } from 'react-native';
+import { useTheme } from '../../lib/theme';
+import { DEFAULT_MAX_SCALE } from './text';
 
 function Textarea({
   className,
@@ -11,7 +13,7 @@ function Textarea({
   placeholderClassName,
   ...props
 }) {
-  const colorScheme = useColorScheme();
+  const { palette } = useTheme();
   return (
     <TextInput
       className={cn(
@@ -27,9 +29,9 @@ function Textarea({
       numberOfLines={numberOfLines}
       textAlignVertical="top"
       placeholderTextColor={
-        props.placeholderTextColor ||
-        (colorScheme === 'dark' ? '#A6BDB3' : '#5D786C')
+        props.placeholderTextColor || palette.mutedForeground
       }
+      maxFontSizeMultiplier={props.maxFontSizeMultiplier ?? DEFAULT_MAX_SCALE}
       {...props} />
   );
 }

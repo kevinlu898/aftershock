@@ -1,14 +1,8 @@
 import { useNavigation } from "@react-navigation/native";
 import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
 import { useRef, useState } from "react";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
+import { Text } from "../../components/ui/text";
 import {
   BackButton,
   FormField,

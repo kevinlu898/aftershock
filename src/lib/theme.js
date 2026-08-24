@@ -9,41 +9,9 @@ import {
   useState,
 } from "react";
 import { Appearance } from "react-native";
+import { PALETTES } from "./palette";
 
-export const PALETTES = {
-  light: {
-    background: "#F3F8F4",
-    foreground: "#17201C",
-    card: "#FFFFFF",
-    cardForeground: "#17201C",
-    primary: "#25745A",
-    primaryForeground: "#FFFFFF",
-    secondary: "#E7F0E9",
-    secondaryForeground: "#193C32",
-    muted: "#E7F0E9",
-    mutedForeground: "#5D786C",
-    border: "#D9E5DC",
-    destructive: "#C93232",
-    destructiveForeground: "#FFFFFF",
-    warning: "#B96B13",
-  },
-  dark: {
-    background: "#0D1713",
-    foreground: "#EDF5F0",
-    card: "#14231D",
-    cardForeground: "#EDF5F0",
-    primary: "#5FC29D",
-    primaryForeground: "#07110D",
-    secondary: "#1C342A",
-    secondaryForeground: "#EDF5F0",
-    muted: "#1A2D25",
-    mutedForeground: "#A6BDB3",
-    border: "#2A4438",
-    destructive: "#F06A6A",
-    destructiveForeground: "#0D1713",
-    warning: "#F2A65A",
-  },
-};
+export { PALETTES };
 
 export function getNavigationTheme(mode) {
   const palette = PALETTES[mode];

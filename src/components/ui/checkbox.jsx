@@ -2,7 +2,7 @@ import { Icon } from './icon';
 import { cn } from '../../lib/utils';
 import * as CheckboxPrimitive from '@rn-primitives/checkbox';
 import { Check } from 'lucide-react-native';
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 
 const DEFAULT_HIT_SLOP = 24;
 
@@ -39,4 +39,31 @@ function Checkbox({
   );
 }
 
-export { Checkbox };
+function CheckIndicator({ checked, className, size = "md" }) {
+  const box = size === "lg" ? "h-7 w-7 rounded-lg" : "h-6 w-6 rounded-md";
+  const glyph = size === "lg" ? 17 : 16;
+
+  return (
+    <View
+      className={cn(
+        "shrink-0 items-center justify-center border-2 bg-card",
+        box,
+        checked ? "border-primary bg-primary" : "border-muted-foreground",
+        className
+      )}
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
+      {checked ? (
+        <Icon
+          as={Check}
+          size={glyph}
+          strokeWidth={3}
+          className="text-primary-foreground"
+        />
+      ) : null}
+    </View>
+  );
+}
+
+export { Checkbox, CheckIndicator };

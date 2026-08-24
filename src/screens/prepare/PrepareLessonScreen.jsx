@@ -1,7 +1,10 @@
 import { Button } from "../../components/ui/button";
 import { AppIcon } from "../../components/app-icon";
 import { useEffect, useState } from 'react';
-import { Alert, Linking, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { Linking, ScrollView, useWindowDimensions, View } from "react-native";
+import { Text } from "../../components/ui/text";
+import { useToast } from "../../components/ui/toast";
+import haptics from "../../lib/haptics";
 import { SafeAreaView } from "react-native-safe-area-context";
 import YoutubePlayer from 'react-native-youtube-iframe';
 import ChecklistLessonPage from '../../components/prepare/ChecklistLessonPage';
@@ -9,10 +12,10 @@ import { getLessonById, getLessonCurrentPageIndex, getLessonPages, getModuleById
 import { events, markLessonCompleted, setLessonCurrentPage } from '../../lib/prepareCompletion';
 import { useTheme } from '../../lib/theme';
 const BUTTON_ROUTE_MAP = {
-  'My Plan': 'myPlan',
-  'Contact Info': 'contactInfo',
-  'Medical Info': 'medicalInfo',
-  'Important Documents': 'importantDocuments'
+  'My Plan': 'MyPlan',
+  'Contact Info': 'ContactInfo',
+  'Medical Info': 'MedicalInfo',
+  'Important Documents': 'ImportantDocuments'
 };
 const handleButtonPress = (btnText, navigation) => {
   const route = BUTTON_ROUTE_MAP[(btnText || '').trim()] || null;
@@ -187,6 +190,7 @@ const PrepareLessons = ({
   navigation
 }) => {
   const { palette } = useTheme();
+  const toast = useToast();
   const {
     lessonId = '1-1',
     moduleId = '1',
@@ -282,15 +286,17 @@ const PrepareLessons = ({
         });
         return () => off && off();
       } else {
-        Alert.alert('Error', 'Lesson not found');
+        toast.error("That lesson couldn’t be found");
         navigation.goBack();
       }
     } catch (error) {
-      console.error('Error loading lesson:', error);
-      Alert.alert('Error', 'Failed to load lesson');
+      console.warn('Error loading lesson:', error);
+      toast.error("Couldn’t load that lesson", {
+        description: "Check your connection and try again.",
+      });
       navigation.goBack();
     }
-  }, [lessonId, lessonData, moduleId, initialPageIndex, navigation]);
+  }, [lessonId, lessonData, moduleId, initialPageIndex, navigation, toast]);
   const progress = screens.length > 0 ? (currentScreenIndex + 1) / screens.length : 0;
   if (!currentLesson) {
     return <View className={"flex-1 justify-center items-center bg-background"}>
@@ -359,8 +365,8 @@ const PrepareLessons = ({
         <AppIcon name={icon} size={21} color={palette.primary} />
       </View>
       <View className="min-w-0 flex-1 gap-1.5">
-        <Text className="text-[26px] font-extrabold leading-[32px] text-foreground">{title}</Text>
-        {description ? <Text className="text-[15px] leading-[22px] text-muted-foreground">{description}</Text> : null}
+        <Text className="text-heading-lg font-extrabold text-foreground">{title}</Text>
+        {description ? <Text className="text-body text-muted-foreground">{description}</Text> : null}
       </View>
     </View>
   );
@@ -380,11 +386,8 @@ const PrepareLessons = ({
           <View className="w-full max-w-[720px] self-center">
             <PageHeading icon={currentPage?.icon || "book-open"} title={currentPage?.title || "Lesson"} />
             <View
-              className="rounded-[20px] border border-border bg-card p-5"
-              style={{
-                borderCurve: "continuous",
-                boxShadow: "0 2px 12px rgba(23, 32, 28, 0.05)"
-              }}
+              className="rounded-[20px] border border-border bg-card p-5 shadow-card"
+              style={{ borderCurve: "continuous" }}
             >
             <SimpleHtmlRenderer html={content} contentWidth={screenWidth - 48} config={{
             ...htmlConfig,
@@ -429,11 +432,8 @@ const PrepareLessons = ({
               description="Watch this short lesson, then continue when you are ready."
             />
               <View
-                className="overflow-hidden rounded-[20px] border border-border bg-card"
-                style={{
-                  borderCurve: "continuous",
-                  boxShadow: "0 2px 12px rgba(23, 32, 28, 0.05)"
-                }}
+                className="overflow-hidden rounded-[20px] border border-border bg-card shadow-card"
+                style={{ borderCurve: "continuous" }}
               >
                 <View className="bg-black items-center">
                   {videoId ? <View style={{
@@ -457,7 +457,7 @@ const PrepareLessons = ({
                   handleButtonPress(btnText, navigation);
                 },
                 navigation
-              }} /> : <Text className="text-[15px] leading-[22px] text-muted-foreground">{caption}</Text>}</View> : null}
+              }} /> : <Text className="text-body text-muted-foreground">{caption}</Text>}</View> : null}
               </View>
           </View>
         </ScrollView>
@@ -485,6 +485,7 @@ const PrepareLessons = ({
       hasSubmitted && selectedAnswer === currentQ?.correctAnswer;
     const handleAnswerSelect = (questionId, answerIndex) => {
       if (submittedQuestions[questionId]) return;
+      haptics.selection();
       setUserAnswers({
         ...userAnswers,
         [questionId]: answerIndex
@@ -492,6 +493,8 @@ const PrepareLessons = ({
     };
     const handleSubmitAnswer = () => {
       if (!currentQ || !hasSelectedAnswer) return;
+      if (selectedAnswer === currentQ.correctAnswer) haptics.success();
+      else haptics.warning();
       setSubmittedQuestions({
         ...submittedQuestions,
         [currentQ.id]: true
@@ -528,11 +531,8 @@ const PrepareLessons = ({
         contentInsetAdjustmentBehavior="automatic"
       >
           <View
-            className="w-full max-w-[560px] self-center rounded-[24px] border border-border bg-card p-6"
-            style={{
-              borderCurve: "continuous",
-              boxShadow: "0 4px 18px rgba(23, 32, 28, 0.07)"
-            }}
+            className="w-full max-w-[560px] self-center rounded-[24px] border border-border bg-card p-6 shadow-raised"
+            style={{ borderCurve: "continuous" }}
           >
             <View className={[
               "mb-5 h-16 w-16 self-center items-center justify-center rounded-[22px]",
@@ -540,16 +540,16 @@ const PrepareLessons = ({
             ].join(" ")}>
               <AppIcon name={passed ? 'trophy' : 'alert-circle'} size={30} color={passed ? palette.primary : palette.destructive} />
             </View>
-            <Text className="mb-2 text-center text-[24px] font-extrabold leading-[30px] text-foreground">
+            <Text className="mb-2 text-center text-heading font-extrabold text-foreground">
               {passed ? 'Quiz Passed' : 'Quiz Results'}
             </Text>
             <Text
-              className="mb-3 text-center text-[32px] font-extrabold text-primary"
+              className="mb-3 text-center text-display-lg font-extrabold text-primary"
               style={{ fontVariant: ["tabular-nums"] }}
             >
               {correct} out of {total} correct
             </Text>
-            <Text className="text-center text-[15px] leading-[22px] text-muted-foreground">
+            <Text className="text-center text-body text-muted-foreground">
               {passed ? 'Great job! You understand the key concepts.' : 'Review the material and try again.'}
             </Text>
             <Button className="mt-6 min-h-[52px] rounded-[14px]" onPress={passed ? () => {
@@ -579,19 +579,16 @@ const PrepareLessons = ({
               title="Knowledge check"
             />
             <View
-              className="rounded-[20px] border border-border bg-card p-5"
-              style={{
-                borderCurve: "continuous",
-                boxShadow: "0 2px 12px rgba(23, 32, 28, 0.05)"
-              }}
+              className="rounded-[20px] border border-border bg-card p-5 shadow-card"
+              style={{ borderCurve: "continuous" }}
             >
               <View className="mb-6 gap-2">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-[13px] font-semibold text-muted-foreground">
+                  <Text className="text-footnote font-semibold text-muted-foreground">
                     Question {currentQuestion + 1} of {questions.length}
                   </Text>
                   <Text
-                    className="text-[13px] font-semibold text-primary"
+                    className="text-footnote font-semibold text-primary"
                     style={{ fontVariant: ["tabular-nums"] }}
                   >
                     {Math.round(((currentQuestion + 1) / questions.length) * 100)}%
@@ -603,7 +600,7 @@ const PrepareLessons = ({
                 }} />
                 </View>
               </View>
-              <Text className="mb-5 text-[19px] font-bold leading-[27px] text-foreground">{currentQ?.question}</Text>
+              <Text className="mb-5 text-title-sm font-bold leading-[27px] text-foreground">{currentQ?.question}</Text>
 
               <View className="gap-3">
                 {currentQ?.options?.map((option, index) => {
@@ -671,7 +668,7 @@ const PrepareLessons = ({
                   </View>
                   <Text
                     className={[
-                      "min-w-0 flex-1 text-[15px] leading-[21px]",
+                      "min-w-0 flex-1 text-body leading-[21px]",
                       (selectedPending || correctOption || selectedIncorrect) &&
                         "font-semibold"
                     ].filter(Boolean).join(" ")}
@@ -708,12 +705,12 @@ const PrepareLessons = ({
                 </View>
                 <View className="min-w-0 flex-1 gap-0.5">
                   <Text className={[
-                    "text-[15px] font-bold",
+                    "text-body font-bold",
                     answerIsCorrect ? "text-primary" : "text-destructive"
                   ].filter(Boolean).join(" ")}>
                     {answerIsCorrect ? "Correct" : "Not quite"}
                   </Text>
-                  <Text className="text-[14px] leading-5 text-foreground">
+                  <Text className="text-body-sm text-foreground">
                     {answerIsCorrect
                       ? "You selected the right answer."
                       : `The correct answer is ${currentQ.options[currentQ.correctAnswer]}.`}
@@ -748,17 +745,14 @@ const PrepareLessons = ({
   // Complete screen
   const CompletedScreen = () => <View className="flex-1 items-center justify-center px-5 py-8">
       <View
-        className="w-full max-w-[540px] rounded-[24px] border border-border bg-card p-7"
-        style={{
-          borderCurve: "continuous",
-          boxShadow: "0 4px 18px rgba(23, 32, 28, 0.07)"
-        }}
+        className="w-full max-w-[540px] rounded-[24px] border border-border bg-card p-7 shadow-raised"
+        style={{ borderCurve: "continuous" }}
       >
         <View className="mb-5 h-[72px] w-[72px] self-center items-center justify-center rounded-[24px] bg-secondary">
           <AppIcon name="check-circle" size={38} color={palette.primary} />
         </View>
-        <Text className="mb-2 text-center text-[26px] font-extrabold leading-8 text-foreground">Lesson complete</Text>
-        <Text className="mb-6 text-center text-[15px] leading-[22px] text-muted-foreground">Nice work! Your progress has been saved and you can review this lesson at any time.</Text>
+        <Text className="mb-2 text-center text-heading-lg font-extrabold text-foreground">Lesson complete</Text>
+        <Text className="mb-6 text-center text-body text-muted-foreground">Nice work! Your progress has been saved and you can review this lesson at any time.</Text>
 
         <View className="gap-3">
           <Button onPress={() => {
@@ -771,7 +765,7 @@ const PrepareLessons = ({
           </Button>
 
           <Button variant="outline" onPress={() => navigation.goBack()} className="min-h-[52px] rounded-[14px]">
-              <Text className="text-base font-bold text-primary">Back to learning path</Text>
+              <Text className="text-base font-bold text-primary">Back to Prepare Home </Text>
           </Button>
         </View>
       </View>
@@ -803,9 +797,11 @@ const PrepareLessons = ({
           <View className="min-h-[58px] flex-row items-center gap-3">
             <Button
               unstyled
-              className="h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted active:bg-secondary"
+              className="h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted active:bg-secondary"
               onPress={() => navigation.goBack()}
               accessibilityLabel="Back to learning path"
+              accessibilityHint="Leaves this lesson"
+              hitSlop={6}
             >
               <AppIcon name="chevron-left" size={22} color={palette.foreground} />
             </Button>
@@ -814,7 +810,7 @@ const PrepareLessons = ({
               <Text className="text-xs font-semibold text-primary" numberOfLines={1}>
                 {currentModule?.title || 'Module'}
               </Text>
-              <Text className="text-[17px] font-bold leading-[22px] text-foreground" numberOfLines={1}>
+              <Text className="text-callout font-bold text-foreground" numberOfLines={1}>
                 {currentLesson?.title}
               </Text>
             </View>
@@ -852,6 +848,7 @@ const PrepareLessons = ({
                   onPress={() => goToScreen(index)}
                   accessibilityLabel={`Open page ${index + 1}: ${screen.title}`}
                   accessibilityState={{ selected: active }}
+                  hitSlop={6}
                 >
                   <AppIcon
                     name={visited && !active ? "check" : screen.icon}

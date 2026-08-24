@@ -2,7 +2,10 @@ import { Button } from "../ui/button";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppIcon } from "../app-icon";
 import { useEffect, useMemo, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, View } from "react-native";
+import { Text } from "../../components/ui/text";
+import { CheckIndicator } from "../ui/checkbox";
+import haptics from "../../lib/haptics";
 import { useTheme } from "../../lib/theme";
 export default function ChecklistLessonPage({
   content,
@@ -52,6 +55,7 @@ export default function ChecklistLessonPage({
     AsyncStorage.setItem(storageKey, JSON.stringify(checklist)).catch(() => {});
   }, [checklist, storageKey]);
   const toggleItem = itemId => {
+    haptics.selection();
     setChecklist(items => items.map(item => item.id === itemId ? {
       ...item,
       completed: !item.completed
@@ -71,24 +75,21 @@ export default function ChecklistLessonPage({
               <AppIcon name="list-checks" size={21} color={palette.primary} />
             </View>
             <View className="min-w-0 flex-1 gap-1.5">
-              <Text className="text-[26px] font-extrabold leading-[32px] text-foreground">Action checklist</Text>
-              <Text className="text-[15px] leading-[22px] text-muted-foreground">
+              <Text className="text-heading-lg font-extrabold text-foreground">Action checklist</Text>
+              <Text className="text-body text-muted-foreground">
                 Mark each item as you complete it. Your progress is saved automatically.
               </Text>
             </View>
           </View>
 
           <View
-            className="rounded-[20px] border border-border bg-card p-5"
-            style={{
-              borderCurve: "continuous",
-              boxShadow: "0 2px 12px rgba(23, 32, 28, 0.05)"
-            }}
+            className="rounded-[20px] border border-border bg-card p-5 shadow-card"
+            style={{ borderCurve: "continuous" }}
           >
             <View className="mb-5 flex-row items-center justify-between gap-4">
-              <Text className="text-[15px] font-bold text-foreground">Tasks</Text>
+              <Text className="text-body font-bold text-foreground">Tasks</Text>
               <Text
-                className="text-[13px] font-semibold text-muted-foreground"
+                className="text-footnote font-semibold text-muted-foreground"
                 style={{ fontVariant: ["tabular-nums"] }}
               >
                 {completedCount} of {checklist.length}
@@ -107,15 +108,11 @@ export default function ChecklistLessonPage({
                 onPress={() => toggleItem(item.id)}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: item.completed }}
+                accessibilityLabel={item.text}
               >
-                  <View className={[
-                    "h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-muted-foreground bg-card",
-                    item.completed && "border-primary bg-primary"
-                  ].filter(Boolean).join(" ")}>
-                    {item.completed ? <AppIcon name="check" size={17} color={palette.primaryForeground} /> : null}
-                  </View>
+                  <CheckIndicator checked={item.completed} size="lg" />
                   <Text className={[
-                    "min-w-0 flex-1 text-[15px] leading-[21px] text-foreground",
+                    "min-w-0 flex-1 text-body leading-[21px] text-foreground",
                     item.completed && "text-muted-foreground line-through"
                   ].filter(Boolean).join(" ")}>
                     {item.text}
@@ -125,7 +122,7 @@ export default function ChecklistLessonPage({
 
             {allCompleted ? <View className="mt-5 flex-row items-center gap-2 rounded-[14px] bg-secondary p-3.5">
               <AppIcon name="check-circle" size={20} color={palette.primary} />
-              <Text className="flex-1 text-[14px] font-semibold text-primary">
+              <Text className="flex-1 text-body-sm font-semibold text-primary">
                 Everything is checked off. You are ready to continue.
               </Text>
             </View> : null}
@@ -139,7 +136,7 @@ export default function ChecklistLessonPage({
           onPress={onContinue}
           disabled={!allCompleted}
         >
-          <Text className="text-base font-bold text-primary-foreground">
+          <Text className="text-body-lg font-bold text-primary-foreground">
             {allCompleted ? "Continue" : `${checklist.length - completedCount} tasks remaining`}
           </Text>
           {allCompleted ? <AppIcon name="chevron-right" size={20} color={palette.primaryForeground} /> : null}
